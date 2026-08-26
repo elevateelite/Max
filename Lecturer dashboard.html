@@ -1,0 +1,2242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Lecturer Dashboard</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      min-height: 100vh;
+      color: #111827;
+    }
+
+
+    /* =========================
+       HEADER
+    ========================= */
+
+    .header {
+
+      height: 70px;
+
+      background: white;
+
+      border-bottom: 1px solid #e5e7eb;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: space-between;
+
+      padding: 0 25px;
+    }
+
+
+    .brand {
+
+      font-size: 20px;
+
+      font-weight: bold;
+    }
+
+
+    .header-right {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 15px;
+    }
+
+
+    .lecturer-name {
+
+      font-size: 14px;
+
+      font-weight: bold;
+    }
+
+
+    .online {
+
+      font-size: 12px;
+
+      color: #16a34a;
+
+      margin-top: 3px;
+    }
+
+
+    .logout {
+
+      border: none;
+
+      background: #fee2e2;
+
+      color: #dc2626;
+
+      padding: 9px 14px;
+
+      border-radius: 8px;
+
+      cursor: pointer;
+
+      font-weight: bold;
+    }
+
+
+    /* =========================
+       MAIN LAYOUT
+    ========================= */
+
+    .layout {
+
+      max-width: 1250px;
+
+      height: calc(100vh - 100px);
+
+      margin: 15px auto;
+
+      background: white;
+
+      border-radius: 16px;
+
+      overflow: hidden;
+
+      display: grid;
+
+      grid-template-columns: 300px 1fr;
+
+      box-shadow:
+        0 8px 30px rgba(0,0,0,.08);
+    }
+
+
+    /* =========================
+       STUDENT PANEL
+    ========================= */
+
+    .students-panel {
+
+      border-right: 1px solid #e5e7eb;
+
+      background: #fafafa;
+
+      overflow-y: auto;
+    }
+
+
+    .students-title {
+
+      padding: 18px;
+
+      font-size: 15px;
+
+      font-weight: bold;
+
+      border-bottom: 1px solid #e5e7eb;
+
+      position: sticky;
+
+      top: 0;
+
+      background: #fafafa;
+
+      z-index: 2;
+    }
+
+
+    .student-item {
+
+      padding: 12px;
+
+      border-bottom: 1px solid #eeeeee;
+
+      cursor: pointer;
+    }
+
+
+    .student-item:hover {
+
+      background: #f0f0f0;
+    }
+
+
+    .student-top {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 10px;
+    }
+
+
+    .student-dot {
+
+      width: 38px;
+
+      height: 38px;
+
+      border-radius: 50%;
+
+      color: white;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      font-size: 11px;
+
+      font-weight: bold;
+
+      flex-shrink: 0;
+    }
+
+
+    .student-details {
+
+      flex: 1;
+
+      min-width: 0;
+    }
+
+
+    .student-name {
+
+      font-size: 13px;
+
+      font-weight: bold;
+    }
+
+
+    .student-status {
+
+      font-size: 11px;
+
+      color: #9ca3af;
+
+      margin-top: 3px;
+    }
+
+
+    .student-status.restricted {
+
+      color: #dc2626;
+
+      font-weight: bold;
+    }
+
+
+    .score {
+
+      font-size: 11px;
+
+      color: #6b7280;
+
+      margin-top: 5px;
+    }
+
+
+    .score-bar {
+
+      height: 5px;
+
+      width: 100%;
+
+      background: #e5e7eb;
+
+      border-radius: 10px;
+
+      overflow: hidden;
+
+      margin-top: 4px;
+    }
+
+
+    .score-fill {
+
+      height: 100%;
+
+      background: #4f46e5;
+
+      border-radius: 10px;
+    }
+
+
+    /* =========================
+       CHAT
+    ========================= */
+
+    .chat {
+
+      display: flex;
+
+      flex-direction: column;
+
+      min-width: 0;
+    }
+
+
+    .chat-header {
+
+      padding: 18px 20px;
+
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+
+    .chat-header h2 {
+
+      font-size: 17px;
+    }
+
+
+    .chat-header p {
+
+      font-size: 12px;
+
+      color: #6b7280;
+
+      margin-top: 4px;
+    }
+
+
+    #messages {
+
+      flex: 1;
+
+      overflow-y: auto;
+
+      padding: 20px;
+
+      background: #f9fafb;
+    }
+
+
+    .empty {
+
+      text-align: center;
+
+      color: #9ca3af;
+
+      margin-top: 100px;
+
+      line-height: 1.6;
+    }
+
+
+    .message-row {
+
+      display: flex;
+
+      margin-bottom: 14px;
+    }
+
+
+    .message-row.mine {
+
+      justify-content: flex-end;
+    }
+
+
+    .bubble {
+
+      max-width: 72%;
+
+      background: white;
+
+      border: 1px solid #e5e7eb;
+
+      padding: 11px 14px;
+
+      border-radius: 14px;
+    }
+
+
+    .mine .bubble {
+
+      background: #4f46e5;
+
+      color: white;
+
+      border: none;
+    }
+
+
+    .sender {
+
+      font-size: 11px;
+
+      font-weight: bold;
+
+      color: #4f46e5;
+
+      margin-bottom: 5px;
+    }
+
+
+    .mine .sender {
+
+      color: rgba(255,255,255,.8);
+    }
+
+
+    .message-text {
+
+      font-size: 14px;
+
+      line-height: 1.45;
+
+      white-space: pre-wrap;
+
+      word-break: break-word;
+    }
+
+
+    .time {
+
+      font-size: 10px;
+
+      margin-top: 5px;
+
+      opacity: .65;
+    }
+
+
+    /* =========================
+       INPUT
+    ========================= */
+
+    .input-area {
+
+      display: flex;
+
+      gap: 10px;
+
+      padding: 15px;
+
+      border-top: 1px solid #e5e7eb;
+
+      background: white;
+    }
+
+
+    #messageInput {
+
+      flex: 1;
+
+      border: 1px solid #d1d5db;
+
+      border-radius: 10px;
+
+      padding: 12px;
+
+      outline: none;
+
+      font-size: 14px;
+    }
+
+
+    #messageInput:focus {
+
+      border-color: #4f46e5;
+    }
+
+
+    #sendButton {
+
+      border: none;
+
+      background: #4f46e5;
+
+      color: white;
+
+      padding: 0 22px;
+
+      border-radius: 10px;
+
+      cursor: pointer;
+
+      font-weight: bold;
+    }
+
+
+    #sendButton:disabled {
+
+      opacity: .5;
+
+      cursor: not-allowed;
+    }
+
+
+    /* =========================
+       STUDENT CONTROL MODAL
+    ========================= */
+
+    .modal {
+
+      position: fixed;
+
+      inset: 0;
+
+      background: rgba(0,0,0,.45);
+
+      display: none;
+
+      align-items: center;
+
+      justify-content: center;
+
+      padding: 20px;
+
+      z-index: 100;
+    }
+
+
+    .modal.show {
+
+      display: flex;
+    }
+
+
+    .modal-box {
+
+      width: 100%;
+
+      max-width: 420px;
+
+      background: white;
+
+      border-radius: 16px;
+
+      padding: 22px;
+
+      box-shadow:
+        0 20px 50px rgba(0,0,0,.2);
+    }
+
+
+    .modal-title {
+
+      font-size: 19px;
+
+      font-weight: bold;
+
+      margin-bottom: 5px;
+    }
+
+
+    .modal-subtitle {
+
+      font-size: 13px;
+
+      color: #6b7280;
+
+      margin-bottom: 18px;
+    }
+
+
+    .control-section {
+
+      margin-top: 18px;
+    }
+
+
+    .control-title {
+
+      font-size: 13px;
+
+      font-weight: bold;
+
+      margin-bottom: 8px;
+    }
+
+
+    .restriction-buttons {
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(3, 1fr);
+
+      gap: 8px;
+    }
+
+
+    .restriction-buttons button {
+
+      border: none;
+
+      background: #4f46e5;
+
+      color: white;
+
+      padding: 10px 5px;
+
+      border-radius: 8px;
+
+      cursor: pointer;
+
+      font-size: 12px;
+
+      font-weight: bold;
+    }
+
+
+    .remove-button {
+
+      width: 100%;
+
+      margin-top: 10px;
+
+      border: none;
+
+      background: #fee2e2;
+
+      color: #dc2626;
+
+      padding: 10px;
+
+      border-radius: 8px;
+
+      cursor: pointer;
+
+      font-weight: bold;
+    }
+
+
+    .close-button {
+
+      width: 100%;
+
+      margin-top: 18px;
+
+      border: 1px solid #d1d5db;
+
+      background: white;
+
+      color: #374151;
+
+      padding: 10px;
+
+      border-radius: 8px;
+
+      cursor: pointer;
+    }
+
+
+    .current-restriction {
+
+      background: #fff7ed;
+
+      border: 1px solid #fed7aa;
+
+      color: #c2410c;
+
+      padding: 10px;
+
+      border-radius: 8px;
+
+      font-size: 12px;
+
+      line-height: 1.5;
+    }
+
+
+    .no-restriction {
+
+      background: #f0fdf4;
+
+      border: 1px solid #bbf7d0;
+
+      color: #15803d;
+
+      padding: 10px;
+
+      border-radius: 8px;
+
+      font-size: 12px;
+    }
+
+
+    /* =========================
+       MOBILE
+    ========================= */
+
+    @media (max-width: 750px) {
+
+      .header {
+
+        padding: 0 12px;
+      }
+
+
+      .brand {
+
+        font-size: 16px;
+      }
+
+
+      .layout {
+
+        grid-template-columns: 1fr;
+
+        height: calc(100vh - 85px);
+
+        margin: 8px;
+      }
+
+
+      .students-panel {
+
+        display: none;
+      }
+
+
+      .bubble {
+
+        max-width: 85%;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =====================================
+     HEADER
+===================================== -->
+
+<header class="header">
+
+  <div class="brand">
+    Classroom Chat
+  </div>
+
+
+  <div class="header-right">
+
+    <div>
+
+      <div
+        class="lecturer-name"
+        id="lecturerName"
+      >
+        Lecturer
+      </div>
+
+      <div class="online">
+        ● Online
+      </div>
+
+    </div>
+
+
+    <button
+      class="logout"
+      id="logoutButton"
+    >
+      Logout
+    </button>
+
+  </div>
+
+</header>
+
+
+
+<!-- =====================================
+     MAIN
+===================================== -->
+
+<div class="layout">
+
+
+  <!-- STUDENTS -->
+
+  <aside class="students-panel">
+
+    <div class="students-title">
+
+      Students (24)
+
+    </div>
+
+
+    <div id="studentList">
+
+      Loading students...
+
+    </div>
+
+  </aside>
+
+
+
+  <!-- CHAT -->
+
+  <main class="chat">
+
+
+    <div class="chat-header">
+
+      <h2>
+        Classroom Group
+      </h2>
+
+      <p>
+        Every classroom member can see messages here.
+      </p>
+
+    </div>
+
+
+    <div id="messages">
+
+      <div class="empty">
+        Loading classroom messages...
+      </div>
+
+    </div>
+
+
+    <form
+      class="input-area"
+      id="messageForm"
+    >
+
+      <input
+        type="text"
+        id="messageInput"
+        placeholder="Send a message to the class..."
+        autocomplete="off"
+        required
+      >
+
+
+      <button
+        type="submit"
+        id="sendButton"
+      >
+        Send
+      </button>
+
+    </form>
+
+
+  </main>
+
+</div>
+
+
+
+<!-- =====================================
+     STUDENT CONTROL MODAL
+===================================== -->
+
+<div
+  class="modal"
+  id="studentModal"
+>
+
+  <div class="modal-box">
+
+    <div
+      class="modal-title"
+      id="modalStudentName"
+    >
+      Student
+    </div>
+
+
+    <div
+      class="modal-subtitle"
+      id="modalStudentId"
+    >
+      student02
+    </div>
+
+
+    <!-- CURRENT RESTRICTION -->
+
+    <div class="control-section">
+
+      <div class="control-title">
+        Current Status
+      </div>
+
+
+      <div
+        id="restrictionStatus"
+        class="no-restriction"
+      >
+        No active restriction.
+      </div>
+
+    </div>
+
+
+    <!-- PARTICIPATION -->
+
+    <div class="control-section">
+
+      <div class="control-title">
+        Participation
+      </div>
+
+
+      <div id="modalParticipation">
+        0%
+      </div>
+
+    </div>
+
+
+    <!-- RESTRICTIONS -->
+
+    <div class="control-section">
+
+      <div class="control-title">
+        Restrict Student
+      </div>
+
+
+      <div class="restriction-buttons">
+
+        <button
+          onclick="restrictSelectedStudent(15)"
+        >
+          15 Min
+        </button>
+
+
+        <button
+          onclick="restrictSelectedStudent(20)"
+        >
+          20 Min
+        </button>
+
+
+        <button
+          onclick="restrictSelectedStudent(30)"
+        >
+          30 Min
+        </button>
+
+      </div>
+
+
+      <button
+        class="remove-button"
+        onclick="removeSelectedRestriction()"
+      >
+        Remove Restriction
+      </button>
+
+    </div>
+
+
+    <button
+      class="close-button"
+      onclick="closeStudentModal()"
+    >
+      Close
+    </button>
+
+  </div>
+
+</div>
+
+
+
+<script>
+
+
+/* =====================================
+   SUPABASE
+===================================== */
+
+const SUPABASE_URL =
+  "https://ltbawcggixrnjhygjstg.supabase.co";
+
+
+const SUPABASE_ANON_KEY =
+  "sb_publishable_rcHxJiBKbR3u6fnd4PNHGw_mBODmku4";
+
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+
+
+/* =====================================
+   GLOBAL VARIABLES
+===================================== */
+
+let currentUser = null;
+
+let students = [];
+
+let selectedStudent = null;
+
+let messageChannel = null;
+
+let restrictionChannel = null;
+
+
+
+/* =====================================
+   START DASHBOARD
+===================================== */
+
+async function startDashboard() {
+
+
+  const {
+    data: {
+      user
+    }
+  } =
+    await supabaseClient.auth.getUser();
+
+
+  if (!user) {
+
+    window.location.href =
+      "lecturer-login.html";
+
+    return;
+
+  }
+
+
+  currentUser = user;
+
+
+  /* Check lecturer account */
+
+  const {
+    data: lecturer,
+    error: lecturerError
+  } =
+    await supabaseClient
+      .from("lecturers")
+      .select("*")
+      .eq(
+        "auth_user_id",
+        user.id
+      )
+      .maybeSingle();
+
+
+  if (
+    lecturerError ||
+    !lecturer
+  ) {
+
+    alert(
+      "This account is not registered as a lecturer."
+    );
+
+    await supabaseClient.auth.signOut();
+
+    window.location.href =
+      "lecturer-login.html";
+
+    return;
+
+  }
+
+
+  document.getElementById(
+    "lecturerName"
+  ).textContent =
+    lecturer.display_name ||
+    "Lecturer";
+
+
+  await loadStudents();
+
+  await loadMessages();
+
+  subscribeToMessages();
+
+  subscribeToRestrictions();
+
+}
+
+
+
+/* =====================================
+   LOAD STUDENTS
+===================================== */
+
+async function loadStudents() {
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("students")
+      .select("*")
+      .order(
+        "student_id",
+        {
+          ascending: true
+        }
+      );
+
+
+  if (error) {
+
+    console.error(error);
+
+    document.getElementById(
+      "studentList"
+    ).innerHTML =
+      `
+      <div style="padding:15px;color:#dc2626">
+        Unable to load students.
+      </div>
+      `;
+
+    return;
+
+  }
+
+
+  students = data || [];
+
+
+  renderStudents();
+
+}
+
+
+
+/* =====================================
+   RENDER STUDENTS
+===================================== */
+
+async function renderStudents() {
+
+
+  const container =
+    document.getElementById(
+      "studentList"
+    );
+
+
+  container.innerHTML = "";
+
+
+  for (
+    const student of students
+  ) {
+
+
+    const restriction =
+      await getActiveRestriction(
+        student.student_id
+      );
+
+
+    const activity =
+      await getActivity(
+        student.student_id
+      );
+
+
+    const item =
+      document.createElement(
+        "div"
+      );
+
+
+    item.className =
+      "student-item";
+
+
+    item.onclick = () =>
+      openStudentModal(
+        student
+      );
+
+
+    const number =
+      student.student_id
+        .replace("student", "");
+
+
+    const score =
+      activity
+        ? activity.participation_score
+        : 0;
+
+
+    const messageCount =
+      activity
+        ? activity.message_count
+        : 0;
+
+
+    const restricted =
+      restriction !== null;
+
+
+    item.innerHTML = `
+
+      <div class="student-top">
+
+        <div
+          class="student-dot"
+          style="background:${student.color || "#4F46E5"}"
+        >
+          ${number}
+        </div>
+
+
+        <div class="student-details">
+
+          <div class="student-name">
+            ${escapeHtml(
+              student.display_name
+            )}
+          </div>
+
+
+          <div
+            class="student-status ${
+              restricted
+                ? "restricted"
+                : ""
+            }"
+          >
+
+            ${
+              restricted
+                ? "● Restricted"
+                : "● Student"
+            }
+
+          </div>
+
+
+          <div class="score">
+
+            Participation:
+            ${score}%
+
+            · Messages:
+            ${messageCount}
+
+          </div>
+
+
+          <div class="score-bar">
+
+            <div
+              class="score-fill"
+              style="width:${score}%"
+            ></div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    `;
+
+
+    container.appendChild(item);
+
+  }
+
+}
+
+
+
+/* =====================================
+   GET ACTIVE RESTRICTION
+===================================== */
+
+async function getActiveRestriction(
+  studentId
+) {
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from(
+        "student_restrictions"
+      )
+      .select("*")
+      .eq(
+        "student_id",
+        studentId
+      )
+      .gt(
+        "restricted_until",
+        new Date().toISOString()
+      )
+      .order(
+        "restricted_until",
+        {
+          ascending: false
+        }
+      )
+      .limit(1)
+      .maybeSingle();
+
+
+  if (error) {
+
+    console.error(
+      "Restriction error:",
+      error
+    );
+
+    return null;
+
+  }
+
+
+  return data;
+
+}
+
+
+
+/* =====================================
+   GET STUDENT ACTIVITY
+===================================== */
+
+async function getActivity(
+  studentId
+) {
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from(
+        "student_activity"
+      )
+      .select("*")
+      .eq(
+        "student_id",
+        studentId
+      )
+      .maybeSingle();
+
+
+  if (error) {
+
+    console.error(
+      "Activity error:",
+      error
+    );
+
+    return null;
+
+  }
+
+
+  return data;
+
+}
+
+
+
+/* =====================================
+   OPEN STUDENT MODAL
+===================================== */
+
+async function openStudentModal(
+  student
+) {
+
+
+  selectedStudent =
+    student;
+
+
+  document.getElementById(
+    "modalStudentName"
+  ).textContent =
+    student.display_name;
+
+
+  document.getElementById(
+    "modalStudentId"
+  ).textContent =
+    student.student_id;
+
+
+  const activity =
+    await getActivity(
+      student.student_id
+    );
+
+
+  document.getElementById(
+    "modalParticipation"
+  ).textContent =
+    activity
+      ? `${activity.participation_score}%`
+      : "0%";
+
+
+  await updateRestrictionStatus();
+
+
+  document.getElementById(
+    "studentModal"
+  ).classList.add("show");
+
+}
+
+
+
+/* =====================================
+   UPDATE MODAL RESTRICTION
+===================================== */
+
+async function updateRestrictionStatus() {
+
+
+  if (!selectedStudent) {
+
+    return;
+
+  }
+
+
+  const restriction =
+    await getActiveRestriction(
+      selectedStudent.student_id
+    );
+
+
+  const box =
+    document.getElementById(
+      "restrictionStatus"
+    );
+
+
+  if (!restriction) {
+
+    box.className =
+      "no-restriction";
+
+
+    box.textContent =
+      "No active restriction.";
+
+    return;
+
+  }
+
+
+  const until =
+    new Date(
+      restriction.restricted_until
+    );
+
+
+  box.className =
+    "current-restriction";
+
+
+  box.innerHTML = `
+
+    <strong>
+      Student is currently restricted.
+    </strong>
+
+    <br>
+
+    Until:
+    ${until.toLocaleString()}
+
+    <br>
+
+    Reason:
+    ${escapeHtml(
+      restriction.reason ||
+      "Classroom restriction"
+    )}
+
+  `;
+
+}
+
+
+
+/* =====================================
+   RESTRICT SELECTED STUDENT
+===================================== */
+
+async function restrictSelectedStudent(
+  minutes
+) {
+
+
+  if (!selectedStudent) {
+
+    return;
+
+  }
+
+
+  await restrictStudent(
+    selectedStudent.student_id,
+    minutes
+  );
+
+}
+
+
+
+/* =====================================
+   RESTRICTION FUNCTION
+===================================== */
+
+async function restrictStudent(
+  studentId,
+  minutes
+) {
+
+
+  const until =
+    new Date(
+      Date.now() +
+      minutes * 60 * 1000
+    ).toISOString();
+
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from(
+        "student_restrictions"
+      )
+      .insert({
+
+        student_id:
+          studentId,
+
+        restricted_by:
+          currentUser.id,
+
+        restricted_until:
+          until,
+
+        reason:
+          `Restricted for ${minutes} minutes`
+
+      });
+
+
+  if (error) {
+
+    console.error(
+      "Restriction error:",
+      error
+    );
+
+
+    alert(
+      "Could not restrict student.\n\n" +
+      error.message
+    );
+
+
+    return;
+
+  }
+
+
+  alert(
+    `${studentId} has been restricted for ${minutes} minutes.`
+  );
+
+
+  await updateRestrictionStatus();
+
+  await renderStudents();
+
+}
+
+
+
+/* =====================================
+   REMOVE RESTRICTION
+===================================== */
+
+async function removeSelectedRestriction() {
+
+
+  if (!selectedStudent) {
+
+    return;
+
+  }
+
+
+  const restriction =
+    await getActiveRestriction(
+      selectedStudent.student_id
+    );
+
+
+  if (!restriction) {
+
+    alert(
+      "This student has no active restriction."
+    );
+
+    return;
+
+  }
+
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from(
+        "student_restrictions"
+      )
+      .delete()
+      .eq(
+        "id",
+        restriction.id
+      );
+
+
+  if (error) {
+
+    console.error(error);
+
+    alert(
+      "Could not remove restriction.\n\n" +
+      error.message
+    );
+
+    return;
+
+  }
+
+
+  alert(
+    `${selectedStudent.display_name} is no longer restricted.`
+  );
+
+
+  await updateRestrictionStatus();
+
+  await renderStudents();
+
+}
+
+
+
+/* =====================================
+   CLOSE MODAL
+===================================== */
+
+function closeStudentModal() {
+
+
+  selectedStudent =
+    null;
+
+
+  document.getElementById(
+    "studentModal"
+  ).classList.remove(
+    "show"
+  );
+
+}
+
+
+
+/* =====================================
+   LOAD CLASSROOM MESSAGES
+===================================== */
+
+async function loadMessages() {
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("messages")
+      .select("*")
+      .is(
+        "receiver_id",
+        null
+      )
+      .order(
+        "created_at",
+        {
+          ascending: true
+        }
+      );
+
+
+  if (error) {
+
+    console.error(
+      "Message loading error:",
+      error
+    );
+
+    return;
+
+  }
+
+
+  const container =
+    document.getElementById(
+      "messages"
+    );
+
+
+  container.innerHTML = "";
+
+
+  if (
+    !data ||
+    data.length === 0
+  ) {
+
+    container.innerHTML = `
+
+      <div class="empty">
+
+        No classroom messages yet.
+
+        <br>
+
+        Send the first message to your class.
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  data.forEach(
+    message => {
+
+      addMessage(
+        message,
+        false
+      );
+
+    }
+  );
+
+
+  scrollToBottom();
+
+}
+
+
+
+/* =====================================
+   ADD MESSAGE
+===================================== */
+
+function addMessage(
+  message,
+  scroll = true
+) {
+
+
+  const container =
+    document.getElementById(
+      "messages"
+    );
+
+
+  const row =
+    document.createElement(
+      "div"
+    );
+
+
+  const mine =
+    message.sender_id ===
+    currentUser.id;
+
+
+  row.className =
+    `message-row ${
+      mine ? "mine" : ""
+    }`;
+
+
+  const bubble =
+    document.createElement(
+      "div"
+    );
+
+
+  bubble.className =
+    "bubble";
+
+
+  const sender =
+    document.createElement(
+      "div"
+    );
+
+
+  sender.className =
+    "sender";
+
+
+  sender.textContent =
+    getSenderName(
+      message.sender_id
+    );
+
+
+  const text =
+    document.createElement(
+      "div"
+    );
+
+
+  text.className =
+    "message-text";
+
+
+  text.textContent =
+    message.message;
+
+
+  const time =
+    document.createElement(
+      "div"
+    );
+
+
+  time.className =
+    "time";
+
+
+  time.textContent =
+    new Date(
+      message.created_at
+    ).toLocaleTimeString(
+      [],
+      {
+        hour: "2-digit",
+        minute: "2-digit"
+      }
+    );
+
+
+  bubble.appendChild(
+    sender
+  );
+
+
+  bubble.appendChild(
+    text
+  );
+
+
+  bubble.appendChild(
+    time
+  );
+
+
+  row.appendChild(
+    bubble
+  );
+
+
+  container.appendChild(
+    row
+  );
+
+
+  if (scroll) {
+
+    scrollToBottom();
+
+  }
+
+}
+
+
+
+/* =====================================
+   FIND MESSAGE SENDER
+===================================== */
+
+function getSenderName(
+  senderId
+) {
+
+
+  if (
+    senderId ===
+    currentUser.id
+  ) {
+
+    return "Lecturer";
+
+  }
+
+
+  const student =
+    students.find(
+      s =>
+        s.auth_user_id ===
+        senderId
+    );
+
+
+  if (student) {
+
+    return student.display_name;
+
+  }
+
+
+  return "Student";
+
+}
+
+
+
+/* =====================================
+   SEND CLASSROOM MESSAGE
+===================================== */
+
+document
+  .getElementById(
+    "messageForm"
+  )
+  .addEventListener(
+    "submit",
+    async function(event) {
+
+
+      event.preventDefault();
+
+
+      const input =
+        document.getElementById(
+          "messageInput"
+        );
+
+
+      const button =
+        document.getElementById(
+          "sendButton"
+        );
+
+
+      const message =
+        input.value.trim();
+
+
+      if (!message) {
+
+        return;
+
+      }
+
+
+      button.disabled =
+        true;
+
+
+      const {
+        error
+      } =
+        await supabaseClient
+          .from("messages")
+          .insert({
+
+            sender_id:
+              currentUser.id,
+
+            receiver_id:
+              null,
+
+            message:
+              message
+
+          });
+
+
+      if (error) {
+
+        console.error(
+          error
+        );
+
+
+        alert(
+          "Message could not be sent.\n\n" +
+          error.message
+        );
+
+      } else {
+
+        input.value = "";
+
+      }
+
+
+      button.disabled =
+        false;
+
+
+      input.focus();
+
+    }
+  );
+
+
+
+/* =====================================
+   REALTIME MESSAGES
+===================================== */
+
+function subscribeToMessages() {
+
+
+  messageChannel =
+    supabaseClient
+      .channel(
+        "classroom-messages"
+      )
+      .on(
+
+        "postgres_changes",
+
+        {
+          event: "INSERT",
+
+          schema: "public",
+
+          table: "messages"
+        },
+
+        payload => {
+
+
+          const message =
+            payload.new;
+
+
+          if (
+            message.receiver_id ===
+            null
+          ) {
+
+            addMessage(
+              message
+            );
+
+          }
+
+        }
+
+      )
+      .subscribe();
+
+}
+
+
+
+/* =====================================
+   REALTIME RESTRICTIONS
+===================================== */
+
+function subscribeToRestrictions() {
+
+
+  restrictionChannel =
+    supabaseClient
+      .channel(
+        "classroom-restrictions"
+      )
+      .on(
+
+        "postgres_changes",
+
+        {
+          event: "*",
+
+          schema: "public",
+
+          table:
+            "student_restrictions"
+        },
+
+        async () => {
+
+          await renderStudents();
+
+          await updateRestrictionStatus();
+
+        }
+
+      )
+      .subscribe();
+
+}
+
+
+
+/* =====================================
+   SCROLL
+===================================== */
+
+function scrollToBottom() {
+
+
+  const container =
+    document.getElementById(
+      "messages"
+    );
+
+
+  container.scrollTop =
+    container.scrollHeight;
+
+}
+
+
+
+/* =====================================
+   HTML ESCAPE
+===================================== */
+
+function escapeHtml(
+  value
+) {
+
+
+  return String(value)
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
+
+
+
+/* =====================================
+   LOGOUT
+===================================== */
+
+document
+  .getElementById(
+    "logoutButton"
+  )
+  .addEventListener(
+    "click",
+    async function() {
+
+
+      await supabaseClient
+        .auth
+        .signOut();
+
+
+      window.location.href =
+        "lecturer-login.html";
+
+    }
+  );
+
+
+
+/* =====================================
+   START
+===================================== */
+
+startDashboard();
+
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Student Login</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f3f4f6;
+      padding: 20px;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+      background: white;
+      padding: 35px;
+      border-radius: 18px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.10);
+    }
+
+    .logo {
+      width: 65px;
+      height: 65px;
+      margin: 0 auto 20px;
+      border-radius: 16px;
+      background: #4f46e5;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 25px;
+      font-weight: bold;
+    }
+
+    h1 {
+      text-align: center;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: #374151;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      margin-bottom: 18px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.10);
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      padding: 14px;
+      border-radius: 10px;
+      background: #4f46e5;
+      color: white;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #4338ca;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #message {
+      margin-top: 18px;
+      text-align: center;
+      font-size: 14px;
+      min-height: 20px;
+    }
+
+    .password-wrapper {
+      position: relative;
+    }
+
+    .password-wrapper input {
+      padding-right: 70px;
+    }
+
+    .show-password {
+      position: absolute;
+      right: 12px;
+      top: 11px;
+      width: auto;
+      padding: 5px;
+      background: transparent;
+      color: #4f46e5;
+      font-size: 12px;
+    }
+
+    .show-password:hover {
+      background: transparent;
+      color: #4338ca;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="login-container">
+
+    <div class="logo">SC</div>
+
+    <h1>Student Login</h1>
+
+    <p class="subtitle">
+      Sign in to access your student chat
+    </p>
+
+    <form id="loginForm">
+
+      <label for="email">Student Email</label>
+
+      <input
+        type="email"
+        id="email"
+        placeholder="student02@school.com"
+        required
+      >
+
+      <label for="password">Password</label>
+
+      <div class="password-wrapper">
+
+        <input
+          type="password"
+          id="password"
+          placeholder="Enter your password"
+          required
+        >
+
+        <button
+          type="button"
+          class="show-password"
+          id="togglePassword"
+        >
+          Show
+        </button>
+
+      </div>
+
+      <button type="submit" id="loginButton">
+        Login
+      </button>
+
+    </form>
+
+    <div id="message"></div>
+
+  </div>
+
+
+<script>
+
+  // ==========================================
+  // YOUR SUPABASE CONNECTION
+  // ==========================================
+
+  const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
+
+  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY";
+
+
+  const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+
+  // ==========================================
+  // PASSWORD SHOW / HIDE
+  // ==========================================
+
+  document
+    .getElementById("togglePassword")
+    .addEventListener("click", function () {
+
+      const passwordInput =
+        document.getElementById("password");
+
+      if (passwordInput.type === "password") {
+
+        passwordInput.type = "text";
+        this.textContent = "Hide";
+
+      } else {
+
+        passwordInput.type = "password";
+        this.textContent = "Show";
+
+      }
+
+    });
+
+
+  // ==========================================
+  // LOGIN
+  // ==========================================
+
+  document
+    .getElementById("loginForm")
+    .addEventListener("submit", async function (event) {
+
+      event.preventDefault();
+
+      const email =
+        document.getElementById("email").value.trim();
+
+      const password =
+        document.getElementById("password").value;
+
+      const loginButton =
+        document.getElementById("loginButton");
+
+      const message =
+        document.getElementById("message");
+
+
+      message.textContent = "";
+      loginButton.disabled = true;
+      loginButton.textContent = "Logging in...";
+
+
+      try {
+
+        // Sign in with Supabase Auth
+        const { data, error } =
+          await supabaseClient.auth.signInWithPassword({
+            email: email,
+            password: password
+          });
+
+
+        if (error) {
+          throw error;
+        }
+
+
+        if (!data.user) {
+          throw new Error("Login failed.");
+        }
+
+
+        // ==========================================
+        // GET STUDENT INFORMATION
+        // ==========================================
+
+        const { data: student, error: studentError } =
+          await supabaseClient
+            .from("students")
+            .select("*")
+            .eq("auth_user_id", data.user.id)
+            .single();
+
+
+        if (studentError) {
+          throw studentError;
+        }
+
+
+        if (!student) {
+          throw new Error(
+            "Your account is not connected to a student profile."
+          );
+        }
+
+
+        // ==========================================
+        // SAVE STUDENT SESSION INFORMATION
+        // ==========================================
+
+        sessionStorage.setItem(
+          "student_id",
+          student.student_id
+        );
+
+        sessionStorage.setItem(
+          "student_name",
+          student.display_name
+        );
+
+        sessionStorage.setItem(
+          "student_color",
+          student.color || "#4F46E5"
+        );
+
+
+        // ==========================================
+        // GO TO DASHBOARD
+        // ==========================================
+
+        window.location.href = "student-dashboard.html";
+
+
+      } catch (error) {
+
+        console.error(error);
+
+        message.style.color = "#dc2626";
+
+        message.textContent =
+          error.message ||
+          "Invalid email or password.";
+
+        loginButton.disabled = false;
+        loginButton.textContent = "Login";
+
+      }
+
+    });
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,699 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Student Dashboard</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      min-height: 100vh;
+    }
+
+    .header {
+      height: 70px;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 25px;
+    }
+
+    .brand {
+      font-size: 20px;
+      font-weight: bold;
+      color: #111827;
+    }
+
+    .student-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    .student-name {
+      font-size: 14px;
+      font-weight: bold;
+      color: #111827;
+    }
+
+    .online {
+      font-size: 12px;
+      color: #16a34a;
+      margin-top: 2px;
+    }
+
+    .logout {
+      border: none;
+      background: #fee2e2;
+      color: #dc2626;
+      padding: 9px 13px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .chat-container {
+      width: 100%;
+      max-width: 850px;
+      height: calc(100vh - 100px);
+      margin: 15px auto;
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 30px rgba(0,0,0,.08);
+    }
+
+    .chat-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .chat-header h2 {
+      font-size: 17px;
+      color: #111827;
+    }
+
+    .chat-header p {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      background: #f9fafb;
+    }
+
+    .empty {
+      text-align: center;
+      color: #9ca3af;
+      margin-top: 100px;
+    }
+
+    .message-row {
+      display: flex;
+      margin-bottom: 12px;
+    }
+
+    .message-row.mine {
+      justify-content: flex-end;
+    }
+
+    .bubble {
+      max-width: 75%;
+      padding: 11px 14px;
+      border-radius: 14px;
+      background: white;
+      border: 1px solid #e5e7eb;
+    }
+
+    .mine .bubble {
+      background: #4f46e5;
+      color: white;
+      border: none;
+    }
+
+    .message-text {
+      font-size: 14px;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .time {
+      font-size: 10px;
+      margin-top: 5px;
+      opacity: .65;
+    }
+
+    .input-area {
+      display: flex;
+      gap: 10px;
+      padding: 15px;
+      border-top: 1px solid #e5e7eb;
+      background: white;
+    }
+
+    #messageInput {
+      flex: 1;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 12px;
+      outline: none;
+      font-size: 14px;
+    }
+
+    #messageInput:focus {
+      border-color: #4f46e5;
+    }
+
+    #sendButton {
+      border: none;
+      background: #4f46e5;
+      color: white;
+      padding: 0 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    #sendButton:disabled {
+      opacity: .5;
+    }
+
+    @media (max-width: 600px) {
+      .header {
+        padding: 0 12px;
+      }
+
+      .brand {
+        font-size: 16px;
+      }
+
+      .student-name {
+        display: none;
+      }
+
+      .chat-container {
+        height: calc(100vh - 85px);
+        margin: 8px;
+        width: calc(100% - 16px);
+      }
+
+      .bubble {
+        max-width: 85%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="header">
+
+  <div class="brand">
+    Student Chat
+  </div>
+
+  <div class="student-info">
+
+    <div>
+      <div class="student-name" id="studentName">
+        Student
+      </div>
+
+      <div class="online">
+        ● Online
+      </div>
+    </div>
+
+    <div
+      class="avatar"
+      id="avatar"
+    >
+      S
+    </div>
+
+    <button
+      class="logout"
+      id="logoutButton"
+    >
+      Logout
+    </button>
+
+  </div>
+
+</header>
+
+
+<main class="chat-container">
+
+  <div class="chat-header">
+    <h2>Lecturer</h2>
+    <p>Send a message to your lecturer</p>
+  </div>
+
+
+  <div id="messages">
+
+    <div class="empty" id="emptyMessage">
+      Loading messages...
+    </div>
+
+  </div>
+
+
+  <form class="input-area" id="messageForm">
+
+    <input
+      type="text"
+      id="messageInput"
+      placeholder="Type your message..."
+      autocomplete="off"
+      required
+    >
+
+    <button
+      type="submit"
+      id="sendButton"
+    >
+      Send
+    </button>
+
+  </form>
+
+</main>
+
+
+<script>
+
+const SUPABASE_URL =
+  "https://ltbawcggixrnjhygjstg.supabase.co";
+
+const SUPABASE_ANON_KEY =
+  "sb_publishable_rcHxJiBKbR3u6fnd4PNHGw_mBODmku4";
+
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+
+let currentUser = null;
+let student = null;
+
+
+// ==========================================
+// START DASHBOARD
+// ==========================================
+
+async function startDashboard() {
+
+  const {
+    data: {
+      user
+    }
+  } = await supabaseClient.auth.getUser();
+
+
+  if (!user) {
+
+    window.location.href =
+      "student-login.html";
+
+    return;
+  }
+
+
+  currentUser = user;
+
+
+  // Get student profile
+  const {
+    data,
+    error
+  } = await supabaseClient
+    .from("students")
+    .select("*")
+    .eq("auth_user_id", user.id)
+    .single();
+
+
+  if (error || !data) {
+
+    alert(
+      "Your student profile could not be found."
+    );
+
+    await supabaseClient.auth.signOut();
+
+    window.location.href =
+      "student-login.html";
+
+    return;
+  }
+
+
+  student = data;
+
+
+  document.getElementById(
+    "studentName"
+  ).textContent =
+    student.display_name;
+
+
+  const avatar =
+    document.getElementById("avatar");
+
+  avatar.textContent =
+    student.display_name
+      .replace("Student ", "")
+      .trim();
+
+
+  avatar.style.background =
+    student.color || "#4F46E5";
+
+
+  await loadMessages();
+
+  subscribeToMessages();
+}
+
+
+// ==========================================
+// LOAD MESSAGES
+// ==========================================
+
+async function loadMessages() {
+
+  const {
+    data,
+    error
+  } = await supabaseClient
+    .from("messages")
+    .select("*")
+    .or(
+      `sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`
+    )
+    .order(
+      "created_at",
+      {
+        ascending: true
+      }
+    );
+
+
+  if (error) {
+
+    console.error(error);
+
+    return;
+  }
+
+
+  renderMessages(data || []);
+}
+
+
+// ==========================================
+// DISPLAY MESSAGES
+// ==========================================
+
+function renderMessages(messages) {
+
+  const container =
+    document.getElementById("messages");
+
+
+  container.innerHTML = "";
+
+
+  if (messages.length === 0) {
+
+    container.innerHTML =
+      `<div class="empty">
+        No messages yet.<br>
+        Send your first message to the lecturer.
+      </div>`;
+
+    return;
+  }
+
+
+  messages.forEach(
+    message => {
+
+      addMessageToScreen(
+        message,
+        false
+      );
+
+    }
+  );
+
+
+  scrollToBottom();
+}
+
+
+// ==========================================
+// ADD MESSAGE TO SCREEN
+// ==========================================
+
+function addMessageToScreen(
+  message,
+  scroll = true
+) {
+
+  const container =
+    document.getElementById("messages");
+
+
+  const mine =
+    message.sender_id === currentUser.id;
+
+
+  const row =
+    document.createElement("div");
+
+  row.className =
+    `message-row ${mine ? "mine" : ""}`;
+
+
+  const bubble =
+    document.createElement("div");
+
+  bubble.className =
+    "bubble";
+
+
+  const text =
+    document.createElement("div");
+
+  text.className =
+    "message-text";
+
+  text.textContent =
+    message.message;
+
+
+  const time =
+    document.createElement("div");
+
+  time.className =
+    "time";
+
+  time.textContent =
+    new Date(
+      message.created_at
+    ).toLocaleTimeString(
+      [],
+      {
+        hour: "2-digit",
+        minute: "2-digit"
+      }
+    );
+
+
+  bubble.appendChild(text);
+  bubble.appendChild(time);
+
+  row.appendChild(bubble);
+
+  container.appendChild(row);
+
+
+  if (scroll) {
+    scrollToBottom();
+  }
+}
+
+
+// ==========================================
+// SEND MESSAGE
+// ==========================================
+
+document
+  .getElementById("messageForm")
+  .addEventListener(
+    "submit",
+    async function(event) {
+
+      event.preventDefault();
+
+
+      const input =
+        document.getElementById(
+          "messageInput"
+        );
+
+      const button =
+        document.getElementById(
+          "sendButton"
+        );
+
+
+      const message =
+        input.value.trim();
+
+
+      if (!message) {
+        return;
+      }
+
+
+      button.disabled = true;
+
+
+      const {
+        error
+      } = await supabaseClient
+        .from("messages")
+        .insert({
+          sender_id: currentUser.id,
+          receiver_id: null,
+          message: message
+        });
+
+
+      if (error) {
+
+        console.error(error);
+
+        alert(
+          "Message could not be sent."
+        );
+
+      } else {
+
+        input.value = "";
+
+      }
+
+
+      button.disabled = false;
+
+      input.focus();
+
+    }
+  );
+
+
+// ==========================================
+// REAL-TIME MESSAGES
+// ==========================================
+
+function subscribeToMessages() {
+
+  supabaseClient
+    .channel("student-chat")
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "messages"
+      },
+      payload => {
+
+        const message =
+          payload.new;
+
+
+        if (
+          message.sender_id ===
+          currentUser.id
+          ||
+          message.receiver_id ===
+          currentUser.id
+        ) {
+
+          addMessageToScreen(
+            message
+          );
+
+        }
+
+      }
+    )
+    .subscribe();
+
+}
+
+
+// ==========================================
+// SCROLL
+// ==========================================
+
+function scrollToBottom() {
+
+  const container =
+    document.getElementById(
+      "messages"
+    );
+
+  container.scrollTop =
+    container.scrollHeight;
+
+}
+
+
+// ==========================================
+// LOGOUT
+// ==========================================
+
+document
+  .getElementById("logoutButton")
+  .addEventListener(
+    "click",
+    async function() {
+
+      await supabaseClient.auth.signOut();
+
+      window.location.href =
+        "student-login.html";
+
+    }
+  );
+
+
+// ==========================================
+// START
+// ==========================================
+
+startDashboard();
+
+</script>
+
+</body>
+</html>
