@@ -59,7 +59,6 @@
 </head>
 <body class="flex items-center justify-center p-2 sm:p-4 relative">
 
-    <!-- LOGIN SCREEN -->
     <div id="login-screen" class="glass rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
         <div class="mb-8">
             <i class="fa-solid fa-store text-5xl text-cyan-400 mb-4"></i>
@@ -71,7 +70,6 @@
         </button>
     </div>
 
-    <!-- ROLE SELECTION SCREEN -->
     <div id="role-screen" class="hidden glass rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
         <h2 class="text-2xl font-bold mb-2">Select Account Type</h2>
         <p class="text-gray-300 text-sm mb-6">Choose how you want to participate in this group room:</p>
@@ -95,11 +93,9 @@
         </div>
     </div>
 
-    <!-- MAIN CHAT INTERFACE -->
     <div id="chat-screen" class="hidden glass rounded-2xl w-full max-w-6xl h-[98dvh] md:h-[92vh] flex flex-col md:flex-row shadow-2xl overflow-hidden relative">
         <div class="flex-1 flex flex-col h-full border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden">
 
-            <!-- Inactivity PDF Banner -->
             <div id="pdf-banner" class="hidden bg-amber-500/20 border-b border-amber-500/30 p-3 text-xs flex flex-wrap items-center justify-between gap-2 backdrop-blur-md z-10">
                 <div class="flex items-center gap-2 text-amber-200">
                     <i class="fa-solid fa-clock text-amber-400 text-sm"></i>
@@ -110,7 +106,6 @@
                 </button>
             </div>
 
-            <!-- Header -->
             <header class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20 shrink-0">
                 <div class="flex items-center gap-3">
                     <i class="fa-solid fa-comments text-cyan-400 text-xl"></i>
@@ -120,7 +115,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button id="toggle-sidebar-btn" type="button" class="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-2 cursor-pointer" title="Toggle Sidebar">
+                    <button id="toggle-sidebar-btn" type="button" class="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-2 cursor-pointer" title="Toggle Online Participants">
                         <i class="fa-solid fa-users"></i>
                         <span>Online (<span id="header-online-count">0</span>)</span>
                     </button>
@@ -132,7 +127,6 @@
                 </div>
             </header>
 
-            <!-- Chat Messages Scroll Area -->
             <main id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
             </main>
 
@@ -142,9 +136,8 @@
                 <span id="typing-text">Someone is typing...</span>
             </div>
 
-            <!-- Footer / Message Input -->
             <footer class="p-4 border-t border-white/10 bg-black/20 shrink-0 relative">
-                <!-- Main Input Emoji Picker Container -->
+                <!-- Emoji Picker Container -->
                 <div id="emoji-picker" class="hidden absolute bottom-20 left-4 z-50 glass bg-slate-900/95 border border-white/20 rounded-2xl p-3 w-72 sm:w-80 shadow-2xl backdrop-blur-xl">
                     <div class="flex justify-between items-center pb-2 border-b border-white/10 mb-2">
                         <span class="text-xs font-bold text-gray-300">Choose Emoji</span>
@@ -172,7 +165,7 @@
                     <button id="cancel-reply-btn" type="button" class="text-gray-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <!-- File Attachment Preview Bar -->
+                <!-- File Preview Bar -->
                 <div id="file-preview" class="hidden text-sm text-cyan-300 mb-2 flex justify-between items-center bg-cyan-900/30 p-2 rounded">
                     <span id="file-name"></span>
                     <button id="remove-file-btn" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
@@ -198,7 +191,6 @@
             </footer>
         </div>
 
-        <!-- Sidebar Panel -->
         <aside id="sidebar-panel" class="hidden w-full md:w-80 bg-black/30 flex-col h-auto md:h-full p-4 space-y-4 overflow-y-auto border-t md:border-t-0 md:border-l border-white/10 shrink-0">
             <div>
                 <div class="flex items-center justify-between mb-2">
@@ -331,7 +323,7 @@
         const closePdfModalBtn = document.getElementById('close-pdf-modal-btn');
         const savePdfModalBtn = document.getElementById('save-pdf-modal-btn');
 
-        // Populate Main Emoji Grid
+        // Populate Emoji Grid
         EMOJI_LIST.forEach(emoji => {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -468,7 +460,7 @@
             msg.reactions = reactions;
             renderOrUpdateMessage(msg);
 
-            // 2. Broadcast immediately to online clients via Realtime
+            // 2. Broadcast immediately to online clients
             if (roomChannel) {
                 roomChannel.send({
                     type: 'broadcast',
@@ -477,8 +469,12 @@
                 });
             }
 
-            // 3. Persist directly to Supabase Database
-            await supabase.from('messages').update({ reactions }).eq('id', msgId);
+            // 3. Persist update automatically via RPC function
+            await supabase.rpc('toggle_reaction', {
+                p_message_id: msgId,
+                p_emoji: emoji,
+                p_user_email: userEmail
+            });
         };
 
         function resetChatInactivityTimer() {
@@ -561,6 +557,7 @@
                 styles: { fontSize: 8.5, cellPadding: 3.5, overflow: 'linebreak' }
             });
 
+            // Convert PDF output to a Blob URL for popup viewing
             const pdfBlob = doc.output('blob');
             const pdfUrl = URL.createObjectURL(pdfBlob);
 
@@ -678,33 +675,33 @@
                 }
             }
 
-            // Reactions Badges List (Rendered directly under the message)
+            // Reactions UI Render
             let reactionsHtml = '';
             const reactions = msg.reactions || {};
             const reactionKeys = Object.keys(reactions);
             if (reactionKeys.length > 0) {
-                reactionsHtml = '<div class="flex flex-wrap gap-1.5 mt-2.5 pt-1 border-t border-white/10">';
+                reactionsHtml = '<div class="flex flex-wrap gap-1 mt-2">';
                 reactionKeys.forEach(emoji => {
                     const users = reactions[emoji];
                     const isMyReaction = currentUser && users.includes(currentUser.email.split('@')[0]);
                     const badgeClass = isMyReaction 
-                        ? 'bg-cyan-500/40 border-cyan-300 text-cyan-100 font-bold shadow-sm' 
-                        : 'bg-black/40 border-white/10 text-gray-300 hover:bg-black/60';
+                        ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200 font-bold' 
+                        : 'bg-black/30 border-white/10 text-gray-300';
                     reactionsHtml += `
-                        <button onclick="toggleReaction('${msg.id}', '${emoji}')" class="text-xs px-2 py-0.5 rounded-full border ${badgeClass} hover:scale-105 transition flex items-center gap-1 cursor-pointer">
+                        <button onclick="toggleReaction('${msg.id}', '${emoji}')" class="text-xs px-2 py-0.5 rounded-full border ${badgeClass} hover:scale-105 transition flex items-center gap-1">
                             <span>${emoji}</span>
-                            <span class="text-[10px] font-semibold">${users.length}</span>
+                            <span class="text-[10px]">${users.length}</span>
                         </button>
                     `;
                 });
                 reactionsHtml += '</div>';
             }
 
-            // Quick Reaction Preset Buttons Bar
+            // Quick Emoji Reaction Preset Bar
             let reactionPresetsButtonsHtml = '';
             REACTION_PRESETS.forEach(emoji => {
                 reactionPresetsButtonsHtml += `
-                    <button onclick="toggleReaction('${msg.id}', '${emoji}'); toggleReactionPicker('${msg.id}')" class="hover:scale-125 transition text-lg p-1 cursor-pointer">
+                    <button onclick="toggleReaction('${msg.id}', '${emoji}'); toggleReactionPicker('${msg.id}')" class="hover:scale-125 transition text-base p-1">
                         ${emoji}
                     </button>
                 `;
@@ -728,26 +725,26 @@
                         ${fileHtml}
                         ${reactionsHtml}
                         
-                        <!-- Hover Action Bar -->
-                        <div class="absolute top-2 ${isMe ? '-left-28' : '-right-28'} opacity-0 group-hover:opacity-100 transition flex items-center gap-1 bg-black/80 p-1 rounded-lg backdrop-blur-sm z-10 border border-white/10 shadow-lg">
-                            <button onclick="toggleReactionPicker('${msg.id}')" class="text-gray-300 hover:text-yellow-400 p-1 transition cursor-pointer" title="Add Reaction">
+                        <!-- Actions Popup -->
+                        <div class="absolute top-2 ${isMe ? '-left-24' : '-right-24'} opacity-0 group-hover:opacity-100 transition flex items-center gap-1 bg-black/70 p-1 rounded-lg backdrop-blur-sm z-10 border border-white/10">
+                            <button onclick="toggleReactionPicker('${msg.id}')" class="text-gray-300 hover:text-yellow-400 p-1 transition" title="React">
                                 <i class="fa-regular fa-face-smile text-xs"></i>
                             </button>
-                            <button onclick="setReplyMessage('${msg.id}', '${msg.user_email.replace(/'/g, "\\'")}', '${cleanContent}')" class="text-gray-300 hover:text-cyan-400 p-1 transition cursor-pointer" title="Reply">
+                            <button onclick="setReplyMessage('${msg.id}', '${msg.user_email.replace(/'/g, "\\'")}', '${cleanContent}')" class="text-gray-300 hover:text-cyan-400 p-1 transition" title="Reply">
                                 <i class="fa-solid fa-reply text-xs"></i>
                             </button>
                             ${isMe ? `
-                            <button onclick="startEditMessage('${msg.id}', '${cleanContent}')" class="text-gray-300 hover:text-amber-400 p-1 transition cursor-pointer" title="Edit">
+                            <button onclick="startEditMessage('${msg.id}', '${cleanContent}')" class="text-gray-300 hover:text-amber-400 p-1 transition" title="Edit">
                                 <i class="fa-solid fa-pen text-xs"></i>
                             </button>` : ''}
                             ${msg.content ? `
-                            <button onclick="copyText('${cleanContent}')" class="text-gray-300 hover:text-cyan-400 p-1 transition cursor-pointer" title="Copy text">
+                            <button onclick="copyText('${cleanContent}')" class="text-gray-300 hover:text-cyan-400 p-1 transition" title="Copy text">
                                 <i class="fa-regular fa-copy text-xs"></i>
                             </button>` : ''}
                         </div>
 
-                        <!-- Floating Quick Emoji Reaction Selector Bar -->
-                        <div id="reaction-picker-${msg.id}" class="hidden absolute -top-11 ${isMe ? 'right-0' : 'left-0'} z-20 bg-slate-900/95 border border-white/20 rounded-full px-2.5 py-1 shadow-2xl flex items-center gap-1.5 backdrop-blur-md">
+                        <!-- Floating Emoji Reaction Picker Bar -->
+                        <div id="reaction-picker-${msg.id}" class="hidden absolute -top-10 ${isMe ? 'right-0' : 'left-0'} z-20 bg-slate-900/90 border border-white/20 rounded-full px-2 py-1 shadow-xl flex items-center gap-1 backdrop-blur-md">
                             ${reactionPresetsButtonsHtml}
                         </div>
                     </div>
@@ -848,7 +845,7 @@
                 updateTypingUI();
             });
 
-            // Listen for immediate real-time emoji reaction broadcasts
+            // Live broadcast listener for instant cross-client reactions
             roomChannel.on('broadcast', { event: 'reaction_update' }, ({ payload }) => {
                 const msg = allSessionMessages.find(m => m.id === payload.id);
                 if (msg) {
@@ -922,7 +919,7 @@
             const content = messageInput.value.trim();
             if (!content && !selectedFile && !editingMessageId) return;
 
-            // Message Editing Mode
+            // Handle Message Editing Mode
             if (editingMessageId) {
                 await supabase.from('messages').update({
                     content: content,
@@ -933,7 +930,7 @@
                 return;
             }
 
-            // New Message Mode
+            // Handle New Message Creation Mode
             messageInput.value = '';
             filePreview.classList.add('hidden');
             const fileToUpload = selectedFile;
@@ -971,7 +968,7 @@
             await supabase.from('messages').insert([messageData]);
             window.cancelReply();
 
-            // Clear typing state
+            // Clear typing state on send
             if (roomChannel) {
                 roomChannel.send({
                     type: 'broadcast',
