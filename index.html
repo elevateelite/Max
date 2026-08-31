@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Nexus Marketplace Chat</title>
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Nexus Market">
+    <meta name="theme-color" content="#0f2027">
+
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png">
+
+    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Nexus%20Marketplace%20Chat%22%2C%22short_name%22%3A%22NexusChat%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230f2027%22%2C%22theme_color%22%3A%22%230f2027%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F1041%2F1041916.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            height: 100dvh;
+            width: 100vw;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .message-bubble { 
+            animation: fadeIn 0.3s ease-out;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .highlight-msg {
+            animation: highlightPulse 2s ease-in-out;
+            border-radius: 1rem;
+        }
+        @keyframes highlightPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+            50% { box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.8); }
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+    </style>
+</head>
+<body class="flex items-center justify-center p-2 sm:p-4 relative">
+
+    <div id="login-screen" class="glass rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
+        <div class="mb-8">
+            <i class="fa-solid fa-store text-5xl text-cyan-400 mb-4"></i>
+            <h1 class="text-3xl font-bold tracking-wider">NEXUS MARKET</h1>
+            <p class="text-gray-300 text-sm mt-2">Connect buyers & sellers instantly.</p>
+        </div>
+        <button id="google-login-btn" class="w-full bg-white text-gray-900 font-semibold py-3 px-4 rounded-lg hover:bg-gray-100 transition duration-300 flex items-center justify-center gap-3 active:scale-95">
+            <i class="fa-brands fa-google text-red-500"></i> Continue with Google
+        </button>
+    </div>
+
+    <div id="role-screen" class="hidden glass rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
+        <h2 class="text-2xl font-bold mb-2">Select Account Type</h2>
+        <p class="text-gray-300 text-sm mb-6">Choose how you want to participate in this group room:</p>
+
+        <div class="space-y-4">
+            <button id="select-seller-btn" class="w-full p-4 border border-cyan-400/40 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/60 transition flex items-center justify-between text-left group">
+                <div>
+                    <h3 class="font-bold text-cyan-300 text-lg">Seller (Seller)</h3>
+                    <p class="text-xs text-gray-300">Respond to buyer inquiries & measure speed</p>
+                </div>
+                <i class="fa-solid fa-user-tag text-2xl text-cyan-400 group-hover:scale-110 transition"></i>
+            </button>
+
+            <button id="select-buyer-btn" class="w-full p-4 border border-emerald-400/40 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 transition flex items-center justify-between text-left group">
+                <div>
+                    <h3 class="font-bold text-emerald-300 text-lg">Buyer (Buyer)</h3>
+                    <p class="text-xs text-gray-300">Post requests & get instant seller replies</p>
+                </div>
+                <i class="fa-solid fa-cart-shopping text-2xl text-emerald-400 group-hover:scale-110 transition"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="chat-screen" class="hidden glass rounded-2xl w-full max-w-6xl h-[98dvh] md:h-[92vh] flex flex-col md:flex-row shadow-2xl overflow-hidden relative">
+        <div class="flex-1 flex flex-col h-full border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden">
+
+            <div id="pdf-banner" class="hidden bg-amber-500/20 border-b border-amber-500/30 p-3 text-xs flex flex-wrap items-center justify-between gap-2 backdrop-blur-md z-10">
+                <div class="flex items-center gap-2 text-amber-200">
+                    <i class="fa-solid fa-clock text-amber-400 text-sm"></i>
+                    <span><strong>Chat Inactive for 5 Minutes:</strong> You can export today's chat history up to this inactivity period.</span>
+                </div>
+                <button id="download-pdf-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-file-pdf"></i> Download PDF Transcript
+                </button>
+            </div>
+
+            <header class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20 shrink-0">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-comments text-cyan-400 text-xl"></i>
+                    <div>
+                        <h2 class="font-bold text-lg leading-tight">Nexus Trading Room</h2>
+                        <span id="user-role-badge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300"></span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="toggle-sidebar-btn" type="button" class="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-2 cursor-pointer" title="Toggle Online Participants">
+                        <i class="fa-solid fa-users"></i>
+                        <span>Online (<span id="header-online-count">0</span>)</span>
+                    </button>
+
+                    <span id="user-display" class="text-xs text-gray-300 hidden sm:block"></span>
+                    <button id="logout-btn" class="text-gray-400 hover:text-white transition p-2" title="Logout">
+                        <i class="fa-solid fa-right-from-bracket text-lg"></i>
+                    </button>
+                </div>
+            </header>
+
+            <main id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+            </main>
+
+            <!-- Typing Indicator Banner -->
+            <div id="typing-indicator" class="text-xs text-cyan-300 italic min-h-[1.25rem] px-4 opacity-0 transition-opacity flex items-center gap-2">
+                <i class="fa-solid fa-ellipsis fa-bounce"></i>
+                <span id="typing-text">Someone is typing...</span>
+            </div>
+
+            <footer class="p-4 border-t border-white/10 bg-black/20 shrink-0 relative">
+                <!-- Emoji Picker Container -->
+                <div id="emoji-picker" class="hidden absolute bottom-20 left-4 z-50 glass bg-slate-900/95 border border-white/20 rounded-2xl p-3 w-72 sm:w-80 shadow-2xl backdrop-blur-xl">
+                    <div class="flex justify-between items-center pb-2 border-b border-white/10 mb-2">
+                        <span class="text-xs font-bold text-gray-300">Choose Emoji</span>
+                        <button type="button" id="close-emoji-picker" class="text-gray-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div id="emoji-grid" class="grid grid-cols-6 sm:grid-cols-7 gap-1.5 max-h-48 overflow-y-auto text-xl p-1">
+                    </div>
+                </div>
+
+                <!-- Edit Message Preview Bar -->
+                <div id="edit-preview" class="hidden text-xs text-amber-200 mb-2 flex justify-between items-center bg-amber-950/60 p-2.5 rounded-lg border-l-4 border-amber-400 backdrop-blur-md">
+                    <div class="truncate pr-2">
+                        <span class="text-amber-400 font-bold block"><i class="fa-solid fa-pen-to-square mr-1"></i> Editing Message</span>
+                        <span id="edit-text" class="text-gray-300 italic truncate block mt-0.5"></span>
+                    </div>
+                    <button id="cancel-edit-btn" type="button" class="text-gray-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <!-- Reply Preview Bar -->
+                <div id="reply-preview" class="hidden text-xs text-cyan-200 mb-2 flex justify-between items-center bg-cyan-950/60 p-2.5 rounded-lg border-l-4 border-cyan-400 backdrop-blur-md">
+                    <div class="truncate pr-2">
+                        <span class="text-cyan-400 font-bold block"><i class="fa-solid fa-reply mr-1"></i> Replying to <span id="reply-user"></span></span>
+                        <span id="reply-text" class="text-gray-300 italic truncate block mt-0.5"></span>
+                    </div>
+                    <button id="cancel-reply-btn" type="button" class="text-gray-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <!-- File Preview Bar -->
+                <div id="file-preview" class="hidden text-sm text-cyan-300 mb-2 flex justify-between items-center bg-cyan-900/30 p-2 rounded">
+                    <span id="file-name"></span>
+                    <button id="remove-file-btn" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
+                </div>
+
+                <form id="chat-form" class="flex items-center gap-2">
+                    <button type="button" id="emoji-btn" class="p-3 text-gray-400 hover:text-yellow-400 transition" title="Add Emoji">
+                        <i class="fa-regular fa-face-smile text-xl"></i>
+                    </button>
+
+                    <label for="file-input" class="p-3 text-gray-400 hover:text-cyan-400 cursor-pointer transition" title="Attach File (Max 50MB)">
+                        <i class="fa-solid fa-paperclip text-xl"></i>
+                    </label>
+                    <input type="file" id="file-input" class="hidden">
+
+                    <input type="text" id="message-input" autocomplete="off" placeholder="Type a message..." 
+                           class="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-white focus:outline-none focus:border-cyan-400 transition">
+
+                    <button type="submit" class="bg-cyan-500 hover:bg-cyan-400 text-white p-3 rounded-full transition w-12 h-12 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+            </footer>
+        </div>
+
+        <aside id="sidebar-panel" class="hidden w-full md:w-80 bg-black/30 flex-col h-auto md:h-full p-4 space-y-4 overflow-y-auto border-t md:border-t-0 md:border-l border-white/10 shrink-0">
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400">Seller Speed Tracker</h3>
+                    <span id="seller-count" class="bg-cyan-500/20 text-cyan-300 text-xs px-2 py-0.5 rounded-full font-bold">0 Active</span>
+                </div>
+                <div id="seller-speed-list" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <div class="text-xs text-gray-400 italic text-center py-2">No seller responses recorded yet</div>
+                </div>
+            </div>
+
+            <hr class="border-white/10">
+
+            <div class="flex-1">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Online Participants</h3>
+                    <span id="online-count" class="bg-emerald-500/20 text-emerald-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                </div>
+                <div id="presence-list" class="space-y-2">
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+        const SUPABASE_URL = 'https://uavklixceheysspmgilk.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_Y9vPgA1CYXcFgk2SVqMXRg_M-jLuk_8';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true,
+                storageKey: 'nexus-market-auth-token',
+                storage: window.localStorage
+            }
+        });
+
+        let currentUser = null;
+        let userRole = localStorage.getItem('nexus_user_role') || null;
+        let selectedFile = null;
+        let lastBuyerTimestamp = null;
+        let allSessionMessages = []; 
+        let replyingToMessage = null;
+        let editingMessageId = null;
+        let roomChannel = null;
+
+        let typingTimeout = null;
+        const typingUsers = new Set();
+
+        const CHAT_INACTIVITY_MS = 5 * 60 * 1000;
+        let chatInactivityTimer = null;
+        const sellerMetrics = {}; 
+        const MAX_FILE_SIZE = 50 * 1024 * 1024;
+
+        const EMOJI_LIST = [
+            '😀','😂','😅','😍','😎','🥳','🔥','❤️','👍','👎','👏','🎉','🚀','💡','💯',
+            '😊','😭','😮','🤔','🙏','🤝','✨','⭐','💸','🛒','📦','✅','❌','⚠️','💬',
+            '⚡','🎯','💪','🙌','🤩','😜','🙄','🤯','💤','💩','🙈','🙋','🏼','☕','🍻'
+        ];
+
+        const REACTION_PRESETS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '🚀', '🎉'];
+
+        // DOM Elements
+        const loginScreen = document.getElementById('login-screen');
+        const roleScreen = document.getElementById('role-screen');
+        const chatScreen = document.getElementById('chat-screen');
+        const googleLoginBtn = document.getElementById('google-login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const selectSellerBtn = document.getElementById('select-seller-btn');
+        const selectBuyerBtn = document.getElementById('select-buyer-btn');
+        const userRoleBadge = document.getElementById('user-role-badge');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const userDisplay = document.getElementById('user-display');
+        const fileInput = document.getElementById('file-input');
+        const filePreview = document.getElementById('file-preview');
+        const fileName = document.getElementById('file-name');
+        const removeFileBtn = document.getElementById('remove-file-btn');
+        const emojiBtn = document.getElementById('emoji-btn');
+        const emojiPicker = document.getElementById('emoji-picker');
+        const emojiGrid = document.getElementById('emoji-grid');
+        const closeEmojiPicker = document.getElementById('close-emoji-picker');
+        const presenceList = document.getElementById('presence-list');
+        const onlineCount = document.getElementById('online-count');
+        const headerOnlineCount = document.getElementById('header-online-count');
+        const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+        const sidebarPanel = document.getElementById('sidebar-panel');
+        const sellerSpeedList = document.getElementById('seller-speed-list');
+        const sellerCount = document.getElementById('seller-count');
+        const pdfBanner = document.getElementById('pdf-banner');
+        const downloadPdfBtn = document.getElementById('download-pdf-btn');
+        const replyPreview = document.getElementById('reply-preview');
+        const replyUser = document.getElementById('reply-user');
+        const replyText = document.getElementById('reply-text');
+        const cancelReplyBtn = document.getElementById('cancel-reply-btn');
+        const editPreview = document.getElementById('edit-preview');
+        const editText = document.getElementById('edit-text');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const typingText = document.getElementById('typing-text');
+
+        // Populate Emoji Grid
+        EMOJI_LIST.forEach(emoji => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'hover:bg-white/10 rounded p-1 transition flex items-center justify-center';
+            btn.textContent = emoji;
+            btn.onclick = () => {
+                messageInput.value += emoji;
+                messageInput.focus();
+            };
+            emojiGrid.appendChild(btn);
+        });
+
+        emojiBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            emojiPicker.classList.toggle('hidden');
+        });
+        closeEmojiPicker.addEventListener('click', () => emojiPicker.classList.add('hidden'));
+        document.addEventListener('click', (e) => {
+            if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+                emojiPicker.classList.add('hidden');
+            }
+        });
+
+        toggleSidebarBtn.addEventListener('click', () => {
+            sidebarPanel.classList.toggle('hidden');
+            if (!sidebarPanel.classList.contains('hidden')) {
+                sidebarPanel.classList.add('flex');
+            } else {
+                sidebarPanel.classList.remove('flex');
+            }
+        });
+
+        // --- TYPING INDICATOR HANDLERS ---
+        messageInput.addEventListener('input', () => {
+            if (!roomChannel || !currentUser) return;
+            
+            roomChannel.send({
+                type: 'broadcast',
+                event: 'typing',
+                payload: { email: currentUser.email.split('@')[0], isTyping: true }
+            });
+
+            if (typingTimeout) clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                roomChannel.send({
+                    type: 'broadcast',
+                    event: 'typing',
+                    payload: { email: currentUser.email.split('@')[0], isTyping: false }
+                });
+            }, 2000);
+        });
+
+        function updateTypingUI() {
+            if (typingUsers.size === 0) {
+                typingIndicator.classList.add('opacity-0');
+            } else {
+                const names = Array.from(typingUsers).join(', ');
+                typingText.textContent = `${names} ${typingUsers.size === 1 ? 'is' : 'are'} typing...`;
+                typingIndicator.classList.remove('opacity-0');
+            }
+        }
+
+        // --- EDITING & REPLY HANDLERS ---
+        window.startEditMessage = function(id, content) {
+            window.cancelReply();
+            editingMessageId = id;
+            editText.textContent = content;
+            editPreview.classList.remove('hidden');
+            messageInput.value = content;
+            messageInput.focus();
+        };
+
+        window.cancelEdit = function() {
+            editingMessageId = null;
+            editPreview.classList.add('hidden');
+            messageInput.value = '';
+        };
+
+        cancelEditBtn.addEventListener('click', () => window.cancelEdit());
+
+        window.setReplyMessage = function(id, email, content) {
+            window.cancelEdit();
+            replyingToMessage = { id, email, content };
+            replyUser.textContent = email.split('@')[0];
+            replyText.textContent = content || '(Attachment)';
+            replyPreview.classList.remove('hidden');
+            messageInput.focus();
+        };
+
+        window.cancelReply = function() {
+            replyingToMessage = null;
+            replyPreview.classList.add('hidden');
+        };
+
+        window.scrollToMessage = function(msgId) {
+            if (!msgId) return;
+            const targetEl = document.getElementById(`msg-${msgId}`);
+            if (targetEl) {
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                targetEl.classList.add('highlight-msg');
+                setTimeout(() => targetEl.classList.remove('highlight-msg'), 2000);
+            }
+        };
+
+        cancelReplyBtn.addEventListener('click', () => window.cancelReply());
+
+        // --- EMOJI REACTION HANDLERS ---
+        window.toggleReactionPicker = function(msgId) {
+            const pickerEl = document.getElementById(`reaction-picker-${msgId}`);
+            if (pickerEl) pickerEl.classList.toggle('hidden');
+        };
+
+        window.toggleReaction = async function(msgId, emoji) {
+            const msg = allSessionMessages.find(m => m.id === msgId);
+            if (!msg || !currentUser) return;
+
+            let reactions = JSON.parse(JSON.stringify(msg.reactions || {}));
+            let userList = reactions[emoji] || [];
+            const userEmail = currentUser.email.split('@')[0];
+
+            if (userList.includes(userEmail)) {
+                userList = userList.filter(e => e !== userEmail);
+            } else {
+                userList.push(userEmail);
+            }
+
+            if (userList.length === 0) {
+                delete reactions[emoji];
+            } else {
+                reactions[emoji] = userList;
+            }
+
+            // 1. Instant local UI update
+            msg.reactions = reactions;
+            renderOrUpdateMessage(msg);
+
+            // 2. Broadcast immediately to online clients
+            if (roomChannel) {
+                roomChannel.send({
+                    type: 'broadcast',
+                    event: 'reaction_update',
+                    payload: { id: msgId, reactions }
+                });
+            }
+
+            // 3. Persist update automatically via RPC function
+            await supabase.rpc('toggle_reaction', {
+                p_message_id: msgId,
+                p_emoji: emoji,
+                p_user_email: userEmail
+            });
+        };
+
+        function resetChatInactivityTimer() {
+            if (chatInactivityTimer) clearTimeout(chatInactivityTimer);
+            pdfBanner.classList.add('hidden'); 
+            chatInactivityTimer = setTimeout(() => {
+                pdfBanner.classList.remove('hidden'); 
+            }, CHAT_INACTIVITY_MS);
+        }
+
+        downloadPdfBtn.addEventListener('click', () => generatePDFTranscript());
+
+        function generatePDFTranscript() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            const todaysMessages = allSessionMessages.filter(msg => {
+                if (!msg.created_at) return true;
+                return new Date(msg.created_at).toISOString().split('T')[0] === todayStr;
+            });
+
+            doc.setFillColor(15, 23, 42); 
+            doc.rect(0, 0, 210, 32, 'F');
+            doc.setTextColor(56, 189, 248);
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text('NEXUS MARKETPLACE', 14, 15);
+
+            doc.setTextColor(203, 213, 225);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Official Session Chat Transcript & Inactivity Export`, 14, 23);
+
+            doc.setDrawColor(226, 232, 240);
+            doc.setFillColor(248, 250, 252);
+            doc.roundedRect(14, 36, 182, 22, 2, 2, 'FD');
+
+            doc.setTextColor(15, 23, 42);
+            doc.setFontSize(8.5);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Export Reason:`, 18, 43);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`5 Minutes Inactivity Detected`, 45, 43);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Today's Date:`, 18, 50);
+            doc.setFont('helvetica', 'normal');
+            doc.text(todayStr, 45, 50);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Export Time:`, 110, 43);
+            doc.setFont('helvetica', 'normal');
+            doc.text(new Date().toLocaleTimeString(), 135, 43);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Total Messages:`, 110, 50);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${todaysMessages.length} Messages`, 135, 50);
+
+            const tableData = todaysMessages.map(msg => {
+                const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                const sender = `${msg.user_email.split('@')[0]} (${msg.user_role || 'Buyer'})`;
+                let content = msg.content || '';
+                if (msg.is_edited) content += ' (edited)';
+                if (msg.reply_to_email) {
+                    content = `[Replying to ${msg.reply_to_email.split('@')[0]}: "${msg.reply_to_content}"]\n` + content;
+                }
+                if (msg.file_url) content += `\n[Attachment: ${msg.file_url}]`;
+                return [time, sender, content];
+            });
+
+            doc.autoTable({
+                startY: 64,
+                head: [['Time', 'Participant & Role', 'Message Content']],
+                body: tableData,
+                headStyles: { fillColor: [2, 132, 199], textColor: [255, 255, 255], fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [241, 245, 249] },
+                columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 48 }, 2: { cellWidth: 108 } },
+                styles: { fontSize: 8.5, cellPadding: 3.5, overflow: 'linebreak' }
+            });
+
+            doc.save(`Nexus_Chat_Transcript_${todayStr}.pdf`);
+        }
+
+        googleLoginBtn.addEventListener('click', async () => {
+            const redirectUrl = window.location.origin + window.location.pathname;
+            const { error } = await supabase.auth.signInWithOAuth({ 
+                provider: 'google',
+                options: { redirectTo: redirectUrl }
+            });
+            if (error) alert('Authentication failed: ' + error.message);
+        });
+
+        selectSellerBtn.addEventListener('click', () => setRole('Seller'));
+        selectBuyerBtn.addEventListener('click', () => setRole('Buyer'));
+
+        function setRole(role) {
+            userRole = role;
+            localStorage.setItem('nexus_user_role', role);
+            showChat();
+            loadMessages();
+            subscribeToRealtime();
+        }
+
+        logoutBtn.addEventListener('click', async () => {
+            localStorage.removeItem('nexus_user_role');
+            await supabase.auth.signOut();
+            window.location.reload();
+        });
+
+        function showLogin() {
+            loginScreen.classList.remove('hidden');
+            roleScreen.classList.add('hidden');
+            chatScreen.classList.add('hidden');
+        }
+
+        function showRoleSelection() {
+            loginScreen.classList.add('hidden');
+            roleScreen.classList.remove('hidden');
+            chatScreen.classList.add('hidden');
+        }
+
+        function showChat() {
+            loginScreen.classList.add('hidden');
+            roleScreen.classList.add('hidden');
+            chatScreen.classList.remove('hidden');
+            userDisplay.textContent = currentUser.email;
+            userRoleBadge.textContent = `(${userRole})`;
+            userRoleBadge.className = userRole === 'Seller' 
+                ? 'text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                : 'text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+        }
+
+        window.copyText = function(text) {
+            navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
+        };
+
+        function renderOrUpdateMessage(msg) {
+            const existingIndex = allSessionMessages.findIndex(m => m.id === msg.id);
+            if (existingIndex > -1) {
+                allSessionMessages[existingIndex] = msg;
+            } else {
+                allSessionMessages.push(msg);
+            }
+            resetChatInactivityTimer();
+
+            const isMe = currentUser && msg.user_id === currentUser.id;
+            const alignClass = isMe ? 'flex-row-reverse' : 'flex-row';
+            const bgClass = isMe ? 'bg-cyan-600/80 text-white' : 'bg-white/10 text-gray-100';
+            const role = msg.user_role || 'Buyer';
+            const roleColor = role === 'Seller' ? 'text-cyan-400' : 'text-emerald-400';
+
+            const msgTime = new Date(msg.created_at).getTime();
+            if (role === 'Buyer') {
+                lastBuyerTimestamp = msgTime;
+            } else if (role === 'Seller' && lastBuyerTimestamp && msgTime > lastBuyerTimestamp) {
+                const diffSeconds = Math.round((msgTime - lastBuyerTimestamp) / 1000);
+                recordSellerSpeed(msg.user_id, msg.user_email, diffSeconds);
+                lastBuyerTimestamp = null;
+            }
+
+            let replyQuoteHtml = '';
+            if (msg.reply_to_email) {
+                replyQuoteHtml = `
+                    <div onclick="scrollToMessage('${msg.reply_to_id}')" class="mb-2 p-2 rounded bg-black/30 border-l-2 border-cyan-400 text-xs cursor-pointer hover:bg-black/50 transition group/reply">
+                        <div class="font-semibold text-cyan-300 flex items-center justify-between gap-1">
+                            <span><i class="fa-solid fa-reply text-[10px] mr-1"></i> ${msg.reply_to_email.split('@')[0]}</span>
+                            <span class="text-[10px] text-gray-400 opacity-0 group-hover/reply:opacity-100 transition">Jump to original</span>
+                        </div>
+                        <div class="text-gray-300 truncate mt-0.5">${msg.reply_to_content || '(Attachment)'}</div>
+                    </div>
+                `;
+            }
+
+            let fileHtml = '';
+            if (msg.file_url) {
+                const isImage = msg.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+                if (isImage) {
+                    fileHtml = `<img src="${msg.file_url}" class="max-w-xs rounded-lg mt-2 cursor-pointer hover:opacity-80 transition" onclick="window.open('${msg.file_url}')" />`;
+                } else {
+                    fileHtml = `<a href="${msg.file_url}" target="_blank" class="block mt-2 text-cyan-200 underline text-sm"><i class="fa-solid fa-file-arrow-down"></i> Download Attachment</a>`;
+                }
+            }
+
+            // Reactions UI Render
+            let reactionsHtml = '';
+            const reactions = msg.reactions || {};
+            const reactionKeys = Object.keys(reactions);
+            if (reactionKeys.length > 0) {
+                reactionsHtml = '<div class="flex flex-wrap gap-1 mt-2">';
+                reactionKeys.forEach(emoji => {
+                    const users = reactions[emoji];
+                    const isMyReaction = currentUser && users.includes(currentUser.email.split('@')[0]);
+                    const badgeClass = isMyReaction 
+                        ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200 font-bold' 
+                        : 'bg-black/30 border-white/10 text-gray-300';
+                    reactionsHtml += `
+                        <button onclick="toggleReaction('${msg.id}', '${emoji}')" class="text-xs px-2 py-0.5 rounded-full border ${badgeClass} hover:scale-105 transition flex items-center gap-1">
+                            <span>${emoji}</span>
+                            <span class="text-[10px]">${users.length}</span>
+                        </button>
+                    `;
+                });
+                reactionsHtml += '</div>';
+            }
+
+            // Quick Emoji Reaction Preset Bar
+            let reactionPresetsButtonsHtml = '';
+            REACTION_PRESETS.forEach(emoji => {
+                reactionPresetsButtonsHtml += `
+                    <button onclick="toggleReaction('${msg.id}', '${emoji}'); toggleReactionPicker('${msg.id}')" class="hover:scale-125 transition text-base p-1">
+                        ${emoji}
+                    </button>
+                `;
+            });
+
+            const cleanContent = (msg.content || '').replace(/'/g, "\\'").replace(/\n/g, " ");
+
+            const messageHtml = `
+                <div id="msg-${msg.id}" class="flex ${alignClass} gap-3 message-bubble p-1 relative">
+                    <div class="w-8 h-8 rounded-full bg-gray-700 border border-white/10 flex items-center justify-center text-xs font-bold shrink-0">
+                        ${msg.user_email.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="${bgClass} px-4 py-2 rounded-2xl max-w-[75%] relative group">
+                        <div class="text-xs text-gray-300/80 mb-1 flex items-center gap-2">
+                            <span class="font-semibold">${msg.user_email.split('@')[0]}</span>
+                            <span class="${roleColor} font-bold text-[10px]">(${role})</span>
+                            ${msg.is_edited ? '<span class="text-[10px] italic text-gray-400">(edited)</span>' : ''}
+                        </div>
+                        ${replyQuoteHtml}
+                        <div class="break-words">${msg.content || ''}</div>
+                        ${fileHtml}
+                        ${reactionsHtml}
+                        
+                        <!-- Actions Popup -->
+                        <div class="absolute top-2 ${isMe ? '-left-24' : '-right-24'} opacity-0 group-hover:opacity-100 transition flex items-center gap-1 bg-black/70 p-1 rounded-lg backdrop-blur-sm z-10 border border-white/10">
+                            <button onclick="toggleReactionPicker('${msg.id}')" class="text-gray-300 hover:text-yellow-400 p-1 transition" title="React">
+                                <i class="fa-regular fa-face-smile text-xs"></i>
+                            </button>
+                            <button onclick="setReplyMessage('${msg.id}', '${msg.user_email.replace(/'/g, "\\'")}', '${cleanContent}')" class="text-gray-300 hover:text-cyan-400 p-1 transition" title="Reply">
+                                <i class="fa-solid fa-reply text-xs"></i>
+                            </button>
+                            ${isMe ? `
+                            <button onclick="startEditMessage('${msg.id}', '${cleanContent}')" class="text-gray-300 hover:text-amber-400 p-1 transition" title="Edit">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>` : ''}
+                            ${msg.content ? `
+                            <button onclick="copyText('${cleanContent}')" class="text-gray-300 hover:text-cyan-400 p-1 transition" title="Copy text">
+                                <i class="fa-regular fa-copy text-xs"></i>
+                            </button>` : ''}
+                        </div>
+
+                        <!-- Floating Emoji Reaction Picker Bar -->
+                        <div id="reaction-picker-${msg.id}" class="hidden absolute -top-10 ${isMe ? 'right-0' : 'left-0'} z-20 bg-slate-900/90 border border-white/20 rounded-full px-2 py-1 shadow-xl flex items-center gap-1 backdrop-blur-md">
+                            ${reactionPresetsButtonsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const existingElem = document.getElementById(`msg-${msg.id}`);
+            if (existingElem) {
+                existingElem.outerHTML = messageHtml;
+            } else {
+                chatMessages.insertAdjacentHTML('beforeend', messageHtml);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        function recordSellerSpeed(sellerId, sellerEmail, diffSeconds) {
+            if (!sellerMetrics[sellerId]) {
+                sellerMetrics[sellerId] = { email: sellerEmail, times: [] };
+            }
+            sellerMetrics[sellerId].times.push(diffSeconds);
+            renderSellerLeaderboard();
+        }
+
+        function renderSellerLeaderboard() {
+            const keys = Object.keys(sellerMetrics);
+            if (keys.length === 0) return;
+
+            sellerSpeedList.innerHTML = '';
+            sellerCount.textContent = `${keys.length} Active`;
+
+            keys.forEach(sellerId => {
+                const seller = sellerMetrics[sellerId];
+                const avgSeconds = Math.round(seller.times.reduce((a, b) => a + b, 0) / seller.times.length);
+
+                let badgeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+                let icon = '⚡';
+                let barWidth = '100%';
+                let barColor = 'bg-emerald-400';
+
+                if (avgSeconds > 15 && avgSeconds <= 60) {
+                    badgeClass = 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
+                    icon = '⏱️';
+                    barWidth = '65%';
+                    barColor = 'bg-yellow-400';
+                } else if (avgSeconds > 60) {
+                    badgeClass = 'bg-red-500/20 text-red-300 border-red-500/30';
+                    icon = '🐢';
+                    barWidth = '30%';
+                    barColor = 'bg-red-500';
+                }
+
+                const itemHtml = `
+                    <div class="p-2 rounded-lg bg-white/5 border border-white/10 text-xs space-y-1">
+                        <div class="flex justify-between items-center">
+                            <span class="font-semibold text-cyan-300 truncate max-w-[130px]">${seller.email.split('@')[0]} (Seller)</span>
+                            <span class="px-1.5 py-0.5 rounded border text-[10px] font-bold ${badgeClass}">
+                                ${icon} ${avgSeconds}s avg
+                            </span>
+                        </div>
+                        <div class="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
+                            <div class="${barColor} h-full transition-all duration-500" style="width: ${barWidth}"></div>
+                        </div>
+                    </div>
+                `;
+                sellerSpeedList.insertAdjacentHTML('beforeend', itemHtml);
+            });
+        }
+
+        async function loadMessages() {
+            const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(200);
+            if (data) {
+                chatMessages.innerHTML = '';
+                allSessionMessages = data;
+                data.forEach(renderOrUpdateMessage);
+            }
+        }
+
+        function subscribeToRealtime() {
+            roomChannel = supabase.channel('nexus-room', {
+                config: { presence: { key: currentUser.id } }
+            });
+
+            roomChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                renderOrUpdateMessage(payload.new);
+            });
+
+            roomChannel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
+                renderOrUpdateMessage(payload.new);
+            });
+
+            roomChannel.on('broadcast', { event: 'typing' }, ({ payload }) => {
+                if (!payload || payload.email === currentUser.email.split('@')[0]) return;
+                if (payload.isTyping) {
+                    typingUsers.add(payload.email);
+                } else {
+                    typingUsers.delete(payload.email);
+                }
+                updateTypingUI();
+            });
+
+            // Live broadcast listener for instant cross-client reactions
+            roomChannel.on('broadcast', { event: 'reaction_update' }, ({ payload }) => {
+                const msg = allSessionMessages.find(m => m.id === payload.id);
+                if (msg) {
+                    msg.reactions = payload.reactions;
+                    renderOrUpdateMessage(msg);
+                }
+            });
+
+            roomChannel.on('presence', { event: 'sync' }, () => {
+                const state = roomChannel.presenceState();
+                renderPresence(state);
+            });
+
+            roomChannel.subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    await roomChannel.track({
+                        user_id: currentUser.id,
+                        email: currentUser.email,
+                        role: userRole
+                    });
+                }
+            });
+        }
+
+        function renderPresence(state) {
+            presenceList.innerHTML = '';
+            let count = 0;
+            for (const id in state) {
+                const user = state[id][0];
+                if (!user) continue;
+                count++;
+                const roleColor = user.role === 'Seller' ? 'text-cyan-400' : 'text-emerald-400';
+                const item = `
+                    <div class="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 text-sm">
+                        <div class="flex items-center gap-2 overflow-hidden">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+                            <span class="truncate text-gray-200 text-xs">${user.email.split('@')[0]}</span>
+                        </div>
+                        <span class="${roleColor} font-bold text-xs shrink-0">(${user.role || 'Buyer'})</span>
+                    </div>
+                `;
+                presenceList.insertAdjacentHTML('beforeend', item);
+            }
+            onlineCount.textContent = count;
+            if (headerOnlineCount) headerOnlineCount.textContent = count;
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > MAX_FILE_SIZE) {
+                    alert('File exceeds 50MB limit!');
+                    fileInput.value = '';
+                    return;
+                }
+                selectedFile = file;
+                fileName.textContent = file.name;
+                filePreview.classList.remove('hidden');
+            }
+        });
+
+        removeFileBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            filePreview.classList.add('hidden');
+        });
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const content = messageInput.value.trim();
+            if (!content && !selectedFile && !editingMessageId) return;
+
+            // Handle Message Editing Mode
+            if (editingMessageId) {
+                await supabase.from('messages').update({
+                    content: content,
+                    is_edited: true
+                }).eq('id', editingMessageId);
+
+                window.cancelEdit();
+                return;
+            }
+
+            // Handle New Message Creation Mode
+            messageInput.value = '';
+            filePreview.classList.add('hidden');
+            const fileToUpload = selectedFile;
+            selectedFile = null;
+            fileInput.value = '';
+
+            let file_url = null;
+
+            if (fileToUpload) {
+                const fileExt = fileToUpload.name.split('.').pop();
+                const filePath = `${currentUser.id}/${Date.now()}.${fileExt}`;
+                const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, fileToUpload);
+
+                if (!uploadError) {
+                    const { data } = supabase.storage.from('chat-files').getPublicUrl(filePath);
+                    file_url = data.publicUrl;
+                }
+            }
+
+            const messageData = {
+                user_id: currentUser.id,
+                user_email: currentUser.email,
+                user_role: userRole,
+                content: content,
+                file_url: file_url,
+                reactions: {}
+            };
+
+            if (replyingToMessage) {
+                messageData.reply_to_id = replyingToMessage.id;
+                messageData.reply_to_email = replyingToMessage.email;
+                messageData.reply_to_content = replyingToMessage.content;
+            }
+
+            await supabase.from('messages').insert([messageData]);
+            window.cancelReply();
+
+            // Clear typing state on send
+            if (roomChannel) {
+                roomChannel.send({
+                    type: 'broadcast',
+                    event: 'typing',
+                    payload: { email: currentUser.email.split('@')[0], isTyping: false }
+                });
+            }
+        });
+
+        // --- AUTH STATE LISTENER ---
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                currentUser = session.user;
+                resetChatInactivityTimer();
+
+                if (!userRole) {
+                    showRoleSelection();
+                } else {
+                    showChat();
+                    loadMessages();
+                    subscribeToRealtime();
+                }
+            } else {
+                showLogin();
+            }
+        });
+    </script>
+</body>
+</html>
