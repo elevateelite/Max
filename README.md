@@ -215,6 +215,27 @@
         </aside>
     </div>
 
+    <!-- PDF PREVIEW MODAL OVERLAY -->
+    <div id="pdf-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
+        <div class="glass w-full max-w-4xl h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
+            <div class="p-3 sm:p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
+                <div class="flex items-center gap-2 text-cyan-400 font-bold text-sm sm:text-base">
+                    <i class="fa-solid fa-file-pdf text-lg"></i>
+                    <span>Chat Transcript Preview</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="save-pdf-modal-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm transition flex items-center gap-1.5 shadow">
+                        <i class="fa-solid fa-download"></i> Save to Device
+                    </button>
+                    <button id="close-pdf-modal-btn" class="bg-white/10 hover:bg-white/20 text-white font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm transition">
+                        Close
+                    </button>
+                </div>
+            </div>
+            <iframe id="pdf-frame" class="w-full flex-1 bg-white border-0"></iframe>
+        </div>
+    </div>
+
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
@@ -295,6 +316,12 @@
         const cancelEditBtn = document.getElementById('cancel-edit-btn');
         const typingIndicator = document.getElementById('typing-indicator');
         const typingText = document.getElementById('typing-text');
+
+        // Modal DOM Elements
+        const pdfModal = document.getElementById('pdf-modal');
+        const pdfFrame = document.getElementById('pdf-frame');
+        const closePdfModalBtn = document.getElementById('close-pdf-modal-btn');
+        const savePdfModalBtn = document.getElementById('save-pdf-modal-btn');
 
         // Populate Emoji Grid
         EMOJI_LIST.forEach(emoji => {
@@ -530,7 +557,22 @@
                 styles: { fontSize: 8.5, cellPadding: 3.5, overflow: 'linebreak' }
             });
 
-            doc.save(`Nexus_Chat_Transcript_${todayStr}.pdf`);
+            // Convert PDF output to a Blob URL for popup viewing
+            const pdfBlob = doc.output('blob');
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+
+            pdfFrame.src = pdfUrl;
+            pdfModal.classList.remove('hidden');
+
+            savePdfModalBtn.onclick = () => {
+                doc.save(`Nexus_Chat_Transcript_${todayStr}.pdf`);
+            };
+
+            closePdfModalBtn.onclick = () => {
+                pdfModal.classList.add('hidden');
+                pdfFrame.src = '';
+                URL.revokeObjectURL(pdfUrl);
+            };
         }
 
         googleLoginBtn.addEventListener('click', async () => {
