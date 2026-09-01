@@ -181,8 +181,8 @@
                     </label>
                     <input type="file" id="file-input" class="hidden">
 
-                    <!-- Multi-line Paragraph Textarea -->
-                    <textarea id="message-input" rows="1" placeholder="Type a message..." 
+                    <!-- Multi-line Textarea configured for newline enter key on mobile -->
+                    <textarea id="message-input" rows="1" enterkeyhint="newline" placeholder="Type a message..." 
                               class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-2 text-white focus:outline-none focus:border-cyan-400 transition resize-none max-h-36 overflow-y-auto leading-normal"></textarea>
 
                     <button type="submit" class="bg-cyan-500 hover:bg-cyan-400 text-white p-3 rounded-full transition w-12 h-12 flex items-center justify-center shrink-0">
@@ -386,7 +386,12 @@
         });
 
         messageInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            // Check if device is touch/mobile
+            const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 768);
+
+            // On Desktop, plain Enter submits (Shift+Enter creates a newline).
+            // On Mobile/Touch devices, Enter ALWAYS creates a new paragraph line, so users must tap the send button to send.
+            if (e.key === 'Enter' && !e.shiftKey && !isTouchDevice) {
                 e.preventDefault();
                 chatForm.requestSubmit();
             }
