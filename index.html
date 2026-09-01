@@ -12,7 +12,6 @@
     <meta name="theme-color" content="#0f2027">
 
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png">
-
     <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Nexus%20Marketplace%20Chat%22%2C%22short_name%22%3A%22NexusChat%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230f2027%22%2C%22theme_color%22%3A%22%230f2027%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F1041%2F1041916.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -99,7 +98,7 @@
             <div id="pdf-banner" class="hidden bg-amber-500/20 border-b border-amber-500/30 p-3 text-xs flex flex-wrap items-center justify-between gap-2 backdrop-blur-md z-10">
                 <div class="flex items-center gap-2 text-amber-200">
                     <i class="fa-solid fa-clock text-amber-400 text-sm"></i>
-                    <span><strong>Chat Inactive for 5 Minutes:</strong> You can export today's chat history up to this inactivity period.</span>
+                    <span><strong>Chat Inactive for 5 Minutes:</strong> You can export today's chat history now.</span>
                 </div>
                 <button id="download-pdf-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow">
                     <i class="fa-solid fa-file-pdf"></i> Export PDF Transcript
@@ -114,14 +113,23 @@
                         <span id="user-role-badge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300"></span>
                     </div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <button id="toggle-sidebar-btn" type="button" class="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-2 cursor-pointer" title="Toggle Online Participants & Archive">
-                        <i class="fa-solid fa-bars"></i>
-                        <span>Menu</span>
+                <div class="flex items-center gap-2">
+                    <button id="manual-export-btn" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="Generate and archive today's discussion PDF">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span class="hidden sm:inline">Export PDF</span>
                     </button>
 
-                    <span id="user-display" class="text-xs text-gray-300 hidden sm:block"></span>
-                    <button id="logout-btn" class="text-gray-400 hover:text-white transition p-2" title="Logout">
+                    <button id="open-archive-modal-btn" class="bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 border border-cyan-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="View all daily archives">
+                        <i class="fa-solid fa-box-archive"></i>
+                        <span>Archives</span>
+                    </button>
+
+                    <button id="toggle-sidebar-btn" type="button" class="md:hidden bg-white/10 hover:bg-white/20 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+
+                    <span id="user-display" class="text-xs text-gray-300 hidden lg:block ml-2"></span>
+                    <button id="logout-btn" class="text-gray-400 hover:text-white transition p-1.5" title="Logout">
                         <i class="fa-solid fa-right-from-bracket text-lg"></i>
                     </button>
                 </div>
@@ -186,14 +194,17 @@
             </footer>
         </div>
 
-        <aside id="sidebar-panel" class="hidden w-full md:w-80 bg-black/30 flex-col h-auto md:h-full p-4 space-y-4 overflow-y-auto border-t md:border-t-0 md:border-l border-white/10 shrink-0">
+        <!-- SIDEBAR PANEL (Always visible on Desktop md:flex) -->
+        <aside id="sidebar-panel" class="hidden md:flex w-full md:w-80 bg-black/30 flex-col h-auto md:h-full p-4 space-y-4 overflow-y-auto border-t md:border-t-0 md:border-l border-white/10 shrink-0">
             <div>
                 <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400">Seller Speed Tracker</h3>
-                    <span id="seller-count" class="bg-cyan-500/20 text-cyan-300 text-xs px-2 py-0.5 rounded-full font-bold">0 Active</span>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-box-archive"></i> Saved Daily Transcripts
+                    </h3>
+                    <span id="transcript-count" class="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
                 </div>
-                <div id="seller-speed-list" class="space-y-2 max-h-36 overflow-y-auto pr-1">
-                    <div class="text-xs text-gray-400 italic text-center py-2">No seller responses recorded yet</div>
+                <div id="transcript-archive-list" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    <div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts yet</div>
                 </div>
             </div>
 
@@ -201,11 +212,11 @@
 
             <div>
                 <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400"><i class="fa-solid fa-box-archive mr-1"></i> Saved Daily Transcripts</h3>
-                    <span id="transcript-count" class="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400">Seller Speed Tracker</h3>
+                    <span id="seller-count" class="bg-cyan-500/20 text-cyan-300 text-xs px-2 py-0.5 rounded-full font-bold">0 Active</span>
                 </div>
-                <div id="transcript-archive-list" class="space-y-2 max-h-48 overflow-y-auto pr-1">
-                    <div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts yet</div>
+                <div id="seller-speed-list" class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                    <div class="text-xs text-gray-400 italic text-center py-2">No seller responses recorded yet</div>
                 </div>
             </div>
 
@@ -220,6 +231,25 @@
                 </div>
             </div>
         </aside>
+    </div>
+
+    <!-- DEDICATED TRANSCRIPT ARCHIVE MODAL -->
+    <div id="archive-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass w-full max-w-2xl max-h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
+            <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
+                <div class="flex items-center gap-2 text-amber-400 font-bold text-base">
+                    <i class="fa-solid fa-box-archive text-lg"></i>
+                    <span>Daily Message Transcripts Archive</span>
+                </div>
+                <button id="close-archive-modal-btn" class="text-gray-400 hover:text-white text-lg px-2"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1 space-y-3">
+                <p class="text-xs text-gray-300">Below are all recorded daily chat history PDFs for this room. Any room member can access and download them at any time.</p>
+                <div id="modal-transcript-list" class="space-y-2">
+                    <div class="text-xs text-gray-400 italic text-center py-4">Loading archives...</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- PDF PREVIEW & SAVE MODAL OVERLAY -->
@@ -315,6 +345,7 @@
         const sellerCount = document.getElementById('seller-count');
         const pdfBanner = document.getElementById('pdf-banner');
         const downloadPdfBtn = document.getElementById('download-pdf-btn');
+        const manualExportBtn = document.getElementById('manual-export-btn');
         const replyPreview = document.getElementById('reply-preview');
         const replyUser = document.getElementById('reply-user');
         const replyText = document.getElementById('reply-text');
@@ -327,11 +358,15 @@
         const transcriptArchiveList = document.getElementById('transcript-archive-list');
         const transcriptCount = document.getElementById('transcript-count');
 
-        // Modal DOM Elements
+        // Modal Elements
         const pdfModal = document.getElementById('pdf-modal');
         const pdfFrame = document.getElementById('pdf-frame');
         const closePdfModalBtn = document.getElementById('close-pdf-modal-btn');
         const savePdfModalBtn = document.getElementById('save-pdf-modal-btn');
+        const archiveModal = document.getElementById('archive-modal');
+        const openArchiveModalBtn = document.getElementById('open-archive-modal-btn');
+        const closeArchiveModalBtn = document.getElementById('close-archive-modal-btn');
+        const modalTranscriptList = document.getElementById('modal-transcript-list');
 
         // Populate Emoji Grid
         EMOJI_LIST.forEach(emoji => {
@@ -360,11 +395,15 @@
 
         toggleSidebarBtn.addEventListener('click', () => {
             sidebarPanel.classList.toggle('hidden');
-            if (!sidebarPanel.classList.contains('hidden')) {
-                sidebarPanel.classList.add('flex');
-            } else {
-                sidebarPanel.classList.remove('flex');
-            }
+        });
+
+        openArchiveModalBtn.addEventListener('click', () => {
+            archiveModal.classList.remove('hidden');
+            loadTranscriptArchive();
+        });
+
+        closeArchiveModalBtn.addEventListener('click', () => {
+            archiveModal.classList.add('hidden');
         });
 
         function adjustTextareaHeight() {
@@ -509,6 +548,7 @@
         }
 
         downloadPdfBtn.addEventListener('click', () => generatePDFTranscript());
+        manualExportBtn.addEventListener('click', () => generatePDFTranscript());
 
         function generatePDFTranscript() {
             const { jsPDF } = window.jspdf;
@@ -519,6 +559,11 @@
                 if (!msg.created_at) return true;
                 return new Date(msg.created_at).toISOString().split('T')[0] === todayStr;
             });
+
+            if (todaysMessages.length === 0) {
+                alert("No messages recorded for today yet!");
+                return;
+            }
 
             doc.setFillColor(15, 23, 42); 
             doc.rect(0, 0, 210, 32, 'F');
@@ -589,26 +634,24 @@
 
             savePdfModalBtn.onclick = async () => {
                 const todayStr = new Date().toISOString().split('T')[0];
-                const fileName = `transcripts/transcript_${todayStr}_${Date.now()}.pdf`;
+                const storagePath = `transcripts/transcript_${todayStr}_${Date.now()}.pdf`;
 
                 savePdfModalBtn.disabled = true;
                 savePdfModalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
 
-                // Upload PDF to Supabase Storage bucket
                 const { error: uploadError } = await supabase.storage
                     .from('chat-files')
-                    .upload(fileName, currentPdfBlob, { contentType: 'application/pdf', upsert: true });
+                    .upload(storagePath, currentPdfBlob, { contentType: 'application/pdf', upsert: true });
 
                 if (uploadError) {
-                    alert('Error saving PDF transcript: ' + uploadError.message);
+                    alert('Storage Upload Error: ' + uploadError.message + '\n\nPlease ensure you executed the updated SQL script.');
                     savePdfModalBtn.disabled = false;
                     savePdfModalBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish for All Members';
                     return;
                 }
 
-                const { data: urlData } = supabase.storage.from('chat-files').getPublicUrl(fileName);
+                const { data: urlData } = supabase.storage.from('chat-files').getPublicUrl(storagePath);
 
-                // Insert record into daily_transcripts database table
                 const { error: dbError } = await supabase.from('daily_transcripts').insert([{
                     transcript_date: todayStr,
                     file_url: urlData.publicUrl,
@@ -616,10 +659,10 @@
                 }]);
 
                 if (dbError) {
-                    alert('Transcript saved to storage, but database record failed: ' + dbError.message);
+                    alert('Database insert error: ' + dbError.message);
                 } else {
                     doc.save(`Nexus_Chat_Transcript_${todayStr}.pdf`);
-                    alert('Daily transcript saved successfully and added to the Archive section!');
+                    alert('Daily transcript successfully published to the Archive!');
                 }
 
                 savePdfModalBtn.disabled = false;
@@ -638,7 +681,7 @@
             };
         }
 
-        // --- TRANSCRIPT ARCHIVE FETCH & RENDER ---
+        // FETCH AND RENDER ARCHIVES
         async function loadTranscriptArchive() {
             const { data, error } = await supabase
                 .from('daily_transcripts')
@@ -646,31 +689,48 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.warn('Could not fetch daily_transcripts (Ensure table exists):', error.message);
+                console.warn('daily_transcripts query warning:', error.message);
                 return;
             }
 
             if (data && data.length > 0) {
                 transcriptArchiveList.innerHTML = '';
+                modalTranscriptList.innerHTML = '';
                 transcriptCount.textContent = data.length;
 
                 data.forEach(item => {
                     const timeStr = new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    const html = `
+                    
+                    const sidebarHtml = `
                         <div class="p-2 rounded-lg bg-white/5 border border-white/10 text-xs flex items-center justify-between gap-2 hover:bg-white/10 transition">
                             <div class="truncate">
                                 <div class="font-bold text-amber-300 truncate">${item.transcript_date}</div>
                                 <div class="text-[10px] text-gray-400 truncate">By ${item.created_by.split('@')[0]} at ${timeStr}</div>
                             </div>
-                            <a href="${item.file_url}" target="_blank" download="Nexus_Transcript_${item.transcript_date}.pdf" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/30 px-2 py-1 rounded text-[11px] font-bold shrink-0 transition flex items-center gap-1">
+                            <a href="${item.file_url}" target="_blank" download="Nexus_Transcript_${item.transcript_date}.pdf" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded text-xs font-bold shrink-0 transition flex items-center gap-1">
                                 <i class="fa-solid fa-download"></i> Get
                             </a>
                         </div>
                     `;
-                    transcriptArchiveList.insertAdjacentHTML('beforeend', html);
+
+                    const modalHtml = `
+                        <div class="p-3 rounded-xl bg-white/5 border border-white/10 text-sm flex items-center justify-between gap-3 hover:bg-white/10 transition">
+                            <div>
+                                <div class="font-bold text-amber-300 text-base">${item.transcript_date}</div>
+                                <div class="text-xs text-gray-300 mt-0.5">Archived by <strong>${item.created_by.split('@')[0]}</strong> at ${timeStr}</div>
+                            </div>
+                            <a href="${item.file_url}" target="_blank" download="Nexus_Transcript_${item.transcript_date}.pdf" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-4 py-2 rounded-lg text-xs transition flex items-center gap-2 shadow">
+                                <i class="fa-solid fa-file-arrow-down text-sm"></i> Download PDF
+                            </a>
+                        </div>
+                    `;
+
+                    transcriptArchiveList.insertAdjacentHTML('beforeend', sidebarHtml);
+                    modalTranscriptList.insertAdjacentHTML('beforeend', modalHtml);
                 });
             } else {
                 transcriptArchiveList.innerHTML = '<div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts yet</div>';
+                modalTranscriptList.innerHTML = '<div class="text-xs text-gray-400 italic text-center py-4">No archived transcripts found. Click "Export PDF" above to publish today\'s log.</div>';
                 transcriptCount.textContent = '0';
             }
         }
