@@ -102,7 +102,7 @@
                     <span><strong>Chat Inactive for 5 Minutes:</strong> You can export today's chat history up to this inactivity period.</span>
                 </div>
                 <button id="download-pdf-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow">
-                    <i class="fa-solid fa-file-pdf"></i> Download PDF Transcript
+                    <i class="fa-solid fa-file-pdf"></i> Export PDF Transcript
                 </button>
             </div>
 
@@ -115,9 +115,9 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button id="toggle-sidebar-btn" type="button" class="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-2 cursor-pointer" title="Toggle Online Participants">
-                        <i class="fa-solid fa-users"></i>
-                        <span>Online (<span id="header-online-count">0</span>)</span>
+                    <button id="toggle-sidebar-btn" type="button" class="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-2 cursor-pointer" title="Toggle Online Participants & Archive">
+                        <i class="fa-solid fa-bars"></i>
+                        <span>Menu</span>
                     </button>
 
                     <span id="user-display" class="text-xs text-gray-300 hidden sm:block"></span>
@@ -130,14 +130,12 @@
             <main id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
             </main>
 
-            <!-- Typing Indicator Banner -->
             <div id="typing-indicator" class="text-xs text-cyan-300 italic min-h-[1.25rem] px-4 opacity-0 transition-opacity flex items-center gap-2">
                 <i class="fa-solid fa-ellipsis fa-bounce"></i>
                 <span id="typing-text">Someone is typing...</span>
             </div>
 
             <footer class="p-4 border-t border-white/10 bg-black/20 shrink-0 relative">
-                <!-- Emoji Picker Container -->
                 <div id="emoji-picker" class="hidden absolute bottom-20 left-4 z-50 glass bg-slate-900/95 border border-white/20 rounded-2xl p-3 w-72 sm:w-80 shadow-2xl backdrop-blur-xl">
                     <div class="flex justify-between items-center pb-2 border-b border-white/10 mb-2">
                         <span class="text-xs font-bold text-gray-300">Choose Emoji</span>
@@ -147,7 +145,6 @@
                     </div>
                 </div>
 
-                <!-- Edit Message Preview Bar -->
                 <div id="edit-preview" class="hidden text-xs text-amber-200 mb-2 flex justify-between items-center bg-amber-950/60 p-2.5 rounded-lg border-l-4 border-amber-400 backdrop-blur-md">
                     <div class="truncate pr-2">
                         <span class="text-amber-400 font-bold block"><i class="fa-solid fa-pen-to-square mr-1"></i> Editing Message</span>
@@ -156,7 +153,6 @@
                     <button id="cancel-edit-btn" type="button" class="text-gray-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <!-- Reply Preview Bar -->
                 <div id="reply-preview" class="hidden text-xs text-cyan-200 mb-2 flex justify-between items-center bg-cyan-950/60 p-2.5 rounded-lg border-l-4 border-cyan-400 backdrop-blur-md">
                     <div class="truncate pr-2">
                         <span class="text-cyan-400 font-bold block"><i class="fa-solid fa-reply mr-1"></i> Replying to <span id="reply-user"></span></span>
@@ -165,7 +161,6 @@
                     <button id="cancel-reply-btn" type="button" class="text-gray-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <!-- File Preview Bar -->
                 <div id="file-preview" class="hidden text-sm text-cyan-300 mb-2 flex justify-between items-center bg-cyan-900/30 p-2 rounded">
                     <span id="file-name"></span>
                     <button id="remove-file-btn" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
@@ -181,7 +176,6 @@
                     </label>
                     <input type="file" id="file-input" class="hidden">
 
-                    <!-- Multi-line Textarea configured for newline enter key on mobile -->
                     <textarea id="message-input" rows="1" enterkeyhint="newline" placeholder="Type a message..." 
                               class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-2 text-white focus:outline-none focus:border-cyan-400 transition resize-none max-h-36 overflow-y-auto leading-normal"></textarea>
 
@@ -198,8 +192,20 @@
                     <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400">Seller Speed Tracker</h3>
                     <span id="seller-count" class="bg-cyan-500/20 text-cyan-300 text-xs px-2 py-0.5 rounded-full font-bold">0 Active</span>
                 </div>
-                <div id="seller-speed-list" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                <div id="seller-speed-list" class="space-y-2 max-h-36 overflow-y-auto pr-1">
                     <div class="text-xs text-gray-400 italic text-center py-2">No seller responses recorded yet</div>
+                </div>
+            </div>
+
+            <hr class="border-white/10">
+
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400"><i class="fa-solid fa-box-archive mr-1"></i> Saved Daily Transcripts</h3>
+                    <span id="transcript-count" class="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                </div>
+                <div id="transcript-archive-list" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts yet</div>
                 </div>
             </div>
 
@@ -216,7 +222,7 @@
         </aside>
     </div>
 
-    <!-- PDF PREVIEW MODAL OVERLAY -->
+    <!-- PDF PREVIEW & SAVE MODAL OVERLAY -->
     <div id="pdf-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
         <div class="glass w-full max-w-4xl h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
             <div class="p-3 sm:p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
@@ -226,7 +232,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <button id="save-pdf-modal-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm transition flex items-center gap-1.5 shadow">
-                        <i class="fa-solid fa-download"></i> Save to Device
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish for All Members
                     </button>
                     <button id="close-pdf-modal-btn" class="bg-white/10 hover:bg-white/20 text-white font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm transition">
                         Close
@@ -261,6 +267,8 @@
         let replyingToMessage = null;
         let editingMessageId = null;
         let roomChannel = null;
+        let currentDocObject = null;
+        let currentPdfBlob = null;
 
         let typingTimeout = null;
         const typingUsers = new Set();
@@ -301,7 +309,6 @@
         const closeEmojiPicker = document.getElementById('close-emoji-picker');
         const presenceList = document.getElementById('presence-list');
         const onlineCount = document.getElementById('online-count');
-        const headerOnlineCount = document.getElementById('header-online-count');
         const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
         const sidebarPanel = document.getElementById('sidebar-panel');
         const sellerSpeedList = document.getElementById('seller-speed-list');
@@ -317,6 +324,8 @@
         const cancelEditBtn = document.getElementById('cancel-edit-btn');
         const typingIndicator = document.getElementById('typing-indicator');
         const typingText = document.getElementById('typing-text');
+        const transcriptArchiveList = document.getElementById('transcript-archive-list');
+        const transcriptCount = document.getElementById('transcript-count');
 
         // Modal DOM Elements
         const pdfModal = document.getElementById('pdf-modal');
@@ -358,7 +367,6 @@
             }
         });
 
-        // --- AUTO-EXPANDING TEXTAREA & PARAGRAPH HANDLER ---
         function adjustTextareaHeight() {
             messageInput.style.height = 'auto';
             messageInput.style.height = Math.min(messageInput.scrollHeight, 144) + 'px';
@@ -386,11 +394,8 @@
         });
 
         messageInput.addEventListener('keydown', (e) => {
-            // Check if device is touch/mobile
             const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 768);
 
-            // On Desktop, plain Enter submits (Shift+Enter creates a newline).
-            // On Mobile/Touch devices, Enter ALWAYS creates a new paragraph line, so users must tap the send button to send.
             if (e.key === 'Enter' && !e.shiftKey && !isTouchDevice) {
                 e.preventDefault();
                 chatForm.requestSubmit();
@@ -407,7 +412,6 @@
             }
         }
 
-        // --- EDITING & REPLY HANDLERS ---
         window.startEditMessage = function(id, content) {
             window.cancelReply();
             editingMessageId = id;
@@ -453,7 +457,6 @@
 
         cancelReplyBtn.addEventListener('click', () => window.cancelReply());
 
-        // --- EMOJI REACTION HANDLERS ---
         window.toggleReactionPicker = function(msgId) {
             const pickerEl = document.getElementById(`reaction-picker-${msgId}`);
             if (pickerEl) pickerEl.classList.toggle('hidden');
@@ -527,7 +530,7 @@
             doc.setTextColor(203, 213, 225);
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.text(`Official Session Chat Transcript & Inactivity Export`, 14, 23);
+            doc.text(`Official Session Chat Transcript & Daily Export`, 14, 23);
 
             doc.setDrawColor(226, 232, 240);
             doc.setFillColor(248, 250, 252);
@@ -536,9 +539,9 @@
             doc.setTextColor(15, 23, 42);
             doc.setFontSize(8.5);
             doc.setFont('helvetica', 'bold');
-            doc.text(`Export Reason:`, 18, 43);
+            doc.text(`Export Context:`, 18, 43);
             doc.setFont('helvetica', 'normal');
-            doc.text(`5 Minutes Inactivity Detected`, 45, 43);
+            doc.text(`Daily Message Room Log`, 45, 43);
 
             doc.setFont('helvetica', 'bold');
             doc.text(`Today's Date:`, 18, 50);
@@ -577,14 +580,55 @@
                 styles: { fontSize: 8.5, cellPadding: 3.5, overflow: 'linebreak' }
             });
 
-            const pdfBlob = doc.output('blob');
-            const pdfUrl = URL.createObjectURL(pdfBlob);
+            currentDocObject = doc;
+            currentPdfBlob = doc.output('blob');
+            const pdfUrl = URL.createObjectURL(currentPdfBlob);
 
             pdfFrame.src = pdfUrl;
             pdfModal.classList.remove('hidden');
 
-            savePdfModalBtn.onclick = () => {
-                doc.save(`Nexus_Chat_Transcript_${todayStr}.pdf`);
+            savePdfModalBtn.onclick = async () => {
+                const todayStr = new Date().toISOString().split('T')[0];
+                const fileName = `transcripts/transcript_${todayStr}_${Date.now()}.pdf`;
+
+                savePdfModalBtn.disabled = true;
+                savePdfModalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+                // Upload PDF to Supabase Storage bucket
+                const { error: uploadError } = await supabase.storage
+                    .from('chat-files')
+                    .upload(fileName, currentPdfBlob, { contentType: 'application/pdf', upsert: true });
+
+                if (uploadError) {
+                    alert('Error saving PDF transcript: ' + uploadError.message);
+                    savePdfModalBtn.disabled = false;
+                    savePdfModalBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish for All Members';
+                    return;
+                }
+
+                const { data: urlData } = supabase.storage.from('chat-files').getPublicUrl(fileName);
+
+                // Insert record into daily_transcripts database table
+                const { error: dbError } = await supabase.from('daily_transcripts').insert([{
+                    transcript_date: todayStr,
+                    file_url: urlData.publicUrl,
+                    created_by: currentUser.email
+                }]);
+
+                if (dbError) {
+                    alert('Transcript saved to storage, but database record failed: ' + dbError.message);
+                } else {
+                    doc.save(`Nexus_Chat_Transcript_${todayStr}.pdf`);
+                    alert('Daily transcript saved successfully and added to the Archive section!');
+                }
+
+                savePdfModalBtn.disabled = false;
+                savePdfModalBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish for All Members';
+                pdfModal.classList.add('hidden');
+                pdfFrame.src = '';
+                URL.revokeObjectURL(pdfUrl);
+
+                loadTranscriptArchive();
             };
 
             closePdfModalBtn.onclick = () => {
@@ -592,6 +636,43 @@
                 pdfFrame.src = '';
                 URL.revokeObjectURL(pdfUrl);
             };
+        }
+
+        // --- TRANSCRIPT ARCHIVE FETCH & RENDER ---
+        async function loadTranscriptArchive() {
+            const { data, error } = await supabase
+                .from('daily_transcripts')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.warn('Could not fetch daily_transcripts (Ensure table exists):', error.message);
+                return;
+            }
+
+            if (data && data.length > 0) {
+                transcriptArchiveList.innerHTML = '';
+                transcriptCount.textContent = data.length;
+
+                data.forEach(item => {
+                    const timeStr = new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const html = `
+                        <div class="p-2 rounded-lg bg-white/5 border border-white/10 text-xs flex items-center justify-between gap-2 hover:bg-white/10 transition">
+                            <div class="truncate">
+                                <div class="font-bold text-amber-300 truncate">${item.transcript_date}</div>
+                                <div class="text-[10px] text-gray-400 truncate">By ${item.created_by.split('@')[0]} at ${timeStr}</div>
+                            </div>
+                            <a href="${item.file_url}" target="_blank" download="Nexus_Transcript_${item.transcript_date}.pdf" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/30 px-2 py-1 rounded text-[11px] font-bold shrink-0 transition flex items-center gap-1">
+                                <i class="fa-solid fa-download"></i> Get
+                            </a>
+                        </div>
+                    `;
+                    transcriptArchiveList.insertAdjacentHTML('beforeend', html);
+                });
+            } else {
+                transcriptArchiveList.innerHTML = '<div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts yet</div>';
+                transcriptCount.textContent = '0';
+            }
         }
 
         googleLoginBtn.addEventListener('click', async () => {
@@ -611,6 +692,7 @@
             localStorage.setItem('nexus_user_role', role);
             showChat();
             loadMessages();
+            loadTranscriptArchive();
             subscribeToRealtime();
         }
 
@@ -851,6 +933,10 @@
                 renderOrUpdateMessage(payload.new);
             });
 
+            roomChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'daily_transcripts' }, () => {
+                loadTranscriptArchive();
+            });
+
             roomChannel.on('broadcast', { event: 'typing' }, ({ payload }) => {
                 if (!payload || payload.email === currentUser.email.split('@')[0]) return;
                 if (payload.isTyping) {
@@ -905,7 +991,6 @@
                 presenceList.insertAdjacentHTML('beforeend', item);
             }
             onlineCount.textContent = count;
-            if (headerOnlineCount) headerOnlineCount.textContent = count;
         }
 
         fileInput.addEventListener('change', (e) => {
@@ -1001,6 +1086,7 @@
                 } else {
                     showChat();
                     loadMessages();
+                    loadTranscriptArchive();
                     subscribeToRealtime();
                 }
             } else {
