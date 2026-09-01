@@ -171,7 +171,7 @@
                     <button id="remove-file-btn" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
                 </div>
 
-                <form id="chat-form" class="flex items-center gap-2">
+                <form id="chat-form" class="flex items-end gap-2">
                     <button type="button" id="emoji-btn" class="p-3 text-gray-400 hover:text-yellow-400 transition" title="Add Emoji">
                         <i class="fa-regular fa-face-smile text-xl"></i>
                     </button>
@@ -181,8 +181,9 @@
                     </label>
                     <input type="file" id="file-input" class="hidden">
 
-                    <input type="text" id="message-input" autocomplete="off" placeholder="Type a message..." 
-                           class="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-white focus:outline-none focus:border-cyan-400 transition">
+                    <!-- Multi-line Paragraph Textarea -->
+                    <textarea id="message-input" rows="1" placeholder="Type a message..." 
+                              class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-2 text-white focus:outline-none focus:border-cyan-400 transition resize-none max-h-36 overflow-y-auto leading-normal"></textarea>
 
                     <button type="submit" class="bg-cyan-500 hover:bg-cyan-400 text-white p-3 rounded-full transition w-12 h-12 flex items-center justify-center shrink-0">
                         <i class="fa-solid fa-paper-plane"></i>
@@ -331,6 +332,7 @@
             btn.textContent = emoji;
             btn.onclick = () => {
                 messageInput.value += emoji;
+                adjustTextareaHeight();
                 messageInput.focus();
             };
             emojiGrid.appendChild(btn);
@@ -356,8 +358,15 @@
             }
         });
 
-        // --- TYPING INDICATOR HANDLERS ---
+        // --- AUTO-EXPANDING TEXTAREA & PARAGRAPH HANDLER ---
+        function adjustTextareaHeight() {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 144) + 'px';
+        }
+
         messageInput.addEventListener('input', () => {
+            adjustTextareaHeight();
+
             if (!roomChannel || !currentUser) return;
             
             roomChannel.send({
@@ -374,6 +383,13 @@
                     payload: { email: currentUser.email.split('@')[0], isTyping: false }
                 });
             }, 2000);
+        });
+
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatForm.requestSubmit();
+            }
         });
 
         function updateTypingUI() {
@@ -393,6 +409,7 @@
             editText.textContent = content;
             editPreview.classList.remove('hidden');
             messageInput.value = content;
+            adjustTextareaHeight();
             messageInput.focus();
         };
 
@@ -400,6 +417,7 @@
             editingMessageId = null;
             editPreview.classList.add('hidden');
             messageInput.value = '';
+            adjustTextareaHeight();
         };
 
         cancelEditBtn.addEventListener('click', () => window.cancelEdit());
@@ -456,11 +474,9 @@
                 reactions[emoji] = userList;
             }
 
-            // 1. Instant local UI update
             msg.reactions = reactions;
             renderOrUpdateMessage(msg);
 
-            // 2. Broadcast immediately to online clients
             if (roomChannel) {
                 roomChannel.send({
                     type: 'broadcast',
@@ -469,7 +485,6 @@
                 });
             }
 
-            // 3. Persist update automatically via RPC function
             await supabase.rpc('toggle_reaction', {
                 p_message_id: msgId,
                 p_emoji: emoji,
@@ -557,7 +572,6 @@
                 styles: { fontSize: 8.5, cellPadding: 3.5, overflow: 'linebreak' }
             });
 
-            // Convert PDF output to a Blob URL for popup viewing
             const pdfBlob = doc.output('blob');
             const pdfUrl = URL.createObjectURL(pdfBlob);
 
@@ -675,7 +689,6 @@
                 }
             }
 
-            // Reactions UI Render
             let reactionsHtml = '';
             const reactions = msg.reactions || {};
             const reactionKeys = Object.keys(reactions);
@@ -697,7 +710,6 @@
                 reactionsHtml += '</div>';
             }
 
-            // Quick Emoji Reaction Preset Bar
             let reactionPresetsButtonsHtml = '';
             REACTION_PRESETS.forEach(emoji => {
                 reactionPresetsButtonsHtml += `
@@ -707,6 +719,7 @@
                 `;
             });
 
+            const formattedContent = (msg.content || '').replace(/\n/g, '<br>');
             const cleanContent = (msg.content || '').replace(/'/g, "\\'").replace(/\n/g, " ");
 
             const messageHtml = `
@@ -721,11 +734,10 @@
                             ${msg.is_edited ? '<span class="text-[10px] italic text-gray-400">(edited)</span>' : ''}
                         </div>
                         ${replyQuoteHtml}
-                        <div class="break-words">${msg.content || ''}</div>
+                        <div class="break-words whitespace-pre-wrap">${formattedContent}</div>
                         ${fileHtml}
                         ${reactionsHtml}
                         
-                        <!-- Actions Popup -->
                         <div class="absolute top-2 ${isMe ? '-left-24' : '-right-24'} opacity-0 group-hover:opacity-100 transition flex items-center gap-1 bg-black/70 p-1 rounded-lg backdrop-blur-sm z-10 border border-white/10">
                             <button onclick="toggleReactionPicker('${msg.id}')" class="text-gray-300 hover:text-yellow-400 p-1 transition" title="React">
                                 <i class="fa-regular fa-face-smile text-xs"></i>
@@ -743,7 +755,6 @@
                             </button>` : ''}
                         </div>
 
-                        <!-- Floating Emoji Reaction Picker Bar -->
                         <div id="reaction-picker-${msg.id}" class="hidden absolute -top-10 ${isMe ? 'right-0' : 'left-0'} z-20 bg-slate-900/90 border border-white/20 rounded-full px-2 py-1 shadow-xl flex items-center gap-1 backdrop-blur-md">
                             ${reactionPresetsButtonsHtml}
                         </div>
@@ -845,7 +856,6 @@
                 updateTypingUI();
             });
 
-            // Live broadcast listener for instant cross-client reactions
             roomChannel.on('broadcast', { event: 'reaction_update' }, ({ payload }) => {
                 const msg = allSessionMessages.find(m => m.id === payload.id);
                 if (msg) {
@@ -919,7 +929,6 @@
             const content = messageInput.value.trim();
             if (!content && !selectedFile && !editingMessageId) return;
 
-            // Handle Message Editing Mode
             if (editingMessageId) {
                 await supabase.from('messages').update({
                     content: content,
@@ -930,8 +939,8 @@
                 return;
             }
 
-            // Handle New Message Creation Mode
             messageInput.value = '';
+            adjustTextareaHeight();
             filePreview.classList.add('hidden');
             const fileToUpload = selectedFile;
             selectedFile = null;
@@ -968,7 +977,6 @@
             await supabase.from('messages').insert([messageData]);
             window.cancelReply();
 
-            // Clear typing state on send
             if (roomChannel) {
                 roomChannel.send({
                     type: 'broadcast',
@@ -978,7 +986,6 @@
             }
         });
 
-        // --- AUTH STATE LISTENER ---
         supabase.auth.onAuthStateChange((event, session) => {
             if (session) {
                 currentUser = session.user;
