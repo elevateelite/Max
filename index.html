@@ -194,7 +194,6 @@
             </footer>
         </div>
 
-        <!-- SIDEBAR PANEL (Always visible on Desktop md:flex) -->
         <aside id="sidebar-panel" class="hidden md:flex w-full md:w-80 bg-black/30 flex-col h-auto md:h-full p-4 space-y-4 overflow-y-auto border-t md:border-t-0 md:border-l border-white/10 shrink-0">
             <div>
                 <div class="flex items-center justify-between mb-2">
@@ -233,7 +232,6 @@
         </aside>
     </div>
 
-    <!-- DEDICATED TRANSCRIPT ARCHIVE MODAL -->
     <div id="archive-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
         <div class="glass w-full max-w-2xl max-h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
             <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
@@ -252,7 +250,6 @@
         </div>
     </div>
 
-    <!-- PDF PREVIEW & SAVE MODAL OVERLAY -->
     <div id="pdf-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
         <div class="glass w-full max-w-4xl h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
             <div class="p-3 sm:p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
@@ -367,6 +364,21 @@
         const openArchiveModalBtn = document.getElementById('open-archive-modal-btn');
         const closeArchiveModalBtn = document.getElementById('close-archive-modal-btn');
         const modalTranscriptList = document.getElementById('modal-transcript-list');
+
+        // Helper function: Smooth scroll stabilization for mobile viewport recalculations
+        function scrollToBottom(force = false) {
+            const threshold = 180;
+            const isNearBottom = (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight) < threshold;
+            
+            if (force || isNearBottom) {
+                requestAnimationFrame(() => {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                });
+                setTimeout(() => {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 80);
+            }
+        }
 
         // Populate Emoji Grid
         EMOJI_LIST.forEach(emoji => {
@@ -522,7 +534,7 @@
             }
 
             msg.reactions = reactions;
-            renderOrUpdateMessage(msg);
+            renderOrUpdateMessage(msg, false);
 
             if (roomChannel) {
                 roomChannel.send({
@@ -644,7 +656,7 @@
                     .upload(storagePath, currentPdfBlob, { contentType: 'application/pdf', upsert: true });
 
                 if (uploadError) {
-                    alert('Storage Upload Error: ' + uploadError.message + '\n\nPlease ensure you executed the updated SQL script.');
+                    alert('Storage Upload Error: ' + uploadError.message);
                     savePdfModalBtn.disabled = false;
                     savePdfModalBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish for All Members';
                     return;
@@ -681,7 +693,6 @@
             };
         }
 
-        // FETCH AND RENDER ARCHIVES
         async function loadTranscriptArchive() {
             const { data, error } = await supabase
                 .from('daily_transcripts')
@@ -789,7 +800,7 @@
             navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
         };
 
-        function renderOrUpdateMessage(msg) {
+        function renderOrUpdateMessage(msg, autoScroll = true) {
             const existingIndex = allSessionMessages.findIndex(m => m.id === msg.id);
             if (existingIndex > -1) {
                 allSessionMessages[existingIndex] = msg;
@@ -830,7 +841,7 @@
             if (msg.file_url) {
                 const isImage = msg.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
                 if (isImage) {
-                    fileHtml = `<img src="${msg.file_url}" class="max-w-xs rounded-lg mt-2 cursor-pointer hover:opacity-80 transition" onclick="window.open('${msg.file_url}')" />`;
+                    fileHtml = `<img src="${msg.file_url}" class="max-w-xs rounded-lg mt-2 cursor-pointer hover:opacity-80 transition" onclick="window.open('${msg.file_url}')" onload="scrollToBottom(${isMe})" />`;
                 } else {
                     fileHtml = `<a href="${msg.file_url}" target="_blank" class="block mt-2 text-cyan-200 underline text-sm"><i class="fa-solid fa-file-arrow-down"></i> Download Attachment</a>`;
                 }
@@ -914,7 +925,9 @@
                 existingElem.outerHTML = messageHtml;
             } else {
                 chatMessages.insertAdjacentHTML('beforeend', messageHtml);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+                if (autoScroll) {
+                    scrollToBottom(isMe);
+                }
             }
         }
 
@@ -975,22 +988,27 @@
             const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(200);
             if (data) {
                 chatMessages.innerHTML = '';
-                allSessionMessages = data;
-                data.forEach(renderOrUpdateMessage);
+                allSessionMessages = [];
+                data.forEach(msg => renderOrUpdateMessage(msg, false));
+                scrollToBottom(true);
             }
         }
 
         function subscribeToRealtime() {
+            if (roomChannel) {
+                supabase.removeChannel(roomChannel);
+            }
+
             roomChannel = supabase.channel('nexus-room', {
                 config: { presence: { key: currentUser.id } }
             });
 
             roomChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                renderOrUpdateMessage(payload.new);
+                renderOrUpdateMessage(payload.new, true);
             });
 
             roomChannel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
-                renderOrUpdateMessage(payload.new);
+                renderOrUpdateMessage(payload.new, false);
             });
 
             roomChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'daily_transcripts' }, () => {
@@ -1011,7 +1029,7 @@
                 const msg = allSessionMessages.find(m => m.id === payload.id);
                 if (msg) {
                     msg.reactions = payload.reactions;
-                    renderOrUpdateMessage(msg);
+                    renderOrUpdateMessage(msg, false);
                 }
             });
 
@@ -1030,6 +1048,24 @@
                 }
             });
         }
+
+        // Screen Unlock & Network Recovery: Auto re-sync messages and reconnect WebSocket
+        async function syncAndReconnect() {
+            if (currentUser && userRole) {
+                await loadMessages();
+                subscribeToRealtime();
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                syncAndReconnect();
+            }
+        });
+
+        window.addEventListener('online', () => {
+            syncAndReconnect();
+        });
 
         function renderPresence(state) {
             presenceList.innerHTML = '';
@@ -1124,8 +1160,13 @@
                 messageData.reply_to_content = replyingToMessage.content;
             }
 
-            await supabase.from('messages').insert([messageData]);
             window.cancelReply();
+
+            // Direct insertion with fallback rendering so sender always sees their own message instantly
+            const { data: insertedMsg } = await supabase.from('messages').insert([messageData]).select().single();
+            if (insertedMsg) {
+                renderOrUpdateMessage(insertedMsg, true);
+            }
 
             if (roomChannel) {
                 roomChannel.send({
