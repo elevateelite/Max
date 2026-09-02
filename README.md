@@ -365,7 +365,6 @@
         const closeArchiveModalBtn = document.getElementById('close-archive-modal-btn');
         const modalTranscriptList = document.getElementById('modal-transcript-list');
 
-        // Helper function: Smooth scroll stabilization for mobile viewport recalculations
         function scrollToBottom(force = false) {
             const threshold = 180;
             const isNearBottom = (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight) < threshold;
@@ -380,7 +379,6 @@
             }
         }
 
-        // Populate Emoji Grid
         EMOJI_LIST.forEach(emoji => {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -987,10 +985,7 @@
         async function loadMessages() {
             const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(200);
             if (data) {
-                chatMessages.innerHTML = '';
-                allSessionMessages = [];
                 data.forEach(msg => renderOrUpdateMessage(msg, false));
-                scrollToBottom(true);
             }
         }
 
@@ -1003,8 +998,16 @@
                 config: { presence: { key: currentUser.id } }
             });
 
+            // Postgres DB insert listener
             roomChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
                 renderOrUpdateMessage(payload.new, true);
+            });
+
+            // Immediate direct WebSocket Broadcast listener (bypasses DB WAL latency)
+            roomChannel.on('broadcast', { event: 'new_message' }, ({ payload }) => {
+                if (payload) {
+                    renderOrUpdateMessage(payload, true);
+                }
             });
 
             roomChannel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
@@ -1040,16 +1043,25 @@
 
             roomChannel.subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
+                    loadMessages();
                     await roomChannel.track({
                         user_id: currentUser.id,
                         email: currentUser.email,
                         role: userRole
                     });
+                } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                    setTimeout(() => subscribeToRealtime(), 2000);
                 }
             });
         }
 
-        // Screen Unlock & Network Recovery: Auto re-sync messages and reconnect WebSocket
+        // Periodic Background Sync every 10s to guarantee all connected participants stay 100% updated
+        setInterval(() => {
+            if (currentUser && userRole) {
+                loadMessages();
+            }
+        }, 10000);
+
         async function syncAndReconnect() {
             if (currentUser && userRole) {
                 await loadMessages();
@@ -1116,10 +1128,18 @@
             if (!content && !selectedFile && !editingMessageId) return;
 
             if (editingMessageId) {
-                await supabase.from('messages').update({
+                const { data: updatedMsg } = await supabase.from('messages').update({
                     content: content,
                     is_edited: true
-                }).eq('id', editingMessageId);
+                }).eq('id', editingMessageId).select().single();
+
+                if (updatedMsg && roomChannel) {
+                    roomChannel.send({
+                        type: 'broadcast',
+                        event: 'new_message',
+                        payload: updatedMsg
+                    });
+                }
 
                 window.cancelEdit();
                 return;
@@ -1162,10 +1182,19 @@
 
             window.cancelReply();
 
-            // Direct insertion with fallback rendering so sender always sees their own message instantly
             const { data: insertedMsg } = await supabase.from('messages').insert([messageData]).select().single();
+            
             if (insertedMsg) {
                 renderOrUpdateMessage(insertedMsg, true);
+                
+                // Broadcast newly posted message directly over WebSocket
+                if (roomChannel) {
+                    roomChannel.send({
+                        type: 'broadcast',
+                        event: 'new_message',
+                        payload: insertedMsg
+                    });
+                }
             }
 
             if (roomChannel) {
