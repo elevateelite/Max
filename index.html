@@ -51,21 +51,6 @@
             0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
             50% { box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.8); }
         }
-
-        /* Marquee Animation for Broadcast Banner */
-        @keyframes marquee {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
-        }
-        .animate-marquee {
-            display: inline-block;
-            white-space: nowrap;
-            animation: marquee 22s linear infinite;
-        }
-        .animate-marquee:hover {
-            animation-play-state: paused;
-        }
-
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
@@ -113,18 +98,6 @@
     <div id="chat-screen" class="hidden glass rounded-2xl w-full max-w-6xl h-[98dvh] md:h-[92vh] flex flex-col md:flex-row shadow-2xl overflow-hidden relative">
         <div class="flex-1 flex flex-col h-full border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden">
 
-            <!-- Top Scrolling Broadcast Banner -->
-            <div id="broadcast-banner" class="bg-gradient-to-r from-amber-600/90 via-orange-600/90 to-amber-600/90 text-white py-2 px-4 border-b border-amber-400/30 overflow-hidden relative z-20 backdrop-blur-md shadow-md flex items-center">
-                <div class="bg-amber-950/80 text-amber-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-3 shrink-0 flex items-center gap-1 border border-amber-400/40">
-                    <i class="fa-solid fa-bullhorn text-amber-400 animate-pulse"></i> Announcement
-                </div>
-                <div class="overflow-hidden w-full relative">
-                    <div id="broadcast-text" class="animate-marquee font-medium text-xs text-amber-100">
-                        📢 OFFICIAL APOLOGY: Sincere apologies to everyone in the group chat for any recent misunderstandings or disruptions. Thank you all for your ongoing patience and support!
-                    </div>
-                </div>
-            </div>
-
             <div id="pdf-banner" class="hidden bg-amber-500/20 border-b border-amber-500/30 p-3 text-xs flex flex-wrap items-center justify-between gap-2 backdrop-blur-md z-10">
                 <div class="flex items-center gap-2 text-amber-200">
                     <i class="fa-solid fa-clock text-amber-400 text-sm"></i>
@@ -144,11 +117,6 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button id="enable-notif-btn" class="bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 border border-purple-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="Enable System Push Notifications">
-                        <i class="fa-solid fa-bell"></i>
-                        <span class="hidden sm:inline">Notifications</span>
-                    </button>
-
                     <button id="manual-export-btn" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="Generate and archive today's discussion PDF">
                         <i class="fa-solid fa-file-pdf"></i>
                         <span class="hidden sm:inline">Export PDF</span>
@@ -387,7 +355,6 @@
         const pdfBanner = document.getElementById('pdf-banner');
         const downloadPdfBtn = document.getElementById('download-pdf-btn');
         const manualExportBtn = document.getElementById('manual-export-btn');
-        const enableNotifBtn = document.getElementById('enable-notif-btn');
         const replyPreview = document.getElementById('reply-preview');
         const replyUser = document.getElementById('reply-user');
         const replyText = document.getElementById('reply-text');
@@ -403,34 +370,6 @@
         // Floating Scroll Button & Unread Counter Elements
         const scrollBottomBtn = document.getElementById('scroll-bottom-btn');
         const unreadBadge = document.getElementById('unread-badge');
-
-        // Web Push Notification Helper
-        async function requestNotificationPermission() {
-            if (!('Notification' in window)) {
-                alert('This browser does not support desktop/lock-screen notifications.');
-                return;
-            }
-
-            const permission = await Notification.requestPermission();
-            if (permission === 'granted') {
-                new Notification('Nexus Marketplace Chat', {
-                    body: 'System notifications enabled! You will be notified when offline.',
-                    icon: 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png'
-                });
-            }
-        }
-
-        function triggerSystemNotification(title, body) {
-            if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
-                new Notification(title, {
-                    body: body,
-                    icon: 'https://cdn-icons-png.flaticon.com/512/1041/1041916.png',
-                    tag: 'nexus-chat-notif'
-                });
-            }
-        }
-
-        enableNotifBtn.addEventListener('click', requestNotificationPermission);
 
         function scrollToBottom(force = false) {
             const doScroll = () => {
@@ -920,11 +859,6 @@
             resetChatInactivityTimer();
 
             scrollToBottom(true);
-
-            // Auto-request System Notification Permission
-            if ('Notification' in window && Notification.permission === 'default') {
-                setTimeout(() => requestNotificationPermission(), 2000);
-            }
         }
 
         async function loadMessages() {
@@ -969,11 +903,6 @@
             chatMessages.insertAdjacentHTML('beforeend', buildMessageHTML(msg));
 
             if (isNew) {
-                const sender = msg.user_email ? msg.user_email.split('@')[0] : 'Someone';
-                if (currentUser && msg.user_email !== currentUser.email) {
-                    triggerSystemNotification(`New Message from ${sender}`, msg.content || 'Sent an attachment');
-                }
-
                 const distanceFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight;
                 
                 if (distanceFromBottom > 150) {
