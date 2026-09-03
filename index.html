@@ -612,7 +612,7 @@
         downloadPdfBtn.addEventListener('click', () => generatePDFTranscript());
         manualExportBtn.addEventListener('click', () => generatePDFTranscript());
 
-        // PDF Transcript Generation
+        // PDF Transcript Generation with autoTable styling and page footer support
         function generatePDFTranscript() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -628,9 +628,10 @@
                 return;
             }
 
-            doc.setFillColor(15, 23, 42); 
+            // Header Banner
+            doc.setFillColor(15, 32, 39); 
             doc.rect(0, 0, 210, 32, 'F');
-            doc.setTextColor(56, 189, 248);
+            doc.setTextColor(34, 211, 238);
             doc.setFontSize(18);
             doc.setFont('helvetica', 'bold');
             doc.text('NEXUS MARKETPLACE', 14, 15);
@@ -638,8 +639,9 @@
             doc.setTextColor(203, 213, 225);
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.text(`Official Session Chat Transcript & Daily Export`, 14, 23);
+            doc.text(`Official Daily Chat Transcript & Room Log`, 14, 23);
 
+            // Context Card
             doc.setDrawColor(226, 232, 240);
             doc.setFillColor(248, 250, 252);
             doc.roundedRect(14, 36, 182, 22, 2, 2, 'FD');
@@ -649,7 +651,7 @@
             doc.setFont('helvetica', 'bold');
             doc.text(`Export Context:`, 18, 43);
             doc.setFont('helvetica', 'normal');
-            doc.text(`Daily Message Room Log`, 45, 43);
+            doc.text(`Nexus Trading Room`, 45, 43);
 
             doc.setFont('helvetica', 'bold');
             doc.text(`Today's Date:`, 18, 50);
@@ -666,25 +668,45 @@
             doc.setFont('helvetica', 'normal');
             doc.text(`${todaysMessages.length} Messages`, 135, 50);
 
-            const tableData = todaysMessages.map(msg => [
-                msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
-                msg.user_email ? msg.user_email.split('@')[0] : 'Unknown',
-                (msg.user_role || 'Member').toUpperCase(),
-                msg.content || (msg.file_url ? '[File Attachment]' : '')
-            ]);
+            // Table Data Mapping
+            const tableData = todaysMessages.map(msg => {
+                let contentBody = msg.content || '';
+                if (msg.reply_to_content) {
+                    const replyUser = msg.reply_to_email ? msg.reply_to_email.split('@')[0] : 'User';
+                    contentBody = `[Replying to ${replyUser}: "${msg.reply_to_content}"]\n${contentBody}`;
+                }
+                if (msg.file_url) {
+                    contentBody += contentBody ? `\n[Attachment: ${msg.file_url}]` : `[Attachment: ${msg.file_url}]`;
+                }
 
+                return [
+                    msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
+                    msg.user_email ? msg.user_email.split('@')[0] : 'Unknown',
+                    (msg.user_role || 'Member').toUpperCase(),
+                    contentBody
+                ];
+            });
+
+            // autoTable Render
             doc.autoTable({
                 startY: 64,
                 head: [['Time', 'User', 'Role', 'Message Content']],
                 body: tableData,
                 theme: 'striped',
                 headStyles: { fillColor: [15, 32, 39], textColor: [255, 255, 255], fontStyle: 'bold' },
-                styles: { fontSize: 8, cellPadding: 3 },
+                styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak' },
                 columnStyles: {
-                    0: { cellWidth: 22 },
-                    1: { cellWidth: 35 },
-                    2: { cellWidth: 25 },
+                    0: { cellWidth: 20 },
+                    1: { cellWidth: 32 },
+                    2: { cellWidth: 22 },
                     3: { cellWidth: 'auto' }
+                },
+                didDrawPage: (data) => {
+                    const totalPages = doc.internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.setTextColor(148, 163, 184);
+                    doc.text(`Page ${data.pageNumber} of ${totalPages}`, 196, 287, { align: 'right' });
+                    doc.text(`Nexus Marketplace Transcript • Room Log`, 14, 287);
                 }
             });
 
@@ -836,7 +858,6 @@
         async function setupChatRoom() {
             showScreen('chat');
 
-            // Give layout engine 50ms to calculate flexbox height after un-hiding UI
             await new Promise(resolve => setTimeout(resolve, 50));
 
             userRoleBadge.textContent = userRole;
@@ -894,7 +915,6 @@
             if (isNew) {
                 const distanceFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight;
                 
-                // If user is scrolled up > 150px, increment unread badge instead of auto-scrolling
                 if (distanceFromBottom > 150) {
                     unreadCount++;
                     if (unreadBadge) {
@@ -917,7 +937,6 @@
             const roleColor = role === 'Seller' ? 'text-cyan-400 border-cyan-400/30 bg-cyan-950/40' : 'text-emerald-400 border-emerald-400/30 bg-emerald-950/40';
             const timeStr = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
-            // Reactions HTML
             let reactionsHTML = '';
             if (msg.reactions && Object.keys(msg.reactions).length > 0) {
                 reactionsHTML = '<div class="flex flex-wrap gap-1 mt-2">';
