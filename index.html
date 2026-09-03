@@ -58,6 +58,7 @@
 </head>
 <body class="flex items-center justify-center p-2 sm:p-4 relative">
 
+    <!-- Login Screen -->
     <div id="login-screen" class="glass rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
         <div class="mb-8">
             <i class="fa-solid fa-store text-5xl text-cyan-400 mb-4"></i>
@@ -69,6 +70,7 @@
         </button>
     </div>
 
+    <!-- Role Selection Screen -->
     <div id="role-screen" class="hidden glass rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
         <h2 class="text-2xl font-bold mb-2">Select Account Type</h2>
         <p class="text-gray-300 text-sm mb-6">Choose how you want to participate in this group room:</p>
@@ -76,7 +78,7 @@
         <div class="space-y-4">
             <button id="select-seller-btn" class="w-full p-4 border border-cyan-400/40 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/60 transition flex items-center justify-between text-left group">
                 <div>
-                    <h3 class="font-bold text-cyan-300 text-lg">Seller (Seller)</h3>
+                    <h3 class="font-bold text-cyan-300 text-lg">Seller</h3>
                     <p class="text-xs text-gray-300">Respond to buyer inquiries & measure speed</p>
                 </div>
                 <i class="fa-solid fa-user-tag text-2xl text-cyan-400 group-hover:scale-110 transition"></i>
@@ -84,7 +86,7 @@
 
             <button id="select-buyer-btn" class="w-full p-4 border border-emerald-400/40 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 transition flex items-center justify-between text-left group">
                 <div>
-                    <h3 class="font-bold text-emerald-300 text-lg">Buyer (Buyer)</h3>
+                    <h3 class="font-bold text-emerald-300 text-lg">Buyer</h3>
                     <p class="text-xs text-gray-300">Post requests & get instant seller replies</p>
                 </div>
                 <i class="fa-solid fa-cart-shopping text-2xl text-emerald-400 group-hover:scale-110 transition"></i>
@@ -92,6 +94,7 @@
         </div>
     </div>
 
+    <!-- Chat Screen -->
     <div id="chat-screen" class="hidden glass rounded-2xl w-full max-w-6xl h-[98dvh] md:h-[92vh] flex flex-col md:flex-row shadow-2xl overflow-hidden relative">
         <div class="flex-1 flex flex-col h-full border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden">
 
@@ -171,7 +174,7 @@
 
                 <div id="file-preview" class="hidden text-sm text-cyan-300 mb-2 flex justify-between items-center bg-cyan-900/30 p-2 rounded">
                     <span id="file-name"></span>
-                    <button id="remove-file-btn" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
+                    <button id="remove-file-btn" type="button" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
                 </div>
 
                 <form id="chat-form" class="flex items-end gap-2">
@@ -232,6 +235,7 @@
         </aside>
     </div>
 
+    <!-- Archive Modal -->
     <div id="archive-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
         <div class="glass w-full max-w-2xl max-h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
             <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
@@ -250,6 +254,7 @@
         </div>
     </div>
 
+    <!-- PDF Modal -->
     <div id="pdf-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
         <div class="glass w-full max-w-4xl h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
             <div class="p-3 sm:p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
@@ -259,7 +264,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <button id="save-pdf-modal-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm transition flex items-center gap-1.5 shadow">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish for All Members
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish
                     </button>
                     <button id="close-pdf-modal-btn" class="bg-white/10 hover:bg-white/20 text-white font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm transition">
                         Close
@@ -270,6 +275,7 @@
         </div>
     </div>
 
+    <!-- Application Script -->
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
@@ -289,7 +295,6 @@
         let currentUser = null;
         let userRole = localStorage.getItem('nexus_user_role') || null;
         let selectedFile = null;
-        let lastBuyerTimestamp = null;
         let allSessionMessages = []; 
         let replyingToMessage = null;
         let editingMessageId = null;
@@ -302,7 +307,6 @@
 
         const CHAT_INACTIVITY_MS = 5 * 60 * 1000;
         let chatInactivityTimer = null;
-        const sellerMetrics = {}; 
         const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
         const EMOJI_LIST = [
@@ -366,19 +370,18 @@
         const modalTranscriptList = document.getElementById('modal-transcript-list');
 
         function scrollToBottom(force = false) {
-            const threshold = 180;
-            const isNearBottom = (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight) < threshold;
-            
-            if (force || isNearBottom) {
-                requestAnimationFrame(() => {
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                });
-                setTimeout(() => {
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                }, 80);
-            }
+            const doScroll = () => {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            };
+            doScroll();
+            requestAnimationFrame(() => {
+                doScroll();
+                setTimeout(doScroll, 100);
+                setTimeout(doScroll, 350);
+            });
         }
 
+        // Render Emoji Grid
         EMOJI_LIST.forEach(emoji => {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -416,13 +419,19 @@
             archiveModal.classList.add('hidden');
         });
 
+        closePdfModalBtn.addEventListener('click', () => {
+            pdfModal.classList.add('hidden');
+        });
+
         function adjustTextareaHeight() {
             messageInput.style.height = 'auto';
             messageInput.style.height = Math.min(messageInput.scrollHeight, 144) + 'px';
         }
 
+        // Typing logic
         messageInput.addEventListener('input', () => {
             adjustTextareaHeight();
+            resetChatInactivityTimer();
 
             if (!roomChannel || !currentUser) return;
             
@@ -461,6 +470,7 @@
             }
         }
 
+        // Edit and Reply UI logic
         window.startEditMessage = function(id, content) {
             window.cancelReply();
             editingMessageId = id;
@@ -506,47 +516,43 @@
 
         cancelReplyBtn.addEventListener('click', () => window.cancelReply());
 
+        // File Selection logic
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > MAX_FILE_SIZE) {
+                alert('File size exceeds the 50MB limit.');
+                fileInput.value = '';
+                return;
+            }
+            selectedFile = file;
+            fileName.textContent = file.name;
+            filePreview.classList.remove('hidden');
+        });
+
+        removeFileBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            filePreview.classList.add('hidden');
+        });
+
+        // Reaction handling
         window.toggleReactionPicker = function(msgId) {
             const pickerEl = document.getElementById(`reaction-picker-${msgId}`);
             if (pickerEl) pickerEl.classList.toggle('hidden');
         };
 
         window.toggleReaction = async function(msgId, emoji) {
-            const msg = allSessionMessages.find(m => m.id === msgId);
-            if (!msg || !currentUser) return;
-
-            let reactions = JSON.parse(JSON.stringify(msg.reactions || {}));
-            let userList = reactions[emoji] || [];
-            const userEmail = currentUser.email.split('@')[0];
-
-            if (userList.includes(userEmail)) {
-                userList = userList.filter(e => e !== userEmail);
-            } else {
-                userList.push(userEmail);
-            }
-
-            if (userList.length === 0) {
-                delete reactions[emoji];
-            } else {
-                reactions[emoji] = userList;
-            }
-
-            msg.reactions = reactions;
-            renderOrUpdateMessage(msg, false);
-
-            if (roomChannel) {
-                roomChannel.send({
-                    type: 'broadcast',
-                    event: 'reaction_update',
-                    payload: { id: msgId, reactions }
+            if (!currentUser) return;
+            try {
+                await supabase.rpc('toggle_reaction', {
+                    p_message_id: msgId,
+                    p_emoji: emoji,
+                    p_user_email: currentUser.email.split('@')[0]
                 });
+            } catch (e) {
+                console.error('Reaction update error:', e);
             }
-
-            await supabase.rpc('toggle_reaction', {
-                p_message_id: msgId,
-                p_emoji: emoji,
-                p_user_email: userEmail
-            });
         };
 
         function resetChatInactivityTimer() {
@@ -560,6 +566,7 @@
         downloadPdfBtn.addEventListener('click', () => generatePDFTranscript());
         manualExportBtn.addEventListener('click', () => generatePDFTranscript());
 
+        // PDF Transcript Generation
         function generatePDFTranscript() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -613,143 +620,155 @@
             doc.setFont('helvetica', 'normal');
             doc.text(`${todaysMessages.length} Messages`, 135, 50);
 
-            const tableData = todaysMessages.map(msg => {
-                const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                const sender = `${msg.user_email.split('@')[0]} (${msg.user_role || 'Buyer'})`;
-                let content = msg.content || '';
-                if (msg.is_edited) content += ' (edited)';
-                if (msg.reply_to_email) {
-                    content = `[Replying to ${msg.reply_to_email.split('@')[0]}: "${msg.reply_to_content}"]\n` + content;
-                }
-                if (msg.file_url) content += `\n[Attachment: ${msg.file_url}]`;
-                return [time, sender, content];
-            });
+            const tableData = todaysMessages.map(msg => [
+                msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
+                msg.user_email ? msg.user_email.split('@')[0] : 'Unknown',
+                (msg.user_role || 'Member').toUpperCase(),
+                msg.content || (msg.file_url ? '[File Attachment]' : '')
+            ]);
 
             doc.autoTable({
                 startY: 64,
-                head: [['Time', 'Participant & Role', 'Message Content']],
-                headStyles: { fillColor: [2, 132, 199], textColor: [255, 255, 255], fontStyle: 'bold' },
-                alternateRowStyles: { fillColor: [241, 245, 249] },
-                columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 48 }, 2: { cellWidth: 108 } },
-                styles: { fontSize: 8.5, cellPadding: 3.5, overflow: 'linebreak' }
+                head: [['Time', 'User', 'Role', 'Message Content']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [15, 32, 39], textColor: [255, 255, 255], fontStyle: 'bold' },
+                styles: { fontSize: 8, cellPadding: 3 },
+                columnStyles: {
+                    0: { cellWidth: 22 },
+                    1: { cellWidth: 35 },
+                    2: { cellWidth: 25 },
+                    3: { cellWidth: 'auto' }
+                }
             });
 
             currentDocObject = doc;
             currentPdfBlob = doc.output('blob');
-            const pdfUrl = URL.createObjectURL(currentPdfBlob);
-
-            pdfFrame.src = pdfUrl;
+            const blobUrl = URL.createObjectURL(currentPdfBlob);
+            pdfFrame.src = blobUrl;
             pdfModal.classList.remove('hidden');
+        }
 
-            savePdfModalBtn.onclick = async () => {
-                const todayStr = new Date().toISOString().split('T')[0];
-                const storagePath = `transcripts/transcript_${todayStr}_${Date.now()}.pdf`;
+        // Save PDF Archive to Supabase
+        savePdfModalBtn.addEventListener('click', async () => {
+            if (!currentPdfBlob) return;
+            const todayStr = new Date().toISOString().split('T')[0];
+            const fileName = `transcript-${todayStr}-${Date.now()}.pdf`;
 
-                savePdfModalBtn.disabled = true;
-                savePdfModalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+            savePdfModalBtn.disabled = true;
+            savePdfModalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
 
-                const { error: uploadError } = await supabase.storage
-                    .from('chat-files')
-                    .upload(storagePath, currentPdfBlob, { contentType: 'application/pdf', upsert: true });
+            try {
+                const { error: uploadErr } = await supabase.storage.from('chat-transcripts').upload(fileName, currentPdfBlob, {
+                    contentType: 'application/pdf',
+                    upsert: true
+                });
 
-                if (uploadError) {
-                    alert('Storage Upload Error: ' + uploadError.message);
-                    savePdfModalBtn.disabled = false;
-                    savePdfModalBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish for All Members';
+                if (uploadErr) throw uploadErr;
+
+                const { data: publicUrlData } = supabase.storage.from('chat-transcripts').getPublicUrl(fileName);
+
+                const { error: dbErr } = await supabase.from('daily_transcripts').insert([{
+                    transcript_date: todayStr,
+                    file_url: publicUrlData.publicUrl,
+                    created_by: currentUser?.email || 'System'
+                }]);
+
+                if (dbErr) throw dbErr;
+
+                alert('Transcript successfully saved & published to room archives!');
+                pdfModal.classList.add('hidden');
+                loadTranscriptArchive();
+            } catch (err) {
+                console.error(err);
+                alert('Downloading locally as backup.');
+                if (currentDocObject) currentDocObject.save(`Nexus-Transcript-${todayStr}.pdf`);
+            } finally {
+                savePdfModalBtn.disabled = false;
+                savePdfModalBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish';
+            }
+        });
+
+        // Load Archived Transcripts
+        async function loadTranscriptArchive() {
+            try {
+                const { data, error } = await supabase.from('daily_transcripts').select('*').order('created_at', { ascending: false });
+                
+                if (error || !data || data.length === 0) {
+                    const emptyState = `<div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts found</div>`;
+                    transcriptArchiveList.innerHTML = emptyState;
+                    modalTranscriptList.innerHTML = emptyState;
+                    transcriptCount.textContent = '0';
                     return;
                 }
 
-                const { data: urlData } = supabase.storage.from('chat-files').getPublicUrl(storagePath);
-
-                const { error: dbError } = await supabase.from('daily_transcripts').insert([{
-                    transcript_date: todayStr,
-                    file_url: urlData.publicUrl,
-                    created_by: currentUser.email
-                }]);
-
-                if (dbError) {
-                    alert('Database insert error: ' + dbError.message);
-                } else {
-                    doc.save(`Nexus_Chat_Transcript_${todayStr}.pdf`);
-                    alert('Daily transcript successfully published to the Archive!');
-                }
-
-                savePdfModalBtn.disabled = false;
-                savePdfModalBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish for All Members';
-                pdfModal.classList.add('hidden');
-                pdfFrame.src = '';
-                URL.revokeObjectURL(pdfUrl);
-
-                loadTranscriptArchive();
-            };
-
-            closePdfModalBtn.onclick = () => {
-                pdfModal.classList.add('hidden');
-                pdfFrame.src = '';
-                URL.revokeObjectURL(pdfUrl);
-            };
-        }
-
-        async function loadTranscriptArchive() {
-            const { data, error } = await supabase
-                .from('daily_transcripts')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.warn('daily_transcripts query warning:', error.message);
-                return;
-            }
-
-            if (data && data.length > 0) {
-                transcriptArchiveList.innerHTML = '';
-                modalTranscriptList.innerHTML = '';
-                transcriptCount.textContent = data.length;
+                transcriptCount.textContent = data.length.toString();
+                let html = '';
 
                 data.forEach(item => {
-                    const timeStr = new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                    
-                    const sidebarHtml = `
-                        <div class="p-2 rounded-lg bg-white/5 border border-white/10 text-xs flex items-center justify-between gap-2 hover:bg-white/10 transition">
-                            <div class="truncate">
-                                <div class="font-bold text-amber-300 truncate">${item.transcript_date}</div>
-                                <div class="text-[10px] text-gray-400 truncate">By ${item.created_by.split('@')[0]} at ${timeStr}</div>
+                    html += `
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-2.5 flex items-center justify-between text-xs hover:bg-white/10 transition">
+                            <div class="truncate pr-2">
+                                <p class="font-bold text-amber-300 truncate">Transcript - ${item.transcript_date}</p>
+                                <p class="text-[10px] text-gray-400">By: ${item.created_by.split('@')[0]}</p>
                             </div>
-                            <a href="${item.file_url}" target="_blank" download="Nexus_Transcript_${item.transcript_date}.pdf" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded text-xs font-bold shrink-0 transition flex items-center gap-1">
-                                <i class="fa-solid fa-download"></i> Get
+                            <a href="${item.file_url}" target="_blank" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded transition flex items-center gap-1 shrink-0">
+                                <i class="fa-solid fa-download"></i> View
                             </a>
                         </div>
                     `;
-
-                    const modalHtml = `
-                        <div class="p-3 rounded-xl bg-white/5 border border-white/10 text-sm flex items-center justify-between gap-3 hover:bg-white/10 transition">
-                            <div>
-                                <div class="font-bold text-amber-300 text-base">${item.transcript_date}</div>
-                                <div class="text-xs text-gray-300 mt-0.5">Archived by <strong>${item.created_by.split('@')[0]}</strong> at ${timeStr}</div>
-                            </div>
-                            <a href="${item.file_url}" target="_blank" download="Nexus_Transcript_${item.transcript_date}.pdf" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-4 py-2 rounded-lg text-xs transition flex items-center gap-2 shadow">
-                                <i class="fa-solid fa-file-arrow-down text-sm"></i> Download PDF
-                            </a>
-                        </div>
-                    `;
-
-                    transcriptArchiveList.insertAdjacentHTML('beforeend', sidebarHtml);
-                    modalTranscriptList.insertAdjacentHTML('beforeend', modalHtml);
                 });
-            } else {
-                transcriptArchiveList.innerHTML = '<div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts yet</div>';
-                modalTranscriptList.innerHTML = '<div class="text-xs text-gray-400 italic text-center py-4">No archived transcripts found. Click "Export PDF" above to publish today\'s log.</div>';
-                transcriptCount.textContent = '0';
+
+                transcriptArchiveList.innerHTML = html;
+                modalTranscriptList.innerHTML = html;
+            } catch (err) {
+                console.log('Archive table check:', err.message);
             }
+        }
+
+        // Auth and App Initialization
+        async function init() {
+            const { data: { session } } = await supabase.auth.getSession();
+            currentUser = session?.user || null;
+
+            if (currentUser) {
+                userDisplay.textContent = currentUser.email;
+                if (!userRole) {
+                    showScreen('role');
+                } else {
+                    setupChatRoom();
+                }
+            } else {
+                showScreen('login');
+            }
+
+            supabase.auth.onAuthStateChange((event, session) => {
+                currentUser = session?.user || null;
+                if (currentUser) {
+                    userDisplay.textContent = currentUser.email;
+                    if (!userRole) showScreen('role');
+                    else setupChatRoom();
+                } else {
+                    showScreen('login');
+                }
+            });
+        }
+
+        function showScreen(screen) {
+            loginScreen.classList.add('hidden');
+            roleScreen.classList.add('hidden');
+            chatScreen.classList.add('hidden');
+
+            if (screen === 'login') loginScreen.classList.remove('hidden');
+            if (screen === 'role') roleScreen.classList.remove('hidden');
+            if (screen === 'chat') chatScreen.classList.remove('hidden');
         }
 
         googleLoginBtn.addEventListener('click', async () => {
-            const redirectUrl = window.location.origin + window.location.pathname;
-            const { error } = await supabase.auth.signInWithOAuth({ 
+            await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: redirectUrl }
+                options: { redirectTo: window.location.href }
             });
-            if (error) alert('Authentication failed: ' + error.message);
         });
 
         selectSellerBtn.addEventListener('click', () => setRole('Seller'));
@@ -758,478 +777,333 @@
         function setRole(role) {
             userRole = role;
             localStorage.setItem('nexus_user_role', role);
-            showChat();
-            loadMessages();
-            loadTranscriptArchive();
-            subscribeToRealtime();
+            setupChatRoom();
         }
 
         logoutBtn.addEventListener('click', async () => {
             localStorage.removeItem('nexus_user_role');
+            userRole = null;
             await supabase.auth.signOut();
             window.location.reload();
         });
 
-        function showLogin() {
-            loginScreen.classList.remove('hidden');
-            roleScreen.classList.add('hidden');
-            chatScreen.classList.add('hidden');
-        }
-
-        function showRoleSelection() {
-            loginScreen.classList.add('hidden');
-            roleScreen.classList.remove('hidden');
-            chatScreen.classList.add('hidden');
-        }
-
-        function showChat() {
-            loginScreen.classList.add('hidden');
-            roleScreen.classList.add('hidden');
-            chatScreen.classList.remove('hidden');
-            userDisplay.textContent = currentUser.email;
-            userRoleBadge.textContent = `(${userRole})`;
-            userRoleBadge.className = userRole === 'Seller' 
-                ? 'text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                : 'text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
-        }
-
-        window.copyText = function(text) {
-            navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
-        };
-
-        function renderOrUpdateMessage(msg, autoScroll = true) {
-            const existingIndex = allSessionMessages.findIndex(m => m.id === msg.id);
-            if (existingIndex > -1) {
-                allSessionMessages[existingIndex] = msg;
-            } else {
-                allSessionMessages.push(msg);
-            }
+        async function setupChatRoom() {
+            showScreen('chat');
+            userRoleBadge.textContent = userRole;
+            userRoleBadge.className = `text-xs font-semibold px-2 py-0.5 rounded-full ${userRole === 'Seller' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-emerald-500/20 text-emerald-300'}`;
+            
+            await loadMessages();
+            setupRealtimeChannel();
+            loadTranscriptArchive();
             resetChatInactivityTimer();
 
-            // Client-side local timezone formatting as HH:mm (00:00)
-            const localFormattedTime = msg.created_at 
-                ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) 
-                : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            setTimeout(() => scrollToBottom(true), 300);
+        }
 
-            const isMe = currentUser && msg.user_id === currentUser.id;
-            const alignClass = isMe ? 'flex-row-reverse' : 'flex-row';
-            const bgClass = isMe ? 'bg-cyan-600/80 text-white' : 'bg-white/10 text-gray-100';
-            const role = msg.user_role || 'Buyer';
-            const roleColor = role === 'Seller' ? 'text-cyan-400' : 'text-emerald-400';
+        async function loadMessages() {
+            chatMessages.innerHTML = `
+                <div class="text-center text-gray-400 py-8">
+                    <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
+                    <p class="mt-2 text-xs">Loading room history...</p>
+                </div>`;
 
-            const msgTime = new Date(msg.created_at).getTime();
-            if (role === 'Buyer') {
-                lastBuyerTimestamp = msgTime;
-            } else if (role === 'Seller' && lastBuyerTimestamp && msgTime > lastBuyerTimestamp) {
-                const diffSeconds = Math.round((msgTime - lastBuyerTimestamp) / 1000);
-                recordSellerSpeed(msg.user_id, msg.user_email, diffSeconds);
-                lastBuyerTimestamp = null;
+            // Fetch latest 200 messages descending
+            const { data, error } = await supabase
+                .from('messages')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(200);
+
+            if (error) {
+                chatMessages.innerHTML = `<p class="text-center text-red-400 text-xs py-4">Error loading history: ${error.message}</p>`;
+                return;
             }
 
-            let replyQuoteHtml = '';
-            if (msg.reply_to_email) {
-                replyQuoteHtml = `
-                    <div onclick="scrollToMessage('${msg.reply_to_id}')" class="mb-2 p-2 rounded bg-black/30 border-l-2 border-cyan-400 text-xs cursor-pointer hover:bg-black/50 transition group/reply">
-                        <div class="font-semibold text-cyan-300 flex items-center justify-between gap-1">
-                            <span><i class="fa-solid fa-reply text-[10px] mr-1"></i> ${msg.reply_to_email.split('@')[0]}</span>
-                            <span class="text-[10px] text-gray-400 opacity-0 group-hover/reply:opacity-100 transition">Jump to original</span>
-                        </div>
-                        <div class="text-gray-300 truncate mt-0.5">${msg.reply_to_content || '(Attachment)'}</div>
-                    </div>
-                `;
+            chatMessages.innerHTML = '';
+            allSessionMessages = [];
+
+            if (data && data.length > 0) {
+                // Reverse to display oldest of the batch at top, newest at bottom
+                const sortedData = data.reverse();
+
+                sortedData.forEach(msg => renderOrUpdateMessage(msg, false));
+                calculateSellerSpeeds();
+
+                scrollToBottom(true);
+            } else {
+                chatMessages.innerHTML = `<div class="text-center text-gray-400 italic text-xs py-10">No messages in room yet. Start the conversation!</div>`;
+            }
+        }
+
+        function renderOrUpdateMessage(msg, isNew = false) {
+            const emptyPlaceholder = chatMessages.querySelector('.italic');
+            if (emptyPlaceholder) emptyPlaceholder.remove();
+
+            const existingIndex = allSessionMessages.findIndex(m => m.id === msg.id);
+            if (existingIndex !== -1) {
+                allSessionMessages[existingIndex] = msg;
+                const existingElem = document.getElementById(`msg-${msg.id}`);
+                if (existingElem) existingElem.outerHTML = buildMessageHTML(msg);
+                return;
             }
 
-            let fileHtml = '';
-            if (msg.file_url) {
-                const isImage = msg.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-                if (isImage) {
-                    fileHtml = `<img src="${msg.file_url}" class="max-w-xs rounded-lg mt-2 cursor-pointer hover:opacity-80 transition" onclick="window.open('${msg.file_url}')" onload="scrollToBottom(${isMe})" />`;
-                } else {
-                    fileHtml = `<a href="${msg.file_url}" target="_blank" class="block mt-2 text-cyan-200 underline text-sm"><i class="fa-solid fa-file-arrow-down"></i> Download Attachment</a>`;
+            allSessionMessages.push(msg);
+            chatMessages.insertAdjacentHTML('beforeend', buildMessageHTML(msg));
+            if (isNew) scrollToBottom(true);
+        }
+
+        function buildMessageHTML(msg) {
+            const isSelf = currentUser && currentUser.email === msg.user_email;
+            const senderName = msg.user_email ? msg.user_email.split('@')[0] : 'User';
+            const role = msg.user_role || 'Member';
+            const roleColor = role === 'Seller' ? 'text-cyan-400 border-cyan-400/30 bg-cyan-950/40' : 'text-emerald-400 border-emerald-400/30 bg-emerald-950/40';
+            const timeStr = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+            // Reactions HTML
+            let reactionsHTML = '';
+            if (msg.reactions && Object.keys(msg.reactions).length > 0) {
+                reactionsHTML = '<div class="flex flex-wrap gap-1 mt-2">';
+                for (const [emoji, users] of Object.entries(msg.reactions)) {
+                    if (users && users.length > 0) {
+                        const hasReacted = currentUser && users.includes(currentUser.email.split('@')[0]);
+                        reactionsHTML += `
+                            <button onclick="toggleReaction('${msg.id}', '${emoji}')" class="text-xs ${hasReacted ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200' : 'bg-white/5 border-white/10 text-gray-300'} border px-2 py-0.5 rounded-full flex items-center gap-1 hover:bg-white/20 transition">
+                                <span>${emoji}</span>
+                                <span class="text-[10px] opacity-80">${users.length}</span>
+                            </button>
+                        `;
+                    }
                 }
+                reactionsHTML += '</div>';
             }
 
-            let reactionsHtml = '';
-            const reactions = msg.reactions || {};
-            const reactionKeys = Object.keys(reactions);
-            if (reactionKeys.length > 0) {
-                reactionsHtml = '<div class="flex flex-wrap gap-1 mt-2">';
-                reactionKeys.forEach(emoji => {
-                    const users = reactions[emoji];
-                    const isMyReaction = currentUser && users.includes(currentUser.email.split('@')[0]);
-                    const badgeClass = isMyReaction 
-                        ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200 font-bold' 
-                        : 'bg-black/30 border-white/10 text-gray-300';
-                    reactionsHtml += `
-                        <button onclick="toggleReaction('${msg.id}', '${emoji}')" class="text-xs px-2 py-0.5 rounded-full border ${badgeClass} hover:scale-105 transition flex items-center gap-1">
-                            <span>${emoji}</span>
-                            <span class="text-[10px]">${users.length}</span>
-                        </button>
-                    `;
-                });
-                reactionsHtml += '</div>';
-            }
-
-            let reactionPresetsButtonsHtml = '';
-            REACTION_PRESETS.forEach(emoji => {
-                reactionPresetsButtonsHtml += `
-                    <button onclick="toggleReaction('${msg.id}', '${emoji}'); toggleReactionPicker('${msg.id}')" class="hover:scale-125 transition text-base p-1">
-                        ${emoji}
-                    </button>
-                `;
-            });
-
-            const formattedContent = (msg.content || '').replace(/\n/g, '<br>');
-            const cleanContent = (msg.content || '').replace(/'/g, "\\'").replace(/\n/g, " ");
-
-            const messageHtml = `
-                <div id="msg-${msg.id}" class="flex ${alignClass} gap-3 message-bubble p-1 relative">
-                    <div class="w-8 h-8 rounded-full bg-gray-700 border border-white/10 flex items-center justify-center text-xs font-bold shrink-0">
-                        ${msg.user_email.charAt(0).toUpperCase()}
+            return `
+                <div id="msg-${msg.id}" class="message-bubble flex flex-col ${isSelf ? 'items-end' : 'items-start'} my-2 group">
+                    <div class="flex items-center gap-2 mb-1 text-xs text-gray-400 px-1">
+                        <span class="font-bold text-gray-200">${senderName}</span>
+                        <span class="text-[10px] px-1.5 py-0.2 rounded border ${roleColor}">${role}</span>
+                        <span class="text-[10px] text-gray-400">${timeStr}</span>
                     </div>
-                    <div class="${bgClass} px-4 py-2 rounded-2xl max-w-[75%] relative group">
-                        <div class="text-xs text-gray-300/80 mb-1 flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-1.5 truncate">
-                                <span class="font-semibold truncate">${msg.user_email.split('@')[0]}</span>
-                                <span class="${roleColor} font-bold text-[10px]">(${role})</span>
-                                ${msg.is_edited ? '<span class="text-[10px] italic text-gray-400">(edited)</span>' : ''}
+
+                    <div class="max-w-xs sm:max-w-md ${isSelf ? 'bg-cyan-600/80 text-white rounded-2xl rounded-tr-none' : 'glass text-gray-100 rounded-2xl rounded-tl-none'} p-3 shadow-lg relative border border-white/10">
+                        ${msg.reply_to_content ? `
+                            <div onclick="scrollToMessage('${msg.reply_to_id}')" class="cursor-pointer text-xs bg-black/20 p-2 rounded-lg mb-2 border-l-2 border-cyan-400 hover:bg-black/30 transition">
+                                <span class="font-bold text-cyan-300 block">${msg.reply_to_email ? msg.reply_to_email.split('@')[0] : 'User'}</span>
+                                <span class="opacity-80 italic line-clamp-1">${msg.reply_to_content}</span>
                             </div>
-                            <span class="text-[10px] text-gray-300/70 font-mono shrink-0">${localFormattedTime}</span>
-                        </div>
-                        ${replyQuoteHtml}
-                        <div class="break-words whitespace-pre-wrap">${formattedContent}</div>
-                        ${fileHtml}
-                        ${reactionsHtml}
+                        ` : ''}
+
+                        <p class="whitespace-pre-wrap text-sm leading-relaxed">${msg.content || ''}</p>
+
+                        ${msg.file_url ? `
+                            <div class="mt-2">
+                                ${msg.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? `
+                                    <a href="${msg.file_url}" target="_blank">
+                                        <img src="${msg.file_url}" class="rounded-lg max-h-48 w-full object-cover border border-white/10 hover:opacity-90 transition">
+                                    </a>
+                                ` : `
+                                    <a href="${msg.file_url}" target="_blank" class="inline-flex items-center gap-2 text-xs bg-black/30 hover:bg-black/40 text-cyan-300 p-2 rounded-lg border border-white/10 transition">
+                                        <i class="fa-solid fa-paperclip"></i> View Attached Document
+                                    </a>
+                                `}
+                            </div>
+                        ` : ''}
+
+                        ${msg.is_edited ? `<span class="text-[9px] opacity-60 block text-right mt-1">(edited)</span>` : ''}
                         
-                        <div class="absolute top-2 ${isMe ? '-left-24' : '-right-24'} opacity-0 group-hover:opacity-100 transition flex items-center gap-1 bg-black/70 p-1 rounded-lg backdrop-blur-sm z-10 border border-white/10">
-                            <button onclick="toggleReactionPicker('${msg.id}')" class="text-gray-300 hover:text-yellow-400 p-1 transition" title="React">
-                                <i class="fa-regular fa-face-smile text-xs"></i>
-                            </button>
-                            <button onclick="setReplyMessage('${msg.id}', '${msg.user_email.replace(/'/g, "\\'")}', '${cleanContent}')" class="text-gray-300 hover:text-cyan-400 p-1 transition" title="Reply">
-                                <i class="fa-solid fa-reply text-xs"></i>
-                            </button>
-                            ${isMe ? `
-                            <button onclick="startEditMessage('${msg.id}', '${cleanContent}')" class="text-gray-300 hover:text-amber-400 p-1 transition" title="Edit">
-                                <i class="fa-solid fa-pen text-xs"></i>
-                            </button>` : ''}
-                            ${msg.content ? `
-                            <button onclick="copyText('${cleanContent}')" class="text-gray-300 hover:text-cyan-400 p-1 transition" title="Copy text">
-                                <i class="fa-regular fa-copy text-xs"></i>
-                            </button>` : ''}
+                        ${reactionsHTML}
+
+                        <!-- Message Action Toolbar -->
+                        <div class="opacity-0 group-hover:opacity-100 transition absolute ${isSelf ? '-left-20' : '-right-20'} top-2 flex items-center gap-1 bg-slate-900/90 border border-white/10 p-1 rounded-lg backdrop-blur-md z-20">
+                            <button onclick="toggleReactionPicker('${msg.id}')" class="p-1 hover:text-yellow-400 text-gray-300 text-xs" title="React"><i class="fa-regular fa-face-smile"></i></button>
+                            <button onclick="setReplyMessage('${msg.id}', '${msg.user_email}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-cyan-400 text-gray-300 text-xs" title="Reply"><i class="fa-solid fa-reply"></i></button>
+                            ${isSelf ? `<button onclick="startEditMessage('${msg.id}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-amber-400 text-gray-300 text-xs" title="Edit"><i class="fa-solid fa-pen"></i></button>` : ''}
                         </div>
 
-                        <div id="reaction-picker-${msg.id}" class="hidden absolute -top-10 ${isMe ? 'right-0' : 'left-0'} z-20 bg-slate-900/90 border border-white/20 rounded-full px-2 py-1 shadow-xl flex items-center gap-1 backdrop-blur-md">
-                            ${reactionPresetsButtonsHtml}
+                        <!-- Popup Reaction Selector -->
+                        <div id="reaction-picker-${msg.id}" class="hidden absolute ${isSelf ? 'right-0' : 'left-0'} -top-10 bg-slate-900/95 border border-white/20 p-1.5 rounded-full flex gap-1 shadow-2xl z-30 backdrop-blur-md">
+                            ${REACTION_PRESETS.map(e => `<button onclick="toggleReaction('${msg.id}', '${e}'); toggleReactionPicker('${msg.id}')" class="hover:scale-125 transition text-base px-1">${e}</button>`).join('')}
                         </div>
                     </div>
                 </div>
             `;
-
-            const existingElem = document.getElementById(`msg-${msg.id}`);
-            if (existingElem) {
-                existingElem.outerHTML = messageHtml;
-            } else {
-                chatMessages.insertAdjacentHTML('beforeend', messageHtml);
-                if (autoScroll) {
-                    scrollToBottom(isMe);
-                }
-            }
         }
 
-        function recordSellerSpeed(sellerId, sellerEmail, diffSeconds) {
-            if (!sellerMetrics[sellerId]) {
-                sellerMetrics[sellerId] = { email: sellerEmail, times: [] };
-            }
-            sellerMetrics[sellerId].times.push(diffSeconds);
-            renderSellerLeaderboard();
-        }
-
-        function renderSellerLeaderboard() {
-            const keys = Object.keys(sellerMetrics);
-            if (keys.length === 0) return;
-
-            sellerSpeedList.innerHTML = '';
-            sellerCount.textContent = `${keys.length} Active`;
-
-            keys.forEach(sellerId => {
-                const seller = sellerMetrics[sellerId];
-                const avgSeconds = Math.round(seller.times.reduce((a, b) => a + b, 0) / seller.times.length);
-
-                let badgeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-                let icon = '⚡';
-                let barWidth = '100%';
-                let barColor = 'bg-emerald-400';
-
-                if (avgSeconds > 15 && avgSeconds <= 60) {
-                    badgeClass = 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
-                    icon = '⏱️';
-                    barWidth = '65%';
-                    barColor = 'bg-yellow-400';
-                } else if (avgSeconds > 60) {
-                    badgeClass = 'bg-red-500/20 text-red-300 border-red-500/30';
-                    icon = '🐢';
-                    barWidth = '30%';
-                    barColor = 'bg-red-500';
-                }
-
-                const itemHtml = `
-                    <div class="p-2 rounded-lg bg-white/5 border border-white/10 text-xs space-y-1">
-                        <div class="flex justify-between items-center">
-                            <span class="font-semibold text-cyan-300 truncate max-w-[130px]">${seller.email.split('@')[0]} (Seller)</span>
-                            <span class="px-1.5 py-0.5 rounded border text-[10px] font-bold ${badgeClass}">
-                                ${icon} ${avgSeconds}s avg
-                            </span>
-                        </div>
-                        <div class="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
-                            <div class="${barColor} h-full transition-all duration-500" style="width: ${barWidth}"></div>
-                        </div>
-                    </div>
-                `;
-                sellerSpeedList.insertAdjacentHTML('beforeend', itemHtml);
-            });
-        }
-
-        async function loadMessages() {
-            const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(200);
-            if (data) {
-                data.forEach(msg => renderOrUpdateMessage(msg, false));
-            }
-        }
-
-        function subscribeToRealtime() {
-            if (roomChannel) {
-                supabase.removeChannel(roomChannel);
-            }
-
-            roomChannel = supabase.channel('nexus-room', {
-                config: { presence: { key: currentUser.id } }
-            });
-
-            // Postgres DB insert listener
-            roomChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                renderOrUpdateMessage(payload.new, true);
-            });
-
-            // Immediate direct WebSocket Broadcast listener (bypasses DB WAL latency)
-            roomChannel.on('broadcast', { event: 'new_message' }, ({ payload }) => {
-                if (payload) {
-                    renderOrUpdateMessage(payload, true);
-                }
-            });
-
-            roomChannel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
-                renderOrUpdateMessage(payload.new, false);
-            });
-
-            roomChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'daily_transcripts' }, () => {
-                loadTranscriptArchive();
-            });
-
-            roomChannel.on('broadcast', { event: 'typing' }, ({ payload }) => {
-                if (!payload || payload.email === currentUser.email.split('@')[0]) return;
-                if (payload.isTyping) {
-                    typingUsers.add(payload.email);
-                } else {
-                    typingUsers.delete(payload.email);
-                }
-                updateTypingUI();
-            });
-
-            roomChannel.on('broadcast', { event: 'reaction_update' }, ({ payload }) => {
-                const msg = allSessionMessages.find(m => m.id === payload.id);
-                if (msg) {
-                    msg.reactions = payload.reactions;
-                    renderOrUpdateMessage(msg, false);
-                }
-            });
-
-            roomChannel.on('presence', { event: 'sync' }, () => {
-                const state = roomChannel.presenceState();
-                renderPresence(state);
-            });
-
-            roomChannel.subscribe(async (status) => {
-                if (status === 'SUBSCRIBED') {
-                    loadMessages();
-                    await roomChannel.track({
-                        user_id: currentUser.id,
-                        email: currentUser.email,
-                        role: userRole
-                    });
-                } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                    setTimeout(() => subscribeToRealtime(), 2000);
-                }
-            });
-        }
-
-        // Periodic Background Sync every 10s to guarantee all connected participants stay 100% updated
-        setInterval(() => {
-            if (currentUser && userRole) {
-                loadMessages();
-            }
-        }, 10000);
-
-        async function syncAndReconnect() {
-            if (currentUser && userRole) {
-                await loadMessages();
-                subscribeToRealtime();
-            }
-        }
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                syncAndReconnect();
-            }
-        });
-
-        window.addEventListener('online', () => {
-            syncAndReconnect();
-        });
-
-        function renderPresence(state) {
-            presenceList.innerHTML = '';
-            let count = 0;
-            for (const id in state) {
-                const user = state[id][0];
-                if (!user) continue;
-                count++;
-                const roleColor = user.role === 'Seller' ? 'text-cyan-400' : 'text-emerald-400';
-                const item = `
-                    <div class="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 text-sm">
-                        <div class="flex items-center gap-2 overflow-hidden">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
-                            <span class="truncate text-gray-200 text-xs">${user.email.split('@')[0]}</span>
-                        </div>
-                        <span class="${roleColor} font-bold text-xs shrink-0">(${user.role || 'Buyer'})</span>
-                    </div>
-                `;
-                presenceList.insertAdjacentHTML('beforeend', item);
-            }
-            onlineCount.textContent = count;
-        }
-
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                if (file.size > MAX_FILE_SIZE) {
-                    alert('File exceeds 50MB limit!');
-                    fileInput.value = '';
-                    return;
-                }
-                selectedFile = file;
-                fileName.textContent = file.name;
-                filePreview.classList.remove('hidden');
-            }
-        });
-
-        removeFileBtn.addEventListener('click', () => {
-            selectedFile = null;
-            fileInput.value = '';
-            filePreview.classList.add('hidden');
-        });
-
+        // Form Submit Logic
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            resetChatInactivityTimer();
 
             const content = messageInput.value.trim();
             if (!content && !selectedFile && !editingMessageId) return;
 
+            // Handle Edit
             if (editingMessageId) {
-                const { data: updatedMsg } = await supabase.from('messages').update({
-                    content: content,
-                    is_edited: true
-                }).eq('id', editingMessageId).select().single();
+                const { error } = await supabase
+                    .from('messages')
+                    .update({ content, is_edited: true })
+                    .eq('id', editingMessageId);
 
-                if (updatedMsg && roomChannel) {
-                    roomChannel.send({
-                        type: 'broadcast',
-                        event: 'new_message',
-                        payload: updatedMsg
-                    });
-                }
-
+                if (error) alert('Edit error: ' + error.message);
                 window.cancelEdit();
                 return;
             }
 
-            messageInput.value = '';
-            adjustTextareaHeight();
-            filePreview.classList.add('hidden');
-            const fileToUpload = selectedFile;
-            selectedFile = null;
-            fileInput.value = '';
-
+            // Upload Attached File
             let file_url = null;
-
-            if (fileToUpload) {
-                const fileExt = fileToUpload.name.split('.').pop();
+            if (selectedFile) {
+                const fileExt = selectedFile.name.split('.').pop();
                 const filePath = `${currentUser.id}/${Date.now()}.${fileExt}`;
-                const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, fileToUpload);
+                const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, selectedFile);
 
-                if (!uploadError) {
-                    const { data } = supabase.storage.from('chat-files').getPublicUrl(filePath);
-                    file_url = data.publicUrl;
+                if (uploadError) {
+                    alert('File upload failed: ' + uploadError.message);
+                    return;
                 }
+                const { data } = supabase.storage.from('chat-files').getPublicUrl(filePath);
+                file_url = data.publicUrl;
             }
 
-            const messageData = {
-                user_id: currentUser.id,
+            const newMsg = {
                 user_email: currentUser.email,
                 user_role: userRole,
                 content: content,
                 file_url: file_url,
-                reactions: {}
+                reactions: {},
+                reply_to_id: replyingToMessage?.id || null,
+                reply_to_email: replyingToMessage?.email || null,
+                reply_to_content: replyingToMessage?.content || null
             };
 
-            if (replyingToMessage) {
-                messageData.reply_to_id = replyingToMessage.id;
-                messageData.reply_to_email = replyingToMessage.email;
-                messageData.reply_to_content = replyingToMessage.content;
-            }
-
+            // Clear inputs
+            messageInput.value = '';
+            selectedFile = null;
+            fileInput.value = '';
+            filePreview.classList.add('hidden');
             window.cancelReply();
+            adjustTextareaHeight();
 
-            const { data: insertedMsg } = await supabase.from('messages').insert([messageData]).select().single();
-            
-            if (insertedMsg) {
-                renderOrUpdateMessage(insertedMsg, true);
-                
-                // Broadcast newly posted message directly over WebSocket
-                if (roomChannel) {
-                    roomChannel.send({
-                        type: 'broadcast',
-                        event: 'new_message',
-                        payload: insertedMsg
-                    });
+            // Insert message directly into Database
+            const { error: insertError } = await supabase
+                .from('messages')
+                .insert([newMsg]);
+
+            if (insertError) {
+                alert('Message send error: ' + insertError.message);
+            }
+        });
+
+        // Speed tracker calculation
+        function calculateSellerSpeeds() {
+            let lastBuyerMsgTime = null;
+            const sellerStats = {};
+
+            allSessionMessages.forEach(msg => {
+                const msgTime = new Date(msg.created_at).getTime();
+                if (msg.user_role === 'Buyer') {
+                    lastBuyerMsgTime = msgTime;
+                } else if (msg.user_role === 'Seller' && lastBuyerMsgTime) {
+                    const responseSec = Math.round((msgTime - lastBuyerMsgTime) / 1000);
+                    if (responseSec >= 0 && responseSec < 3600) {
+                        const seller = msg.user_email.split('@')[0];
+                        if (!sellerStats[seller]) sellerStats[seller] = [];
+                        sellerStats[seller].push(responseSec);
+                    }
+                    lastBuyerMsgTime = null;
                 }
+            });
+
+            const sellers = Object.keys(sellerStats);
+            if (sellers.length === 0) {
+                sellerSpeedList.innerHTML = `<div class="text-xs text-gray-400 italic text-center py-2">No seller responses recorded yet</div>`;
+                sellerCount.textContent = '0 Active';
+                return;
             }
 
-            if (roomChannel) {
-                roomChannel.send({
-                    type: 'broadcast',
-                    event: 'typing',
-                    payload: { email: currentUser.email.split('@')[0], isTyping: false }
+            sellerCount.textContent = `${sellers.length} Active`;
+            let listHtml = '';
+            sellers.forEach(seller => {
+                const times = sellerStats[seller];
+                const avgSec = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+                listHtml += `
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-2 flex items-center justify-between text-xs">
+                        <span class="font-bold text-cyan-300 truncate">${seller}</span>
+                        <span class="bg-cyan-500/20 text-cyan-200 px-2 py-0.5 rounded-full text-[10px] font-mono">
+                            ⚡ Avg: ${avgSec}s
+                        </span>
+                    </div>
+                `;
+            });
+            sellerSpeedList.innerHTML = listHtml;
+        }
+
+        // Realtime setup & presence tracking using Postgres Changes
+        function setupRealtimeChannel() {
+            if (roomChannel) supabase.removeChannel(roomChannel);
+
+            roomChannel = supabase.channel('nexus-trading-room', {
+                config: { presence: { key: currentUser.id } }
+            });
+
+            roomChannel
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                    renderOrUpdateMessage(payload.new, true);
+                    calculateSellerSpeeds();
+                })
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
+                    renderOrUpdateMessage(payload.new, false);
+                    calculateSellerSpeeds();
+                })
+                .on('broadcast', { event: 'typing' }, payload => {
+                    if (payload.payload.isTyping) {
+                        typingUsers.add(payload.payload.email);
+                    } else {
+                        typingUsers.delete(payload.payload.email);
+                    }
+                    updateTypingUI();
+                })
+                .on('presence', { event: 'sync' }, () => {
+                    const state = roomChannel.presenceState();
+                    updatePresenceUI(state);
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await roomChannel.track({
+                            email: currentUser.email,
+                            role: userRole,
+                            online_at: new Date().toISOString()
+                        });
+                    }
                 });
-            }
-        });
+        }
 
-        supabase.auth.onAuthStateChange((event, session) => {
-            if (session) {
-                currentUser = session.user;
-                resetChatInactivityTimer();
-
-                if (!userRole) {
-                    showRoleSelection();
-                } else {
-                    showChat();
-                    loadMessages();
-                    loadTranscriptArchive();
-                    subscribeToRealtime();
+        function updatePresenceUI(state) {
+            const users = [];
+            for (const key in state) {
+                if (state[key].length > 0) {
+                    users.push(state[key][0]);
                 }
-            } else {
-                showLogin();
             }
-        });
+
+            onlineCount.textContent = users.length.toString();
+            if (users.length === 0) {
+                presenceList.innerHTML = `<div class="text-xs text-gray-400 italic">No users online</div>`;
+                return;
+            }
+
+            presenceList.innerHTML = users.map(u => `
+                <div class="flex items-center justify-between text-xs bg-white/5 border border-white/10 p-2 rounded-xl">
+                    <div class="flex items-center gap-2 truncate">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="truncate font-medium text-gray-200">${u.email ? u.email.split('@')[0] : 'User'}</span>
+                    </div>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded ${u.role === 'Seller' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-emerald-500/20 text-emerald-300'}">${u.role || 'Member'}</span>
+                </div>
+            `).join('');
+        }
+
+        // Initialize Application
+        init();
     </script>
 </body>
 </html>
