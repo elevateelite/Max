@@ -146,6 +146,13 @@
                 <span id="typing-text">Someone is typing...</span>
             </div>
 
+            <!-- Scroll to Bottom Floating Button with Unread Counter -->
+            <button id="scroll-bottom-btn" type="button" 
+                class="hidden absolute bottom-20 right-6 z-30 bg-cyan-500 hover:bg-cyan-400 text-white p-3 rounded-full shadow-2xl border border-white/20 transition-all duration-300 hover:scale-110 flex items-center justify-center w-11 h-11 active:scale-95">
+                <i class="fa-solid fa-arrow-down text-base"></i>
+                <span id="unread-badge" class="hidden absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border-2 border-slate-900 animate-pulse">0</span>
+            </button>
+
             <footer class="p-4 border-t border-white/10 bg-black/20 shrink-0 relative">
                 <div id="emoji-picker" class="hidden absolute bottom-20 left-4 z-50 glass bg-slate-900/95 border border-white/20 rounded-2xl p-3 w-72 sm:w-80 shadow-2xl backdrop-blur-xl">
                     <div class="flex justify-between items-center pb-2 border-b border-white/10 mb-2">
@@ -301,6 +308,7 @@
         let roomChannel = null;
         let currentDocObject = null;
         let currentPdfBlob = null;
+        let unreadCount = 0;
 
         let typingTimeout = null;
         const typingUsers = new Set();
@@ -359,6 +367,10 @@
         const transcriptArchiveList = document.getElementById('transcript-archive-list');
         const transcriptCount = document.getElementById('transcript-count');
 
+        // Floating Scroll Button & Unread Counter Elements
+        const scrollBottomBtn = document.getElementById('scroll-bottom-btn');
+        const unreadBadge = document.getElementById('unread-badge');
+
         // Modal Elements
         const pdfModal = document.getElementById('pdf-modal');
         const pdfFrame = document.getElementById('pdf-frame');
@@ -371,13 +383,47 @@
 
         function scrollToBottom(force = false) {
             const doScroll = () => {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+                if (chatMessages) {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
             };
+
             doScroll();
             requestAnimationFrame(() => {
                 doScroll();
-                setTimeout(doScroll, 100);
-                setTimeout(doScroll, 350);
+                setTimeout(doScroll, 50);
+                setTimeout(doScroll, 150);
+                setTimeout(doScroll, 400);
+            });
+        }
+
+        function resetUnreadCount() {
+            unreadCount = 0;
+            if (unreadBadge) {
+                unreadBadge.textContent = '0';
+                unreadBadge.classList.add('hidden');
+            }
+        }
+
+        // Scroll listener for floating button and unread counter reset
+        if (chatMessages && scrollBottomBtn) {
+            chatMessages.addEventListener('scroll', () => {
+                const distanceFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight;
+                
+                if (distanceFromBottom > 150) {
+                    scrollBottomBtn.classList.remove('hidden');
+                } else {
+                    scrollBottomBtn.classList.add('hidden');
+                    resetUnreadCount();
+                }
+            });
+
+            scrollBottomBtn.addEventListener('click', () => {
+                chatMessages.scrollTo({
+                    top: chatMessages.scrollHeight,
+                    behavior: 'smooth'
+                });
+                resetUnreadCount();
             });
         }
 
@@ -789,6 +835,10 @@
 
         async function setupChatRoom() {
             showScreen('chat');
+
+            // Give layout engine 50ms to calculate flexbox height after un-hiding UI
+            await new Promise(resolve => setTimeout(resolve, 50));
+
             userRoleBadge.textContent = userRole;
             userRoleBadge.className = `text-xs font-semibold px-2 py-0.5 rounded-full ${userRole === 'Seller' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-emerald-500/20 text-emerald-300'}`;
             
@@ -797,22 +847,17 @@
             loadTranscriptArchive();
             resetChatInactivityTimer();
 
-            setTimeout(() => scrollToBottom(true), 300);
+            scrollToBottom(true);
         }
 
         async function loadMessages() {
-            chatMessages.innerHTML = `
-                <div class="text-center text-gray-400 py-8">
-                    <i class="fa-solid fa-spinner fa-spin text-2xl"></i>
-                    <p class="mt-2 text-xs">Loading room history...</p>
-                </div>`;
+            chatMessages.innerHTML = '<div class="text-center text-gray-400 py-8"><i class="fa-solid fa-spinner fa-spin text-2xl"></i><p class="mt-2 text-xs">Loading room history...</p></div>';
 
-            // Fetch latest 200 messages descending
             const { data, error } = await supabase
                 .from('messages')
                 .select('*')
-                .order('created_at', { ascending: false })
-                .limit(200);
+                .order('created_at', { ascending: true })
+                .limit(300);
 
             if (error) {
                 chatMessages.innerHTML = `<p class="text-center text-red-400 text-xs py-4">Error loading history: ${error.message}</p>`;
@@ -821,14 +866,10 @@
 
             chatMessages.innerHTML = '';
             allSessionMessages = [];
-
+            
             if (data && data.length > 0) {
-                // Reverse to display oldest of the batch at top, newest at bottom
-                const sortedData = data.reverse();
-
-                sortedData.forEach(msg => renderOrUpdateMessage(msg, false));
+                data.forEach(msg => renderOrUpdateMessage(msg, false));
                 calculateSellerSpeeds();
-
                 scrollToBottom(true);
             } else {
                 chatMessages.innerHTML = `<div class="text-center text-gray-400 italic text-xs py-10">No messages in room yet. Start the conversation!</div>`;
@@ -849,7 +890,24 @@
 
             allSessionMessages.push(msg);
             chatMessages.insertAdjacentHTML('beforeend', buildMessageHTML(msg));
-            if (isNew) scrollToBottom(true);
+
+            if (isNew) {
+                const distanceFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight;
+                
+                // If user is scrolled up > 150px, increment unread badge instead of auto-scrolling
+                if (distanceFromBottom > 150) {
+                    unreadCount++;
+                    if (unreadBadge) {
+                        unreadBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                        unreadBadge.classList.remove('hidden');
+                    }
+                    if (scrollBottomBtn) {
+                        scrollBottomBtn.classList.remove('hidden');
+                    }
+                } else {
+                    scrollToBottom(true);
+                }
+            }
         }
 
         function buildMessageHTML(msg) {
