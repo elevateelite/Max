@@ -2,117 +2,834 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supabase Chat Application</title>
-    <!-- Tailwind CSS CDN for quick styling -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Nexus Marketplace Chat</title>
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Nexus Market">
+    <meta name="theme-color" content="#0f2027">
+
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png">
+    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Nexus%20Marketplace%20Chat%22%2C%22short_name%22%3A%22NexusChat%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230f2027%22%2C%22theme_color%22%3A%22%230f2027%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F1041%2F1041916.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            height: 100dvh;
+            width: 100vw;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .message-bubble { 
+            animation: fadeIn 0.3s ease-out;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .highlight-msg {
+            animation: highlightPulse 2s ease-in-out;
+            border-radius: 1rem;
+        }
+        @keyframes highlightPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+            50% { box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.8); }
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+    </style>
 </head>
-<body class="bg-gray-100 h-screen flex flex-col justify-between font-sans">
+<body class="flex items-center justify-center p-2 sm:p-4 relative">
 
-    <!-- Header / Presence Bar -->
-    <header class="bg-white border-b p-4 flex justify-between items-center shadow-sm">
-        <div>
-            <h1 class="text-xl font-bold text-gray-800">Group Chat</h1>
-            <p id="presence-count" class="text-sm text-gray-500">0 users online</p>
+    <!-- Login Screen -->
+    <div id="login-screen" class="glass rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
+        <div class="mb-8">
+            <i class="fa-solid fa-store text-5xl text-cyan-400 mb-4"></i>
+            <h1 class="text-3xl font-bold tracking-wider">NEXUS MARKET</h1>
+            <p class="text-gray-300 text-sm mt-2">Connect buyers & sellers instantly.</p>
         </div>
-        <div id="auth-controls">
-            <button id="login-btn" onclick="loginWithGoogle()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Login with Google</button>
-            <button id="logout-btn" onclick="logout()" class="hidden bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">Logout</button>
-        </div>
-    </header>
-
-    <!-- Chat Messages Container -->
-    <main id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
-        <p class="text-center text-gray-400">Loading messages...</p>
-    </main>
-
-    <!-- Typing Indicator -->
-    <div id="typing-indicator" class="px-4 text-xs italic text-gray-500 h-4"></div>
-
-    <!-- Edit/Reply Banners -->
-    <div id="action-banner" class="hidden bg-gray-200 px-4 py-2 border-t flex justify-between items-center text-sm text-gray-700">
-        <span id="banner-text">Editing message...</span>
-        <button onclick="cancelAction()" class="text-red-500 font-bold hover:underline">Cancel</button>
+        <button id="google-login-btn" class="w-full bg-white text-gray-900 font-semibold py-3 px-4 rounded-lg hover:bg-gray-100 transition duration-300 flex items-center justify-center gap-3 active:scale-95">
+            <i class="fa-brands fa-google text-red-500"></i> Continue with Google
+        </button>
     </div>
 
-    <!-- Message Input Form -->
-    <footer class="bg-white border-t p-4">
-        <!-- File Preview -->
-        <div id="file-preview" class="hidden text-xs text-blue-600 mb-2 flex items-center gap-2">
-            <span id="file-name">filename.png</span>
-            <button onclick="clearFile()" class="text-red-500 font-bold">✕</button>
+    <!-- Role Selection Screen -->
+    <div id="role-screen" class="hidden glass rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
+        <h2 class="text-2xl font-bold mb-2">Select Account Type</h2>
+        <p class="text-gray-300 text-sm mb-6">Choose how you want to participate in this group room:</p>
+
+        <div class="space-y-4">
+            <button id="select-seller-btn" class="w-full p-4 border border-cyan-400/40 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/60 transition flex items-center justify-between text-left group">
+                <div>
+                    <h3 class="font-bold text-cyan-300 text-lg">Seller</h3>
+                    <p class="text-xs text-gray-300">Respond to buyer inquiries & measure speed</p>
+                </div>
+                <i class="fa-solid fa-user-tag text-2xl text-cyan-400 group-hover:scale-110 transition"></i>
+            </button>
+
+            <button id="select-buyer-btn" class="w-full p-4 border border-emerald-400/40 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 transition flex items-center justify-between text-left group">
+                <div>
+                    <h3 class="font-bold text-emerald-300 text-lg">Buyer</h3>
+                    <p class="text-xs text-gray-300">Post requests & get instant seller replies</p>
+                </div>
+                <i class="fa-solid fa-cart-shopping text-2xl text-emerald-400 group-hover:scale-110 transition"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div id="chat-screen" class="hidden glass rounded-2xl w-full max-w-6xl h-[98dvh] md:h-[92vh] flex flex-col md:flex-row shadow-2xl overflow-hidden relative">
+        <div class="flex-1 flex flex-col h-full border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden">
+
+            <div id="pdf-banner" class="hidden bg-amber-500/20 border-b border-amber-500/30 p-3 text-xs flex flex-wrap items-center justify-between gap-2 backdrop-blur-md z-10">
+                <div class="flex items-center gap-2 text-amber-200">
+                    <i class="fa-solid fa-clock text-amber-400 text-sm"></i>
+                    <span><strong>Chat Inactive for 5 Minutes:</strong> You can export today's chat history now.</span>
+                </div>
+                <button id="download-pdf-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-file-pdf"></i> Export PDF Transcript
+                </button>
+            </div>
+
+            <header class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20 shrink-0">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-comments text-cyan-400 text-xl"></i>
+                    <div>
+                        <h2 class="font-bold text-lg leading-tight">Nexus Trading Room</h2>
+                        <span id="user-role-badge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300"></span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="manual-export-btn" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="Generate and archive today's discussion PDF">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span class="hidden sm:inline">Export PDF</span>
+                    </button>
+
+                    <button id="open-archive-modal-btn" class="bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 border border-cyan-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="View all daily archives">
+                        <i class="fa-solid fa-box-archive"></i>
+                        <span>Archives</span>
+                    </button>
+
+                    <button id="toggle-sidebar-btn" type="button" class="md:hidden bg-white/10 hover:bg-white/20 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+
+                    <span id="user-display" class="text-xs text-gray-300 hidden lg:block ml-2"></span>
+                    <button id="logout-btn" class="text-gray-400 hover:text-white transition p-1.5" title="Logout">
+                        <i class="fa-solid fa-right-from-bracket text-lg"></i>
+                    </button>
+                </div>
+            </header>
+
+            <main id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+            </main>
+
+            <div id="typing-indicator" class="text-xs text-cyan-300 italic min-h-[1.25rem] px-4 opacity-0 transition-opacity flex items-center gap-2">
+                <i class="fa-solid fa-ellipsis fa-bounce"></i>
+                <span id="typing-text">Someone is typing...</span>
+            </div>
+
+            <footer class="p-4 border-t border-white/10 bg-black/20 shrink-0 relative">
+                <div id="emoji-picker" class="hidden absolute bottom-20 left-4 z-50 glass bg-slate-900/95 border border-white/20 rounded-2xl p-3 w-72 sm:w-80 shadow-2xl backdrop-blur-xl">
+                    <div class="flex justify-between items-center pb-2 border-b border-white/10 mb-2">
+                        <span class="text-xs font-bold text-gray-300">Choose Emoji</span>
+                        <button type="button" id="close-emoji-picker" class="text-gray-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div id="emoji-grid" class="grid grid-cols-6 sm:grid-cols-7 gap-1.5 max-h-48 overflow-y-auto text-xl p-1">
+                    </div>
+                </div>
+
+                <div id="edit-preview" class="hidden text-xs text-amber-200 mb-2 flex justify-between items-center bg-amber-950/60 p-2.5 rounded-lg border-l-4 border-amber-400 backdrop-blur-md">
+                    <div class="truncate pr-2">
+                        <span class="text-amber-400 font-bold block"><i class="fa-solid fa-pen-to-square mr-1"></i> Editing Message</span>
+                        <span id="edit-text" class="text-gray-300 italic truncate block mt-0.5"></span>
+                    </div>
+                    <button id="cancel-edit-btn" type="button" class="text-gray-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div id="reply-preview" class="hidden text-xs text-cyan-200 mb-2 flex justify-between items-center bg-cyan-950/60 p-2.5 rounded-lg border-l-4 border-cyan-400 backdrop-blur-md">
+                    <div class="truncate pr-2">
+                        <span class="text-cyan-400 font-bold block"><i class="fa-solid fa-reply mr-1"></i> Replying to <span id="reply-user"></span></span>
+                        <span id="reply-text" class="text-gray-300 italic truncate block mt-0.5"></span>
+                    </div>
+                    <button id="cancel-reply-btn" type="button" class="text-gray-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div id="file-preview" class="hidden text-sm text-cyan-300 mb-2 flex justify-between items-center bg-cyan-900/30 p-2 rounded">
+                    <span id="file-name"></span>
+                    <button id="remove-file-btn" type="button" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
+                </div>
+
+                <form id="chat-form" class="flex items-end gap-2">
+                    <button type="button" id="emoji-btn" class="p-3 text-gray-400 hover:text-yellow-400 transition" title="Add Emoji">
+                        <i class="fa-regular fa-face-smile text-xl"></i>
+                    </button>
+
+                    <label for="file-input" class="p-3 text-gray-400 hover:text-cyan-400 cursor-pointer transition" title="Attach File (Max 50MB)">
+                        <i class="fa-solid fa-paperclip text-xl"></i>
+                    </label>
+                    <input type="file" id="file-input" class="hidden">
+
+                    <textarea id="message-input" rows="1" enterkeyhint="newline" placeholder="Type a message..." 
+                              class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-2 text-white focus:outline-none focus:border-cyan-400 transition resize-none max-h-36 overflow-y-auto leading-normal"></textarea>
+
+                    <button type="submit" class="bg-cyan-500 hover:bg-cyan-400 text-white p-3 rounded-full transition w-12 h-12 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+            </footer>
         </div>
 
-        <form id="chat-form" class="flex items-end gap-2">
-            <label class="cursor-pointer bg-gray-100 p-2 rounded-lg hover:bg-gray-200">
-                📎
-                <input type="file" id="file-input" class="hidden" onchange="handleFileSelect(event)">
-            </label>
-            <textarea id="message-input" rows="1" placeholder="Type a message..." class="flex-1 border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none max-h-32"></textarea>
-            <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 font-medium">Send</button>
-        </form>
-    </footer>
+        <aside id="sidebar-panel" class="hidden md:flex w-full md:w-80 bg-black/30 flex-col h-auto md:h-full p-4 space-y-4 overflow-y-auto border-t md:border-t-0 md:border-l border-white/10 shrink-0">
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-box-archive"></i> Saved Daily Transcripts
+                    </h3>
+                    <span id="transcript-count" class="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                </div>
+                <div id="transcript-archive-list" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    <div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts yet</div>
+                </div>
+            </div>
 
-    <!-- App Logic -->
-    <script>
-        // REPLACE WITH YOUR SUPABASE CREDENTIALS
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+            <hr class="border-white/10">
 
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400">Seller Speed Tracker</h3>
+                    <span id="seller-count" class="bg-cyan-500/20 text-cyan-300 text-xs px-2 py-0.5 rounded-full font-bold">0 Active</span>
+                </div>
+                <div id="seller-speed-list" class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                    <div class="text-xs text-gray-400 italic text-center py-2">No seller responses recorded yet</div>
+                </div>
+            </div>
 
-        // State variables
+            <hr class="border-white/10">
+
+            <div class="flex-1">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Online Participants</h3>
+                    <span id="online-count" class="bg-emerald-500/20 text-emerald-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                </div>
+                <div id="presence-list" class="space-y-2">
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Archive Modal -->
+    <div id="archive-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass w-full max-w-2xl max-h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
+            <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
+                <div class="flex items-center gap-2 text-amber-400 font-bold text-base">
+                    <i class="fa-solid fa-box-archive text-lg"></i>
+                    <span>Daily Message Transcripts Archive</span>
+                </div>
+                <button id="close-archive-modal-btn" class="text-gray-400 hover:text-white text-lg px-2"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1 space-y-3">
+                <p class="text-xs text-gray-300">Below are all recorded daily chat history PDFs for this room. Any room member can access and download them at any time.</p>
+                <div id="modal-transcript-list" class="space-y-2">
+                    <div class="text-xs text-gray-400 italic text-center py-4">Loading archives...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Modal -->
+    <div id="pdf-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
+        <div class="glass w-full max-w-4xl h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
+            <div class="p-3 sm:p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
+                <div class="flex items-center gap-2 text-cyan-400 font-bold text-sm sm:text-base">
+                    <i class="fa-solid fa-file-pdf text-lg"></i>
+                    <span>Chat Transcript Preview</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="save-pdf-modal-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm transition flex items-center gap-1.5 shadow">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish
+                    </button>
+                    <button id="close-pdf-modal-btn" class="bg-white/10 hover:bg-white/20 text-white font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm transition">
+                        Close
+                    </button>
+                </div>
+            </div>
+            <iframe id="pdf-frame" class="w-full flex-1 bg-white border-0"></iframe>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+        const SUPABASE_URL = 'https://uavklixceheysspmgilk.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_Y9vPgA1CYXcFgk2SVqMXRg_M-jLuk_8';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true,
+                storageKey: 'nexus-market-auth-token',
+                storage: window.localStorage
+            }
+        });
+
         let currentUser = null;
-        let userRole = 'student';
-        let roomChannel = null;
-        let editingMessageId = null;
-        let replyingToMessage = null;
+        let userRole = localStorage.getItem('nexus_user_role') || null;
         let selectedFile = null;
-        let allSessionMessages = [];
+        let lastBuyerTimestamp = null;
+        let allSessionMessages = []; 
+        let replyingToMessage = null;
+        let editingMessageId = null;
+        let roomChannel = null;
+        let currentDocObject = null;
+        let currentPdfBlob = null;
+
+        let typingTimeout = null;
+        const typingUsers = new Set();
+
+        const CHAT_INACTIVITY_MS = 5 * 60 * 1000;
+        let chatInactivityTimer = null;
+        const sellerMetrics = {}; 
+        const MAX_FILE_SIZE = 50 * 1024 * 1024;
+
+        const EMOJI_LIST = [
+            '😀','😂','😅','😍','😎','🥳','🔥','❤️','👍','👎','👏','🎉','🚀','💡','💯',
+            '😊','😭','😮','🤔','🙏','🤝','✨','⭐','💸','🛒','📦','✅','❌','⚠️','💬',
+            '⚡','🎯','💪','🙌','🤩','😜','🙄','🤯','💤','💩','🙈','🙋','🏼','☕','🍻'
+        ];
+
+        const REACTION_PRESETS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '🚀', '🎉'];
 
         // DOM Elements
+        const loginScreen = document.getElementById('login-screen');
+        const roleScreen = document.getElementById('role-screen');
+        const chatScreen = document.getElementById('chat-screen');
+        const googleLoginBtn = document.getElementById('google-login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const selectSellerBtn = document.getElementById('select-seller-btn');
+        const selectBuyerBtn = document.getElementById('select-buyer-btn');
+        const userRoleBadge = document.getElementById('user-role-badge');
         const chatMessages = document.getElementById('chat-messages');
         const chatForm = document.getElementById('chat-form');
         const messageInput = document.getElementById('message-input');
+        const userDisplay = document.getElementById('user-display');
         const fileInput = document.getElementById('file-input');
         const filePreview = document.getElementById('file-preview');
-        const fileNameSpan = document.getElementById('file-name');
+        const fileName = document.getElementById('file-name');
+        const removeFileBtn = document.getElementById('remove-file-btn');
+        const emojiBtn = document.getElementById('emoji-btn');
+        const emojiPicker = document.getElementById('emoji-picker');
+        const emojiGrid = document.getElementById('emoji-grid');
+        const closeEmojiPicker = document.getElementById('close-emoji-picker');
+        const presenceList = document.getElementById('presence-list');
+        const onlineCount = document.getElementById('online-count');
+        const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+        const sidebarPanel = document.getElementById('sidebar-panel');
+        const sellerSpeedList = document.getElementById('seller-speed-list');
+        const sellerCount = document.getElementById('seller-count');
+        const pdfBanner = document.getElementById('pdf-banner');
+        const downloadPdfBtn = document.getElementById('download-pdf-btn');
+        const manualExportBtn = document.getElementById('manual-export-btn');
+        const replyPreview = document.getElementById('reply-preview');
+        const replyUser = document.getElementById('reply-user');
+        const replyText = document.getElementById('reply-text');
+        const cancelReplyBtn = document.getElementById('cancel-reply-btn');
+        const editPreview = document.getElementById('edit-preview');
+        const editText = document.getElementById('edit-text');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
         const typingIndicator = document.getElementById('typing-indicator');
-        const actionBanner = document.getElementById('action-banner');
-        const bannerText = document.getElementById('banner-text');
+        const typingText = document.getElementById('typing-text');
+        const transcriptArchiveList = document.getElementById('transcript-archive-list');
+        const transcriptCount = document.getElementById('transcript-count');
 
-        // Initialize App
-        async function init() {
-            const { data: { user } } = await supabase.auth.getUser();
-            currentUser = user;
+        // Modal Elements
+        const pdfModal = document.getElementById('pdf-modal');
+        const pdfFrame = document.getElementById('pdf-frame');
+        const closePdfModalBtn = document.getElementById('close-pdf-modal-btn');
+        const savePdfModalBtn = document.getElementById('save-pdf-modal-btn');
+        const archiveModal = document.getElementById('archive-modal');
+        const openArchiveModalBtn = document.getElementById('open-archive-modal-btn');
+        const closeArchiveModalBtn = document.getElementById('close-archive-modal-btn');
+        const modalTranscriptList = document.getElementById('modal-transcript-list');
 
-            if (currentUser) {
-                document.getElementById('login-btn').classList.add('hidden');
-                document.getElementById('logout-btn').classList.remove('hidden');
-                setupRealtimeChannel();
-                await loadMessages();
+        function scrollToBottom(force = false) {
+            const threshold = 180;
+            const isNearBottom = (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight) < threshold;
+            
+            if (force || isNearBottom) {
+                requestAnimationFrame(() => {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                });
+                setTimeout(() => {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 80);
+            }
+        }
+
+        // Render Emoji Grid
+        EMOJI_LIST.forEach(emoji => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'hover:bg-white/10 rounded p-1 transition flex items-center justify-center';
+            btn.textContent = emoji;
+            btn.onclick = () => {
+                messageInput.value += emoji;
+                adjustTextareaHeight();
+                messageInput.focus();
+            };
+            emojiGrid.appendChild(btn);
+        });
+
+        emojiBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            emojiPicker.classList.toggle('hidden');
+        });
+        closeEmojiPicker.addEventListener('click', () => emojiPicker.classList.add('hidden'));
+        document.addEventListener('click', (e) => {
+            if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+                emojiPicker.classList.add('hidden');
+            }
+        });
+
+        toggleSidebarBtn.addEventListener('click', () => {
+            sidebarPanel.classList.toggle('hidden');
+        });
+
+        openArchiveModalBtn.addEventListener('click', () => {
+            archiveModal.classList.remove('hidden');
+            loadTranscriptArchive();
+        });
+
+        closeArchiveModalBtn.addEventListener('click', () => {
+            archiveModal.classList.add('hidden');
+        });
+
+        closePdfModalBtn.addEventListener('click', () => {
+            pdfModal.classList.add('hidden');
+        });
+
+        function adjustTextareaHeight() {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 144) + 'px';
+        }
+
+        // Typing logic
+        messageInput.addEventListener('input', () => {
+            adjustTextareaHeight();
+            resetChatInactivityTimer();
+
+            if (!roomChannel || !currentUser) return;
+            
+            roomChannel.send({
+                type: 'broadcast',
+                event: 'typing',
+                payload: { email: currentUser.email.split('@')[0], isTyping: true }
+            });
+
+            if (typingTimeout) clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                roomChannel.send({
+                    type: 'broadcast',
+                    event: 'typing',
+                    payload: { email: currentUser.email.split('@')[0], isTyping: false }
+                });
+            }, 2000);
+        });
+
+        messageInput.addEventListener('keydown', (e) => {
+            const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 768);
+
+            if (e.key === 'Enter' && !e.shiftKey && !isTouchDevice) {
+                e.preventDefault();
+                chatForm.requestSubmit();
+            }
+        });
+
+        function updateTypingUI() {
+            if (typingUsers.size === 0) {
+                typingIndicator.classList.add('opacity-0');
             } else {
-                chatMessages.innerHTML = '<p class="text-center text-gray-400">Please log in to view and send messages.</p>';
+                const names = Array.from(typingUsers).join(', ');
+                typingText.textContent = `${names} ${typingUsers.size === 1 ? 'is' : 'are'} typing...`;
+                typingIndicator.classList.remove('opacity-0');
+            }
+        }
+
+        // Edit and Reply UI logic
+        window.startEditMessage = function(id, content) {
+            window.cancelReply();
+            editingMessageId = id;
+            editText.textContent = content;
+            editPreview.classList.remove('hidden');
+            messageInput.value = content;
+            adjustTextareaHeight();
+            messageInput.focus();
+        };
+
+        window.cancelEdit = function() {
+            editingMessageId = null;
+            editPreview.classList.add('hidden');
+            messageInput.value = '';
+            adjustTextareaHeight();
+        };
+
+        cancelEditBtn.addEventListener('click', () => window.cancelEdit());
+
+        window.setReplyMessage = function(id, email, content) {
+            window.cancelEdit();
+            replyingToMessage = { id, email, content };
+            replyUser.textContent = email.split('@')[0];
+            replyText.textContent = content || '(Attachment)';
+            replyPreview.classList.remove('hidden');
+            messageInput.focus();
+        };
+
+        window.cancelReply = function() {
+            replyingToMessage = null;
+            replyPreview.classList.add('hidden');
+        };
+
+        window.scrollToMessage = function(msgId) {
+            if (!msgId) return;
+            const targetEl = document.getElementById(`msg-${msgId}`);
+            if (targetEl) {
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                targetEl.classList.add('highlight-msg');
+                setTimeout(() => targetEl.classList.remove('highlight-msg'), 2000);
+            }
+        };
+
+        cancelReplyBtn.addEventListener('click', () => window.cancelReply());
+
+        // File Selection logic
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > MAX_FILE_SIZE) {
+                alert('File size exceeds the 50MB limit.');
+                fileInput.value = '';
+                return;
+            }
+            selectedFile = file;
+            fileName.textContent = file.name;
+            filePreview.classList.remove('hidden');
+        });
+
+        removeFileBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            filePreview.classList.add('hidden');
+        });
+
+        // Reaction handling
+        window.toggleReactionPicker = function(msgId) {
+            const pickerEl = document.getElementById(`reaction-picker-${msgId}`);
+            if (pickerEl) pickerEl.classList.toggle('hidden');
+        };
+
+        window.toggleReaction = async function(msgId, emoji) {
+            const msg = allSessionMessages.find(m => m.id === msgId);
+            if (!msg || !currentUser) return;
+
+            let reactions = JSON.parse(JSON.stringify(msg.reactions || {}));
+            let userList = reactions[emoji] || [];
+            const userEmail = currentUser.email.split('@')[0];
+
+            if (userList.includes(userEmail)) {
+                userList = userList.filter(e => e !== userEmail);
+            } else {
+                userList.push(userEmail);
             }
 
-            // Auto-resize textarea
-            messageInput.addEventListener('input', adjustTextareaHeight);
+            if (userList.length === 0) {
+                delete reactions[emoji];
+            } else {
+                reactions[emoji] = userList;
+            }
+
+            msg.reactions = reactions;
+            renderOrUpdateMessage(msg, false);
+
+            if (roomChannel) {
+                roomChannel.send({
+                    type: 'broadcast',
+                    event: 'reaction_update',
+                    payload: { id: msgId, reactions }
+                });
+            }
+
+            try {
+                await supabase.from('messages').update({ reactions }).eq('id', msgId);
+            } catch (e) {
+                console.error('Reaction sync error:', e);
+            }
+        };
+
+        function resetChatInactivityTimer() {
+            if (chatInactivityTimer) clearTimeout(chatInactivityTimer);
+            pdfBanner.classList.add('hidden'); 
+            chatInactivityTimer = setTimeout(() => {
+                pdfBanner.classList.remove('hidden'); 
+            }, CHAT_INACTIVITY_MS);
         }
 
-        // OAuth Login / Logout
-        async function loginWithGoogle() {
-            await supabase.auth.signInWithOAuth({ provider: 'google' });
+        downloadPdfBtn.addEventListener('click', () => generatePDFTranscript());
+        manualExportBtn.addEventListener('click', () => generatePDFTranscript());
+
+        // PDF Transcript Generation
+        function generatePDFTranscript() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            const todaysMessages = allSessionMessages.filter(msg => {
+                if (!msg.created_at) return true;
+                return new Date(msg.created_at).toISOString().split('T')[0] === todayStr;
+            });
+
+            if (todaysMessages.length === 0) {
+                alert("No messages recorded for today yet!");
+                return;
+            }
+
+            doc.setFillColor(15, 23, 42); 
+            doc.rect(0, 0, 210, 32, 'F');
+            doc.setTextColor(56, 189, 248);
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text('NEXUS MARKETPLACE', 14, 15);
+
+            doc.setTextColor(203, 213, 225);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Official Session Chat Transcript & Daily Export`, 14, 23);
+
+            doc.setDrawColor(226, 232, 240);
+            doc.setFillColor(248, 250, 252);
+            doc.roundedRect(14, 36, 182, 22, 2, 2, 'FD');
+
+            doc.setTextColor(15, 23, 42);
+            doc.setFontSize(8.5);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Export Context:`, 18, 43);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Daily Message Room Log`, 45, 43);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Today's Date:`, 18, 50);
+            doc.setFont('helvetica', 'normal');
+            doc.text(todayStr, 45, 50);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Export Time:`, 110, 43);
+            doc.setFont('helvetica', 'normal');
+            doc.text(new Date().toLocaleTimeString(), 135, 43);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Total Messages:`, 110, 50);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${todaysMessages.length} Messages`, 135, 50);
+
+            const tableData = todaysMessages.map(msg => [
+                msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
+                msg.user_email ? msg.user_email.split('@')[0] : 'Unknown',
+                (msg.user_role || 'Member').toUpperCase(),
+                msg.content || (msg.file_url ? '[File Attachment]' : '')
+            ]);
+
+            doc.autoTable({
+                startY: 64,
+                head: [['Time', 'User', 'Role', 'Message Content']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [15, 32, 39], textColor: [255, 255, 255], fontStyle: 'bold' },
+                styles: { fontSize: 8, cellPadding: 3 },
+                columnStyles: {
+                    0: { cellWidth: 22 },
+                    1: { cellWidth: 35 },
+                    2: { cellWidth: 25 },
+                    3: { cellWidth: 'auto' }
+                }
+            });
+
+            currentDocObject = doc;
+            currentPdfBlob = doc.output('blob');
+            const blobUrl = URL.createObjectURL(currentPdfBlob);
+            pdfFrame.src = blobUrl;
+            pdfModal.classList.remove('hidden');
         }
 
-        async function logout() {
+        // Save PDF Archive to Supabase
+        savePdfModalBtn.addEventListener('click', async () => {
+            if (!currentPdfBlob) return;
+            const todayStr = new Date().toISOString().split('T')[0];
+            const fileName = `transcript-${todayStr}-${Date.now()}.pdf`;
+
+            savePdfModalBtn.disabled = true;
+            savePdfModalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                const { error: uploadErr } = await supabase.storage.from('chat-transcripts').upload(fileName, currentPdfBlob, {
+                    contentType: 'application/pdf',
+                    upsert: true
+                });
+
+                if (uploadErr) throw uploadErr;
+
+                const { data: publicUrlData } = supabase.storage.from('chat-transcripts').getPublicUrl(fileName);
+
+                const { error: dbErr } = await supabase.from('transcripts').insert([{
+                    title: `Chat Transcript - ${todayStr}`,
+                    file_url: publicUrlData.publicUrl,
+                    created_by: currentUser?.email || 'System',
+                    date: todayStr
+                }]);
+
+                if (dbErr) throw dbErr;
+
+                alert('Transcript successfully saved & published to room archives!');
+                pdfModal.classList.add('hidden');
+                loadTranscriptArchive();
+            } catch (err) {
+                alert('Notice: Storage bucket or table for transcripts is setting up. Downloading locally directly instead.');
+                if (currentDocObject) currentDocObject.save(`Nexus-Transcript-${todayStr}.pdf`);
+            } finally {
+                savePdfModalBtn.disabled = false;
+                savePdfModalBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish';
+            }
+        });
+
+        // Load Archived Transcripts
+        async function loadTranscriptArchive() {
+            try {
+                const { data, error } = await supabase.from('transcripts').select('*').order('created_at', { ascending: false });
+                
+                if (error || !data || data.length === 0) {
+                    const emptyState = `<div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts found</div>`;
+                    transcriptArchiveList.innerHTML = emptyState;
+                    modalTranscriptList.innerHTML = emptyState;
+                    transcriptCount.textContent = '0';
+                    return;
+                }
+
+                transcriptCount.textContent = data.length.toString();
+                let html = '';
+
+                data.forEach(item => {
+                    html += `
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-2.5 flex items-center justify-between text-xs hover:bg-white/10 transition">
+                            <div class="truncate pr-2">
+                                <p class="font-bold text-amber-300 truncate">${item.title || 'Daily Transcript'}</p>
+                                <p class="text-[10px] text-gray-400">${item.date || ''}</p>
+                            </div>
+                            <a href="${item.file_url}" target="_blank" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded transition flex items-center gap-1 shrink-0">
+                                <i class="fa-solid fa-download"></i> View
+                            </a>
+                        </div>
+                    `;
+                });
+
+                transcriptArchiveList.innerHTML = html;
+                modalTranscriptList.innerHTML = html;
+            } catch (err) {
+                console.log('Archive table check:', err.message);
+            }
+        }
+
+        // Auth and App Initialization
+        async function init() {
+            const { data: { session } } = await supabase.auth.getSession();
+            currentUser = session?.user || null;
+
+            if (currentUser) {
+                userDisplay.textContent = currentUser.email;
+                if (!userRole) {
+                    showScreen('role');
+                } else {
+                    setupChatRoom();
+                }
+            } else {
+                showScreen('login');
+            }
+
+            supabase.auth.onAuthStateChange((event, session) => {
+                currentUser = session?.user || null;
+                if (currentUser) {
+                    userDisplay.textContent = currentUser.email;
+                    if (!userRole) showScreen('role');
+                    else setupChatRoom();
+                } else {
+                    showScreen('login');
+                }
+            });
+        }
+
+        function showScreen(screen) {
+            loginScreen.classList.add('hidden');
+            roleScreen.classList.add('hidden');
+            chatScreen.classList.add('hidden');
+
+            if (screen === 'login') loginScreen.classList.remove('hidden');
+            if (screen === 'role') roleScreen.classList.remove('hidden');
+            if (screen === 'chat') chatScreen.classList.remove('hidden');
+        }
+
+        googleLoginBtn.addEventListener('click', async () => {
+            await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.href }
+            });
+        });
+
+        selectSellerBtn.addEventListener('click', () => setRole('Seller'));
+        selectBuyerBtn.addEventListener('click', () => setRole('Buyer'));
+
+        function setRole(role) {
+            userRole = role;
+            localStorage.setItem('nexus_user_role', role);
+            setupChatRoom();
+        }
+
+        logoutBtn.addEventListener('click', async () => {
+            localStorage.removeItem('nexus_user_role');
+            userRole = null;
             await supabase.auth.signOut();
             window.location.reload();
+        });
+
+        async function setupChatRoom() {
+            showScreen('chat');
+            userRoleBadge.textContent = userRole;
+            userRoleBadge.className = `text-xs font-semibold px-2 py-0.5 rounded-full ${userRole === 'Seller' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-emerald-500/20 text-emerald-300'}`;
+            
+            await loadMessages();
+            setupRealtimeChannel();
+            loadTranscriptArchive();
+            resetChatInactivityTimer();
         }
 
-        // Fetch Messages from Database with Error Diagnostics
         async function loadMessages() {
+            chatMessages.innerHTML = '<div class="text-center text-gray-400 py-8"><i class="fa-solid fa-spinner fa-spin text-2xl"></i><p class="mt-2 text-xs">Loading message log...</p></div>';
+
             const { data, error } = await supabase
                 .from('messages')
                 .select('*')
@@ -120,25 +837,26 @@
                 .limit(200);
 
             if (error) {
-                console.error('Error loading messages from Supabase:', error.message);
-                chatMessages.innerHTML = `<p class="text-center text-red-500">Failed to load messages: ${error.message}</p>`;
+                chatMessages.innerHTML = `<p class="text-center text-red-400 text-xs py-4">Error loading messages: ${error.message}</p>`;
                 return;
             }
 
-            if (data) {
-                chatMessages.innerHTML = ''; 
-                allSessionMessages = [];
+            chatMessages.innerHTML = '';
+            allSessionMessages = [];
+            
+            if (data && data.length > 0) {
                 data.forEach(msg => renderOrUpdateMessage(msg, false));
+                calculateSellerSpeeds();
                 scrollToBottom(true);
+            } else {
+                chatMessages.innerHTML = `<div class="text-center text-gray-400 italic text-xs py-10">No messages in room yet. Start the conversation!</div>`;
             }
         }
 
-        // Render Message to UI
         function renderOrUpdateMessage(msg, isNew = false) {
-            let existingMsgIndex = allSessionMessages.findIndex(m => m.id === msg.id);
-            
-            if (existingMsgIndex !== -1) {
-                allSessionMessages[existingMsgIndex] = msg;
+            const existingIndex = allSessionMessages.findIndex(m => m.id === msg.id);
+            if (existingIndex !== -1) {
+                allSessionMessages[existingIndex] = msg;
                 const existingElem = document.getElementById(`msg-${msg.id}`);
                 if (existingElem) existingElem.outerHTML = buildMessageHTML(msg);
                 return;
@@ -146,186 +864,277 @@
 
             allSessionMessages.push(msg);
             chatMessages.insertAdjacentHTML('beforeend', buildMessageHTML(msg));
-            if (isNew) scrollToBottom();
+            if (isNew) scrollToBottom(true);
         }
 
         function buildMessageHTML(msg) {
-            const isSelf = currentUser && currentUser.id === msg.user_id;
+            const isSelf = currentUser && currentUser.email === msg.user_email;
+            const senderName = msg.user_email ? msg.user_email.split('@')[0] : 'User';
+            const role = msg.user_role || 'Member';
+            const roleColor = role === 'Seller' ? 'text-cyan-400 border-cyan-400/30 bg-cyan-950/40' : 'text-emerald-400 border-emerald-400/30 bg-emerald-950/40';
+            const timeStr = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+            // Reactions HTML
+            let reactionsHTML = '';
+            if (msg.reactions && Object.keys(msg.reactions).length > 0) {
+                reactionsHTML = '<div class="flex flex-wrap gap-1 mt-2">';
+                for (const [emoji, users] of Object.entries(msg.reactions)) {
+                    if (users && users.length > 0) {
+                        const hasReacted = currentUser && users.includes(currentUser.email.split('@')[0]);
+                        reactionsHTML += `
+                            <button onclick="toggleReaction('${msg.id}', '${emoji}')" class="text-xs ${hasReacted ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200' : 'bg-white/5 border-white/10 text-gray-300'} border px-2 py-0.5 rounded-full flex items-center gap-1 hover:bg-white/20 transition">
+                                <span>${emoji}</span>
+                                <span class="text-[10px] opacity-80">${users.length}</span>
+                            </button>
+                        `;
+                    }
+                }
+                reactionsHTML += '</div>';
+            }
+
             return `
-                <div id="msg-${msg.id}" class="flex flex-col ${isSelf ? 'items-end' : 'items-start'} my-2">
-                    <span class="text-xs text-gray-400 mb-1">${msg.user_email || 'User'}</span>
-                    <div class="max-w-md ${isSelf ? 'bg-blue-600 text-white' : 'bg-white text-gray-800'} p-3 rounded-xl shadow-sm border border-gray-100">
-                        ${msg.reply_to_content ? `<div class="text-xs opacity-75 border-l-2 pl-2 mb-1 italic">Replying to: ${msg.reply_to_content}</div>` : ''}
-                        <p class="whitespace-pre-wrap text-sm">${msg.content || ''}</p>
-                        ${msg.file_url ? `<a href="${msg.file_url}" target="_blank" class="text-xs underline block mt-2 opacity-90">View Attachment</a>` : ''}
-                        ${msg.is_edited ? `<span class="text-[10px] opacity-60 block mt-1">(edited)</span>` : ''}
+                <div id="msg-${msg.id}" class="message-bubble flex flex-col ${isSelf ? 'items-end' : 'items-start'} my-2 group">
+                    <div class="flex items-center gap-2 mb-1 text-xs text-gray-400 px-1">
+                        <span class="font-bold text-gray-200">${senderName}</span>
+                        <span class="text-[10px] px-1.5 py-0.2 rounded border ${roleColor}">${role}</span>
+                        <span class="text-[10px] text-gray-400">${timeStr}</span>
                     </div>
-                    ${isSelf ? `<button onclick="startEdit('${msg.id}', '${msg.content}')" class="text-[10px] text-gray-400 hover:underline mt-1">Edit</button>` : ''}
+
+                    <div class="max-w-xs sm:max-w-md ${isSelf ? 'bg-cyan-600/80 text-white rounded-2xl rounded-tr-none' : 'glass text-gray-100 rounded-2xl rounded-tl-none'} p-3 shadow-lg relative border border-white/10">
+                        ${msg.reply_to_content ? `
+                            <div onclick="scrollToMessage('${msg.reply_to_id}')" class="cursor-pointer text-xs bg-black/20 p-2 rounded-lg mb-2 border-l-2 border-cyan-400 hover:bg-black/30 transition">
+                                <span class="font-bold text-cyan-300 block">${msg.reply_to_email ? msg.reply_to_email.split('@')[0] : 'User'}</span>
+                                <span class="opacity-80 italic line-clamp-1">${msg.reply_to_content}</span>
+                            </div>
+                        ` : ''}
+
+                        <p class="whitespace-pre-wrap text-sm leading-relaxed">${msg.content || ''}</p>
+
+                        ${msg.file_url ? `
+                            <div class="mt-2">
+                                ${msg.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? `
+                                    <a href="${msg.file_url}" target="_blank">
+                                        <img src="${msg.file_url}" class="rounded-lg max-h-48 w-full object-cover border border-white/10 hover:opacity-90 transition">
+                                    </a>
+                                ` : `
+                                    <a href="${msg.file_url}" target="_blank" class="inline-flex items-center gap-2 text-xs bg-black/30 hover:bg-black/40 text-cyan-300 p-2 rounded-lg border border-white/10 transition">
+                                        <i class="fa-solid fa-paperclip"></i> View Attached Document
+                                    </a>
+                                `}
+                            </div>
+                        ` : ''}
+
+                        ${msg.is_edited ? `<span class="text-[9px] opacity-60 block text-right mt-1">(edited)</span>` : ''}
+                        
+                        ${reactionsHTML}
+
+                        <!-- Message Action Toolbar -->
+                        <div class="opacity-0 group-hover:opacity-100 transition absolute ${isSelf ? '-left-20' : '-right-20'} top-2 flex items-center gap-1 bg-slate-900/90 border border-white/10 p-1 rounded-lg backdrop-blur-md z-20">
+                            <button onclick="toggleReactionPicker('${msg.id}')" class="p-1 hover:text-yellow-400 text-gray-300 text-xs" title="React"><i class="fa-regular fa-face-smile"></i></button>
+                            <button onclick="setReplyMessage('${msg.id}', '${msg.user_email}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-cyan-400 text-gray-300 text-xs" title="Reply"><i class="fa-solid fa-reply"></i></button>
+                            ${isSelf ? `<button onclick="startEditMessage('${msg.id}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-amber-400 text-gray-300 text-xs" title="Edit"><i class="fa-solid fa-pen"></i></button>` : ''}
+                        </div>
+
+                        <!-- Popup Reaction Selector -->
+                        <div id="reaction-picker-${msg.id}" class="hidden absolute ${isSelf ? 'right-0' : 'left-0'} -top-10 bg-slate-900/95 border border-white/20 p-1.5 rounded-full flex gap-1 shadow-2xl z-30 backdrop-blur-md">
+                            ${REACTION_PRESETS.map(e => `<button onclick="toggleReaction('${msg.id}', '${e}'); toggleReactionPicker('${msg.id}')" class="hover:scale-125 transition text-base px-1">${e}</button>`).join('')}
+                        </div>
+                    </div>
                 </div>
             `;
         }
 
-        // Submit Form Handler (Handles Inserts, Edits, File Uploads, & Broadcast)
+        // Form Submit Logic
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUser) return alert('Please login first!');
+            resetChatInactivityTimer();
 
             const content = messageInput.value.trim();
             if (!content && !selectedFile && !editingMessageId) return;
 
-            // EDIT MODE
+            // Handle Edit
             if (editingMessageId) {
-                const { data: updatedMsg, error: updateErr } = await supabase.from('messages').update({
-                    content: content,
-                    is_edited: true
-                }).eq('id', editingMessageId).select().single();
+                const { data: updatedMsg, error } = await supabase
+                    .from('messages')
+                    .update({ content, is_edited: true })
+                    .eq('id', editingMessageId)
+                    .select()
+                    .single();
 
-                if (updateErr) {
-                    alert('Failed to update message: ' + updateErr.message);
-                    return;
+                if (!error && updatedMsg) {
+                    renderOrUpdateMessage(updatedMsg, false);
+                    if (roomChannel) roomChannel.send({ type: 'broadcast', event: 'new_message', payload: updatedMsg });
                 }
-
-                if (updatedMsg && roomChannel) {
-                    roomChannel.send({ type: 'broadcast', event: 'new_message', payload: updatedMsg });
-                }
-
-                cancelAction();
+                window.cancelEdit();
                 return;
             }
 
-            // NEW MESSAGE MODE
-            messageInput.value = '';
-            adjustTextareaHeight();
-            filePreview.classList.add('hidden');
-            const fileToUpload = selectedFile;
-            selectedFile = null;
-            fileInput.value = '';
-
+            // Upload Attached File if selected
             let file_url = null;
-
-            if (fileToUpload) {
-                const fileExt = fileToUpload.name.split('.').pop();
+            if (selectedFile) {
+                const fileExt = selectedFile.name.split('.').pop();
                 const filePath = `${currentUser.id}/${Date.now()}.${fileExt}`;
-                const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, fileToUpload);
+                const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, selectedFile);
 
                 if (uploadError) {
-                    alert('File storage upload failed: ' + uploadError.message);
+                    alert('File upload failed: ' + uploadError.message);
                     return;
-                } else {
-                    const { data } = supabase.storage.from('chat-files').getPublicUrl(filePath);
-                    file_url = data.publicUrl;
                 }
+                const { data } = supabase.storage.from('chat-files').getPublicUrl(filePath);
+                file_url = data.publicUrl;
             }
 
-            const messageData = {
-                user_id: currentUser.id,
+            const newMsg = {
                 user_email: currentUser.email,
                 user_role: userRole,
                 content: content,
                 file_url: file_url,
-                reactions: {}
+                reactions: {},
+                reply_to_id: replyingToMessage?.id || null,
+                reply_to_email: replyingToMessage?.email || null,
+                reply_to_content: replyingToMessage?.content || null
             };
 
-            if (replyingToMessage) {
-                messageData.reply_to_id = replyingToMessage.id;
-                messageData.reply_to_email = replyingToMessage.email;
-                messageData.reply_to_content = replyingToMessage.content;
-            }
+            // Clear inputs
+            messageInput.value = '';
+            selectedFile = null;
+            fileInput.value = '';
+            filePreview.classList.add('hidden');
+            window.cancelReply();
+            adjustTextareaHeight();
 
-            cancelAction();
-
-            // Insert into Supabase with explicit error check
+            // Insert message to database
             const { data: insertedMsg, error: insertError } = await supabase
                 .from('messages')
-                .insert([messageData])
+                .insert([newMsg])
                 .select()
                 .single();
-            
+
             if (insertError) {
-                console.error('Database Insert Error:', insertError);
-                alert('Message could not be saved to database: ' + insertError.message);
+                alert('Message send error: ' + insertError.message);
                 return;
             }
 
             if (insertedMsg) {
                 renderOrUpdateMessage(insertedMsg, true);
-                
                 if (roomChannel) {
-                    roomChannel.send({
-                        type: 'broadcast',
-                        event: 'new_message',
-                        payload: insertedMsg
-                    });
+                    roomChannel.send({ type: 'broadcast', event: 'new_message', payload: insertedMsg });
                 }
+                calculateSellerSpeeds();
             }
         });
 
-        // Realtime Subscriptions & Presence
+        // Speed tracker calculation
+        function calculateSellerSpeeds() {
+            let lastBuyerMsgTime = null;
+            const sellerStats = {};
+
+            allSessionMessages.forEach(msg => {
+                const msgTime = new Date(msg.created_at).getTime();
+                if (msg.user_role === 'Buyer') {
+                    lastBuyerMsgTime = msgTime;
+                } else if (msg.user_role === 'Seller' && lastBuyerMsgTime) {
+                    const responseSec = Math.round((msgTime - lastBuyerMsgTime) / 1000);
+                    if (responseSec >= 0 && responseSec < 3600) {
+                        const seller = msg.user_email.split('@')[0];
+                        if (!sellerStats[seller]) sellerStats[seller] = [];
+                        sellerStats[seller].push(responseSec);
+                    }
+                    lastBuyerMsgTime = null; // Reset for next inquiry
+                }
+            });
+
+            const sellers = Object.keys(sellerStats);
+            if (sellers.length === 0) {
+                sellerSpeedList.innerHTML = `<div class="text-xs text-gray-400 italic text-center py-2">No seller responses recorded yet</div>`;
+                sellerCount.textContent = '0 Active';
+                return;
+            }
+
+            sellerCount.textContent = `${sellers.length} Active`;
+            let listHtml = '';
+            sellers.forEach(seller => {
+                const times = sellerStats[seller];
+                const avgSec = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+                listHtml += `
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-2 flex items-center justify-between text-xs">
+                        <span class="font-bold text-cyan-300 truncate">${seller}</span>
+                        <span class="bg-cyan-500/20 text-cyan-200 px-2 py-0.5 rounded-full text-[10px] font-mono">
+                            ⚡ Avg: ${avgSec}s
+                        </span>
+                    </div>
+                `;
+            });
+            sellerSpeedList.innerHTML = listHtml;
+        }
+
+        // Realtime setup & presence tracking
         function setupRealtimeChannel() {
-            roomChannel = supabase.channel('room-1', {
+            roomChannel = supabase.channel('nexus-trading-room', {
                 config: { presence: { key: currentUser.id } }
             });
 
             roomChannel
                 .on('broadcast', { event: 'new_message' }, payload => {
                     renderOrUpdateMessage(payload.payload, true);
+                    calculateSellerSpeeds();
+                })
+                .on('broadcast', { event: 'reaction_update' }, payload => {
+                    const msg = allSessionMessages.find(m => m.id === payload.payload.id);
+                    if (msg) {
+                        msg.reactions = payload.payload.reactions;
+                        renderOrUpdateMessage(msg, false);
+                    }
+                })
+                .on('broadcast', { event: 'typing' }, payload => {
+                    if (payload.payload.isTyping) {
+                        typingUsers.add(payload.payload.email);
+                    } else {
+                        typingUsers.delete(payload.payload.email);
+                    }
+                    updateTypingUI();
                 })
                 .on('presence', { event: 'sync' }, () => {
                     const state = roomChannel.presenceState();
-                    const count = Object.keys(state).length;
-                    document.getElementById('presence-count').innerText = `${count} online`;
+                    updatePresenceUI(state);
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
-                        await roomChannel.track({ email: currentUser.email, online_at: new Date() });
+                        await roomChannel.track({
+                            email: currentUser.email,
+                            role: userRole,
+                            online_at: new Date().toISOString()
+                        });
                     }
                 });
         }
 
-        // Helpers & UI State Management
-        function handleFileSelect(e) {
-            selectedFile = e.target.files[0];
-            if (selectedFile) {
-                fileNameSpan.innerText = selectedFile.name;
-                filePreview.classList.remove('hidden');
+        function updatePresenceUI(state) {
+            const users = [];
+            for (const key in state) {
+                if (state[key].length > 0) {
+                    users.push(state[key][0]);
+                }
             }
+
+            onlineCount.textContent = users.length.toString();
+            if (users.length === 0) {
+                presenceList.innerHTML = `<div class="text-xs text-gray-400 italic">No users online</div>`;
+                return;
+            }
+
+            presenceList.innerHTML = users.map(u => `
+                <div class="flex items-center justify-between text-xs bg-white/5 border border-white/10 p-2 rounded-xl">
+                    <div class="flex items-center gap-2 truncate">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="truncate font-medium text-gray-200">${u.email ? u.email.split('@')[0] : 'User'}</span>
+                    </div>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded ${u.role === 'Seller' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-emerald-500/20 text-emerald-300'}">${u.role || 'Member'}</span>
+                </div>
+            `).join('');
         }
 
-        function clearFile() {
-            selectedFile = null;
-            fileInput.value = '';
-            filePreview.classList.add('hidden');
-        }
-
-        function startEdit(id, content) {
-            editingMessageId = id;
-            messageInput.value = content;
-            bannerText.innerText = 'Editing message...';
-            actionBanner.classList.remove('hidden');
-            messageInput.focus();
-        }
-
-        function cancelAction() {
-            editingMessageId = null;
-            replyingToMessage = null;
-            messageInput.value = '';
-            actionBanner.classList.add('hidden');
-            adjustTextareaHeight();
-        }
-
-        function scrollToBottom(smooth = false) {
-            chatMessages.scrollTo({
-                top: chatMessages.scrollHeight,
-                behavior: smooth ? 'smooth' : 'auto'
-            });
-        }
-
-        function adjustTextareaHeight() {
-            messageInput.style.height = 'auto';
-            messageInput.style.height = messageInput.scrollHeight + 'px';
-        }
-
-        // Launch
+        // Initialize Application
         init();
     </script>
 </body>
