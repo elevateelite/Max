@@ -2,1149 +2,198 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Nexus Marketplace Chat</title>
-
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Nexus Market">
-    <meta name="theme-color" content="#0f2027">
-
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png">
-    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Nexus%20Marketplace%20Chat%22%2C%22short_name%22%3A%22NexusChat%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230f2027%22%2C%22theme_color%22%3A%22%230f2027%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F1041%2F1041916.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Chat Application</title>
+    <!-- Tailwind CSS CDN for quick styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
-    <style>
-        body {
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            color: #ffffff;
-            font-family: 'Inter', sans-serif;
-            height: 100dvh;
-            width: 100vw;
-            overflow: hidden;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .glass {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .message-bubble { 
-            animation: fadeIn 0.3s ease-out;
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .highlight-msg {
-            animation: highlightPulse 2s ease-in-out;
-            border-radius: 1rem;
-        }
-        @keyframes highlightPulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
-            50% { box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.8); }
-        }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-    </style>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="flex items-center justify-center p-2 sm:p-4 relative">
+<body class="bg-gray-100 h-screen flex flex-col justify-between font-sans">
 
-    <div id="login-screen" class="glass rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
-        <div class="mb-8">
-            <i class="fa-solid fa-store text-5xl text-cyan-400 mb-4"></i>
-            <h1 class="text-3xl font-bold tracking-wider">NEXUS MARKET</h1>
-            <p class="text-gray-300 text-sm mt-2">Connect buyers & sellers instantly.</p>
+    <!-- Header / Presence Bar -->
+    <header class="bg-white border-b p-4 flex justify-between items-center shadow-sm">
+        <div>
+            <h1 class="text-xl font-bold text-gray-800">Group Chat</h1>
+            <p id="presence-count" class="text-sm text-gray-500">0 users online</p>
         </div>
-        <button id="google-login-btn" class="w-full bg-white text-gray-900 font-semibold py-3 px-4 rounded-lg hover:bg-gray-100 transition duration-300 flex items-center justify-center gap-3 active:scale-95">
-            <i class="fa-brands fa-google text-red-500"></i> Continue with Google
-        </button>
+        <div id="auth-controls">
+            <button id="login-btn" onclick="loginWithGoogle()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Login with Google</button>
+            <button id="logout-btn" onclick="logout()" class="hidden bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">Logout</button>
+        </div>
+    </header>
+
+    <!-- Chat Messages Container -->
+    <main id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+        <p class="text-center text-gray-400">Loading messages...</p>
+    </main>
+
+    <!-- Typing Indicator -->
+    <div id="typing-indicator" class="px-4 text-xs italic text-gray-500 h-4"></div>
+
+    <!-- Edit/Reply Banners -->
+    <div id="action-banner" class="hidden bg-gray-200 px-4 py-2 border-t flex justify-between items-center text-sm text-gray-700">
+        <span id="banner-text">Editing message...</span>
+        <button onclick="cancelAction()" class="text-red-500 font-bold hover:underline">Cancel</button>
     </div>
 
-    <div id="role-screen" class="hidden glass rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
-        <h2 class="text-2xl font-bold mb-2">Select Account Type</h2>
-        <p class="text-gray-300 text-sm mb-6">Choose how you want to participate in this group room:</p>
-
-        <div class="space-y-4">
-            <button id="select-seller-btn" class="w-full p-4 border border-cyan-400/40 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/60 transition flex items-center justify-between text-left group">
-                <div>
-                    <h3 class="font-bold text-cyan-300 text-lg">Seller (Seller)</h3>
-                    <p class="text-xs text-gray-300">Respond to buyer inquiries & measure speed</p>
-                </div>
-                <i class="fa-solid fa-user-tag text-2xl text-cyan-400 group-hover:scale-110 transition"></i>
-            </button>
-
-            <button id="select-buyer-btn" class="w-full p-4 border border-emerald-400/40 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 transition flex items-center justify-between text-left group">
-                <div>
-                    <h3 class="font-bold text-emerald-300 text-lg">Buyer (Buyer)</h3>
-                    <p class="text-xs text-gray-300">Post requests & get instant seller replies</p>
-                </div>
-                <i class="fa-solid fa-cart-shopping text-2xl text-emerald-400 group-hover:scale-110 transition"></i>
-            </button>
-        </div>
-    </div>
-
-    <div id="chat-screen" class="hidden glass rounded-2xl w-full max-w-6xl h-[98dvh] md:h-[92vh] flex flex-col md:flex-row shadow-2xl overflow-hidden relative">
-        <div class="flex-1 flex flex-col h-full border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden">
-
-            <div id="pdf-banner" class="hidden bg-amber-500/20 border-b border-amber-500/30 p-3 text-xs flex flex-wrap items-center justify-between gap-2 backdrop-blur-md z-10">
-                <div class="flex items-center gap-2 text-amber-200">
-                    <i class="fa-solid fa-clock text-amber-400 text-sm"></i>
-                    <span><strong>Chat Inactive for 5 Minutes:</strong> You can export today's chat history now.</span>
-                </div>
-                <button id="download-pdf-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow">
-                    <i class="fa-solid fa-file-pdf"></i> Export PDF Transcript
-                </button>
-            </div>
-
-            <header class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20 shrink-0">
-                <div class="flex items-center gap-3">
-                    <i class="fa-solid fa-comments text-cyan-400 text-xl"></i>
-                    <div>
-                        <h2 class="font-bold text-lg leading-tight">Nexus Trading Room</h2>
-                        <span id="user-role-badge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300"></span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button id="manual-export-btn" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="Generate and archive today's discussion PDF">
-                        <i class="fa-solid fa-file-pdf"></i>
-                        <span class="hidden sm:inline">Export PDF</span>
-                    </button>
-
-                    <button id="open-archive-modal-btn" class="bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 border border-cyan-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="View all daily archives">
-                        <i class="fa-solid fa-box-archive"></i>
-                        <span>Archives</span>
-                    </button>
-
-                    <button id="toggle-sidebar-btn" type="button" class="md:hidden bg-white/10 hover:bg-white/20 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1">
-                        <i class="fa-solid fa-bars"></i>
-                    </button>
-
-                    <span id="user-display" class="text-xs text-gray-300 hidden lg:block ml-2"></span>
-                    <button id="logout-btn" class="text-gray-400 hover:text-white transition p-1.5" title="Logout">
-                        <i class="fa-solid fa-right-from-bracket text-lg"></i>
-                    </button>
-                </div>
-            </header>
-
-            <main id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
-            </main>
-
-            <div id="typing-indicator" class="text-xs text-cyan-300 italic min-h-[1.25rem] px-4 opacity-0 transition-opacity flex items-center gap-2">
-                <i class="fa-solid fa-ellipsis fa-bounce"></i>
-                <span id="typing-text">Someone is typing...</span>
-            </div>
-
-            <footer class="p-4 border-t border-white/10 bg-black/20 shrink-0 relative">
-                <div id="emoji-picker" class="hidden absolute bottom-20 left-4 z-50 glass bg-slate-900/95 border border-white/20 rounded-2xl p-3 w-72 sm:w-80 shadow-2xl backdrop-blur-xl">
-                    <div class="flex justify-between items-center pb-2 border-b border-white/10 mb-2">
-                        <span class="text-xs font-bold text-gray-300">Choose Emoji</span>
-                        <button type="button" id="close-emoji-picker" class="text-gray-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
-                    <div id="emoji-grid" class="grid grid-cols-6 sm:grid-cols-7 gap-1.5 max-h-48 overflow-y-auto text-xl p-1">
-                    </div>
-                </div>
-
-                <div id="edit-preview" class="hidden text-xs text-amber-200 mb-2 flex justify-between items-center bg-amber-950/60 p-2.5 rounded-lg border-l-4 border-amber-400 backdrop-blur-md">
-                    <div class="truncate pr-2">
-                        <span class="text-amber-400 font-bold block"><i class="fa-solid fa-pen-to-square mr-1"></i> Editing Message</span>
-                        <span id="edit-text" class="text-gray-300 italic truncate block mt-0.5"></span>
-                    </div>
-                    <button id="cancel-edit-btn" type="button" class="text-gray-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-
-                <div id="reply-preview" class="hidden text-xs text-cyan-200 mb-2 flex justify-between items-center bg-cyan-950/60 p-2.5 rounded-lg border-l-4 border-cyan-400 backdrop-blur-md">
-                    <div class="truncate pr-2">
-                        <span class="text-cyan-400 font-bold block"><i class="fa-solid fa-reply mr-1"></i> Replying to <span id="reply-user"></span></span>
-                        <span id="reply-text" class="text-gray-300 italic truncate block mt-0.5"></span>
-                    </div>
-                    <button id="cancel-reply-btn" type="button" class="text-gray-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-
-                <div id="file-preview" class="hidden text-sm text-cyan-300 mb-2 flex justify-between items-center bg-cyan-900/30 p-2 rounded">
-                    <span id="file-name"></span>
-                    <button id="remove-file-btn" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
-                </div>
-
-                <form id="chat-form" class="flex items-end gap-2">
-                    <button type="button" id="emoji-btn" class="p-3 text-gray-400 hover:text-yellow-400 transition" title="Add Emoji">
-                        <i class="fa-regular fa-face-smile text-xl"></i>
-                    </button>
-
-                    <label for="file-input" class="p-3 text-gray-400 hover:text-cyan-400 cursor-pointer transition" title="Attach File (Max 50MB)">
-                        <i class="fa-solid fa-paperclip text-xl"></i>
-                    </label>
-                    <input type="file" id="file-input" class="hidden">
-
-                    <textarea id="message-input" rows="1" enterkeyhint="newline" placeholder="Type a message..." 
-                              class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-2 text-white focus:outline-none focus:border-cyan-400 transition resize-none max-h-36 overflow-y-auto leading-normal"></textarea>
-
-                    <button type="submit" class="bg-cyan-500 hover:bg-cyan-400 text-white p-3 rounded-full transition w-12 h-12 flex items-center justify-center shrink-0">
-                        <i class="fa-solid fa-paper-plane"></i>
-                    </button>
-                </form>
-            </footer>
+    <!-- Message Input Form -->
+    <footer class="bg-white border-t p-4">
+        <!-- File Preview -->
+        <div id="file-preview" class="hidden text-xs text-blue-600 mb-2 flex items-center gap-2">
+            <span id="file-name">filename.png</span>
+            <button onclick="clearFile()" class="text-red-500 font-bold">✕</button>
         </div>
 
-        <aside id="sidebar-panel" class="hidden md:flex w-full md:w-80 bg-black/30 flex-col h-auto md:h-full p-4 space-y-4 overflow-y-auto border-t md:border-t-0 md:border-l border-white/10 shrink-0">
-            <div>
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                        <i class="fa-solid fa-box-archive"></i> Saved Daily Transcripts
-                    </h3>
-                    <span id="transcript-count" class="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
-                </div>
-                <div id="transcript-archive-list" class="space-y-2 max-h-56 overflow-y-auto pr-1">
-                    <div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts yet</div>
-                </div>
-            </div>
+        <form id="chat-form" class="flex items-end gap-2">
+            <label class="cursor-pointer bg-gray-100 p-2 rounded-lg hover:bg-gray-200">
+                📎
+                <input type="file" id="file-input" class="hidden" onchange="handleFileSelect(event)">
+            </label>
+            <textarea id="message-input" rows="1" placeholder="Type a message..." class="flex-1 border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none max-h-32"></textarea>
+            <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 font-medium">Send</button>
+        </form>
+    </footer>
 
-            <hr class="border-white/10">
+    <!-- App Logic -->
+    <script>
+        // REPLACE WITH YOUR SUPABASE CREDENTIALS
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
 
-            <div>
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400">Seller Speed Tracker</h3>
-                    <span id="seller-count" class="bg-cyan-500/20 text-cyan-300 text-xs px-2 py-0.5 rounded-full font-bold">0 Active</span>
-                </div>
-                <div id="seller-speed-list" class="space-y-2 max-h-36 overflow-y-auto pr-1">
-                    <div class="text-xs text-gray-400 italic text-center py-2">No seller responses recorded yet</div>
-                </div>
-            </div>
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            <hr class="border-white/10">
-
-            <div class="flex-1">
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Online Participants</h3>
-                    <span id="online-count" class="bg-emerald-500/20 text-emerald-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
-                </div>
-                <div id="presence-list" class="space-y-2">
-                </div>
-            </div>
-        </aside>
-    </div>
-
-    <div id="archive-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="glass w-full max-w-2xl max-h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
-            <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
-                <div class="flex items-center gap-2 text-amber-400 font-bold text-base">
-                    <i class="fa-solid fa-box-archive text-lg"></i>
-                    <span>Daily Message Transcripts Archive</span>
-                </div>
-                <button id="close-archive-modal-btn" class="text-gray-400 hover:text-white text-lg px-2"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="p-4 overflow-y-auto flex-1 space-y-3">
-                <p class="text-xs text-gray-300">Below are all recorded daily chat history PDFs for this room. Any room member can access and download them at any time.</p>
-                <div id="modal-transcript-list" class="space-y-2">
-                    <div class="text-xs text-gray-400 italic text-center py-4">Loading archives...</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="pdf-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
-        <div class="glass w-full max-w-4xl h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
-            <div class="p-3 sm:p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
-                <div class="flex items-center gap-2 text-cyan-400 font-bold text-sm sm:text-base">
-                    <i class="fa-solid fa-file-pdf text-lg"></i>
-                    <span>Chat Transcript Preview</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button id="save-pdf-modal-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm transition flex items-center gap-1.5 shadow">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish for All Members
-                    </button>
-                    <button id="close-pdf-modal-btn" class="bg-white/10 hover:bg-white/20 text-white font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm transition">
-                        Close
-                    </button>
-                </div>
-            </div>
-            <iframe id="pdf-frame" class="w-full flex-1 bg-white border-0"></iframe>
-        </div>
-    </div>
-
-    <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
-
-        const SUPABASE_URL = 'https://uavklixceheysspmgilk.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_Y9vPgA1CYXcFgk2SVqMXRg_M-jLuk_8';
-
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-                persistSession: true,
-                autoRefreshToken: true,
-                detectSessionInUrl: true,
-                storageKey: 'nexus-market-auth-token',
-                storage: window.localStorage
-            }
-        });
-
+        // State variables
         let currentUser = null;
-        let userRole = localStorage.getItem('nexus_user_role') || null;
-        let selectedFile = null;
-        let lastBuyerTimestamp = null;
-        let allSessionMessages = []; 
-        let replyingToMessage = null;
-        let editingMessageId = null;
+        let userRole = 'student';
         let roomChannel = null;
-        let currentDocObject = null;
-        let currentPdfBlob = null;
-
-        let typingTimeout = null;
-        const typingUsers = new Set();
-
-        const CHAT_INACTIVITY_MS = 5 * 60 * 1000;
-        let chatInactivityTimer = null;
-        const sellerMetrics = {}; 
-        const MAX_FILE_SIZE = 50 * 1024 * 1024;
-
-        const EMOJI_LIST = [
-            '😀','😂','😅','😍','😎','🥳','🔥','❤️','👍','👎','👏','🎉','🚀','💡','💯',
-            '😊','😭','😮','🤔','🙏','🤝','✨','⭐','💸','🛒','📦','✅','❌','⚠️','💬',
-            '⚡','🎯','💪','🙌','🤩','😜','🙄','🤯','💤','💩','🙈','🙋','🏼','☕','🍻'
-        ];
-
-        const REACTION_PRESETS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '🚀', '🎉'];
+        let editingMessageId = null;
+        let replyingToMessage = null;
+        let selectedFile = null;
+        let allSessionMessages = [];
 
         // DOM Elements
-        const loginScreen = document.getElementById('login-screen');
-        const roleScreen = document.getElementById('role-screen');
-        const chatScreen = document.getElementById('chat-screen');
-        const googleLoginBtn = document.getElementById('google-login-btn');
-        const logoutBtn = document.getElementById('logout-btn');
-        const selectSellerBtn = document.getElementById('select-seller-btn');
-        const selectBuyerBtn = document.getElementById('select-buyer-btn');
-        const userRoleBadge = document.getElementById('user-role-badge');
         const chatMessages = document.getElementById('chat-messages');
         const chatForm = document.getElementById('chat-form');
         const messageInput = document.getElementById('message-input');
-        const userDisplay = document.getElementById('user-display');
         const fileInput = document.getElementById('file-input');
         const filePreview = document.getElementById('file-preview');
-        const fileName = document.getElementById('file-name');
-        const removeFileBtn = document.getElementById('remove-file-btn');
-        const emojiBtn = document.getElementById('emoji-btn');
-        const emojiPicker = document.getElementById('emoji-picker');
-        const emojiGrid = document.getElementById('emoji-grid');
-        const closeEmojiPicker = document.getElementById('close-emoji-picker');
-        const presenceList = document.getElementById('presence-list');
-        const onlineCount = document.getElementById('online-count');
-        const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
-        const sidebarPanel = document.getElementById('sidebar-panel');
-        const sellerSpeedList = document.getElementById('seller-speed-list');
-        const sellerCount = document.getElementById('seller-count');
-        const pdfBanner = document.getElementById('pdf-banner');
-        const downloadPdfBtn = document.getElementById('download-pdf-btn');
-        const manualExportBtn = document.getElementById('manual-export-btn');
-        const replyPreview = document.getElementById('reply-preview');
-        const replyUser = document.getElementById('reply-user');
-        const replyText = document.getElementById('reply-text');
-        const cancelReplyBtn = document.getElementById('cancel-reply-btn');
-        const editPreview = document.getElementById('edit-preview');
-        const editText = document.getElementById('edit-text');
-        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const fileNameSpan = document.getElementById('file-name');
         const typingIndicator = document.getElementById('typing-indicator');
-        const typingText = document.getElementById('typing-text');
-        const transcriptArchiveList = document.getElementById('transcript-archive-list');
-        const transcriptCount = document.getElementById('transcript-count');
+        const actionBanner = document.getElementById('action-banner');
+        const bannerText = document.getElementById('banner-text');
 
-        // Modal Elements
-        const pdfModal = document.getElementById('pdf-modal');
-        const pdfFrame = document.getElementById('pdf-frame');
-        const closePdfModalBtn = document.getElementById('close-pdf-modal-btn');
-        const savePdfModalBtn = document.getElementById('save-pdf-modal-btn');
-        const archiveModal = document.getElementById('archive-modal');
-        const openArchiveModalBtn = document.getElementById('open-archive-modal-btn');
-        const closeArchiveModalBtn = document.getElementById('close-archive-modal-btn');
-        const modalTranscriptList = document.getElementById('modal-transcript-list');
+        // Initialize App
+        async function init() {
+            const { data: { user } } = await supabase.auth.getUser();
+            currentUser = user;
 
-        function scrollToBottom(force = false) {
-            const threshold = 180;
-            const isNearBottom = (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight) < threshold;
-            
-            if (force || isNearBottom) {
-                requestAnimationFrame(() => {
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                });
-                setTimeout(() => {
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                }, 80);
-            }
-        }
-
-        EMOJI_LIST.forEach(emoji => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'hover:bg-white/10 rounded p-1 transition flex items-center justify-center';
-            btn.textContent = emoji;
-            btn.onclick = () => {
-                messageInput.value += emoji;
-                adjustTextareaHeight();
-                messageInput.focus();
-            };
-            emojiGrid.appendChild(btn);
-        });
-
-        emojiBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            emojiPicker.classList.toggle('hidden');
-        });
-        closeEmojiPicker.addEventListener('click', () => emojiPicker.classList.add('hidden'));
-        document.addEventListener('click', (e) => {
-            if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
-                emojiPicker.classList.add('hidden');
-            }
-        });
-
-        toggleSidebarBtn.addEventListener('click', () => {
-            sidebarPanel.classList.toggle('hidden');
-        });
-
-        openArchiveModalBtn.addEventListener('click', () => {
-            archiveModal.classList.remove('hidden');
-            loadTranscriptArchive();
-        });
-
-        closeArchiveModalBtn.addEventListener('click', () => {
-            archiveModal.classList.add('hidden');
-        });
-
-        function adjustTextareaHeight() {
-            messageInput.style.height = 'auto';
-            messageInput.style.height = Math.min(messageInput.scrollHeight, 144) + 'px';
-        }
-
-        messageInput.addEventListener('input', () => {
-            adjustTextareaHeight();
-
-            if (!roomChannel || !currentUser) return;
-            
-            roomChannel.send({
-                type: 'broadcast',
-                event: 'typing',
-                payload: { email: currentUser.email.split('@')[0], isTyping: true }
-            });
-
-            if (typingTimeout) clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(() => {
-                roomChannel.send({
-                    type: 'broadcast',
-                    event: 'typing',
-                    payload: { email: currentUser.email.split('@')[0], isTyping: false }
-                });
-            }, 2000);
-        });
-
-        messageInput.addEventListener('keydown', (e) => {
-            const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 768);
-
-            if (e.key === 'Enter' && !e.shiftKey && !isTouchDevice) {
-                e.preventDefault();
-                chatForm.requestSubmit();
-            }
-        });
-
-        function updateTypingUI() {
-            if (typingUsers.size === 0) {
-                typingIndicator.classList.add('opacity-0');
+            if (currentUser) {
+                document.getElementById('login-btn').classList.add('hidden');
+                document.getElementById('logout-btn').classList.remove('hidden');
+                setupRealtimeChannel();
+                await loadMessages();
             } else {
-                const names = Array.from(typingUsers).join(', ');
-                typingText.textContent = `${names} ${typingUsers.size === 1 ? 'is' : 'are'} typing...`;
-                typingIndicator.classList.remove('opacity-0');
+                chatMessages.innerHTML = '<p class="text-center text-gray-400">Please log in to view and send messages.</p>';
             }
+
+            // Auto-resize textarea
+            messageInput.addEventListener('input', adjustTextareaHeight);
         }
 
-        window.startEditMessage = function(id, content) {
-            window.cancelReply();
-            editingMessageId = id;
-            editText.textContent = content;
-            editPreview.classList.remove('hidden');
-            messageInput.value = content;
-            adjustTextareaHeight();
-            messageInput.focus();
-        };
-
-        window.cancelEdit = function() {
-            editingMessageId = null;
-            editPreview.classList.add('hidden');
-            messageInput.value = '';
-            adjustTextareaHeight();
-        };
-
-        cancelEditBtn.addEventListener('click', () => window.cancelEdit());
-
-        window.setReplyMessage = function(id, email, content) {
-            window.cancelEdit();
-            replyingToMessage = { id, email, content };
-            replyUser.textContent = email.split('@')[0];
-            replyText.textContent = content || '(Attachment)';
-            replyPreview.classList.remove('hidden');
-            messageInput.focus();
-        };
-
-        window.cancelReply = function() {
-            replyingToMessage = null;
-            replyPreview.classList.add('hidden');
-        };
-
-        window.scrollToMessage = function(msgId) {
-            if (!msgId) return;
-            const targetEl = document.getElementById(`msg-${msgId}`);
-            if (targetEl) {
-                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                targetEl.classList.add('highlight-msg');
-                setTimeout(() => targetEl.classList.remove('highlight-msg'), 2000);
-            }
-        };
-
-        cancelReplyBtn.addEventListener('click', () => window.cancelReply());
-
-        window.toggleReactionPicker = function(msgId) {
-            const pickerEl = document.getElementById(`reaction-picker-${msgId}`);
-            if (pickerEl) pickerEl.classList.toggle('hidden');
-        };
-
-        window.toggleReaction = async function(msgId, emoji) {
-            const msg = allSessionMessages.find(m => m.id === msgId);
-            if (!msg || !currentUser) return;
-
-            let reactions = JSON.parse(JSON.stringify(msg.reactions || {}));
-            let userList = reactions[emoji] || [];
-            const userEmail = currentUser.email.split('@')[0];
-
-            if (userList.includes(userEmail)) {
-                userList = userList.filter(e => e !== userEmail);
-            } else {
-                userList.push(userEmail);
-            }
-
-            if (userList.length === 0) {
-                delete reactions[emoji];
-            } else {
-                reactions[emoji] = userList;
-            }
-
-            msg.reactions = reactions;
-            renderOrUpdateMessage(msg, false);
-
-            if (roomChannel) {
-                roomChannel.send({
-                    type: 'broadcast',
-                    event: 'reaction_update',
-                    payload: { id: msgId, reactions }
-                });
-            }
-
-            await supabase.rpc('toggle_reaction', {
-                p_message_id: msgId,
-                p_emoji: emoji,
-                p_user_email: userEmail
-            });
-        };
-
-        function resetChatInactivityTimer() {
-            if (chatInactivityTimer) clearTimeout(chatInactivityTimer);
-            pdfBanner.classList.add('hidden'); 
-            chatInactivityTimer = setTimeout(() => {
-                pdfBanner.classList.remove('hidden'); 
-            }, CHAT_INACTIVITY_MS);
+        // OAuth Login / Logout
+        async function loginWithGoogle() {
+            await supabase.auth.signInWithOAuth({ provider: 'google' });
         }
 
-        downloadPdfBtn.addEventListener('click', () => generatePDFTranscript());
-        manualExportBtn.addEventListener('click', () => generatePDFTranscript());
-
-        function generatePDFTranscript() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-            const todayStr = new Date().toISOString().split('T')[0];
-
-            const todaysMessages = allSessionMessages.filter(msg => {
-                if (!msg.created_at) return true;
-                return new Date(msg.created_at).toISOString().split('T')[0] === todayStr;
-            });
-
-            if (todaysMessages.length === 0) {
-                alert("No messages recorded for today yet!");
-                return;
-            }
-
-            doc.setFillColor(15, 23, 42); 
-            doc.rect(0, 0, 210, 32, 'F');
-            doc.setTextColor(56, 189, 248);
-            doc.setFontSize(18);
-            doc.setFont('helvetica', 'bold');
-            doc.text('NEXUS MARKETPLACE', 14, 15);
-
-            doc.setTextColor(203, 213, 225);
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Official Session Chat Transcript & Daily Export`, 14, 23);
-
-            doc.setDrawColor(226, 232, 240);
-            doc.setFillColor(248, 250, 252);
-            doc.roundedRect(14, 36, 182, 22, 2, 2, 'FD');
-
-            doc.setTextColor(15, 23, 42);
-            doc.setFontSize(8.5);
-            doc.setFont('helvetica', 'bold');
-            doc.text(`Export Context:`, 18, 43);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Daily Message Room Log`, 45, 43);
-
-            doc.setFont('helvetica', 'bold');
-            doc.text(`Today's Date:`, 18, 50);
-            doc.setFont('helvetica', 'normal');
-            doc.text(todayStr, 45, 50);
-
-            doc.setFont('helvetica', 'bold');
-            doc.text(`Export Time:`, 110, 43);
-            doc.setFont('helvetica', 'normal');
-            doc.text(new Date().toLocaleTimeString(), 135, 43);
-
-            doc.setFont('helvetica', 'bold');
-            doc.text(`Total Messages:`, 110, 50);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`${todaysMessages.length} Messages`, 135, 50);
-
-            const tableData = todaysMessages.map(msg => {
-                const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                const sender = `${msg.user_email.split('@')[0]} (${msg.user_role || 'Buyer'})`;
-                let content = msg.content || '';
-                if (msg.is_edited) content += ' (edited)';
-                if (msg.reply_to_email) {
-                    content = `[Replying to ${msg.reply_to_email.split('@')[0]}: "${msg.reply_to_content}"]\n` + content;
-                }
-                if (msg.file_url) content += `\n[Attachment: ${msg.file_url}]`;
-                return [time, sender, content];
-            });
-
-            doc.autoTable({
-                startY: 64,
-                head: [['Time', 'Participant & Role', 'Message Content']],
-                body: tableData,
-                headStyles: { fillColor: [2, 132, 199], textColor: [255, 255, 255], fontStyle: 'bold' },
-                alternateRowStyles: { fillColor: [241, 245, 249] },
-                columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 48 }, 2: { cellWidth: 108 } },
-                styles: { fontSize: 8.5, cellPadding: 3.5, overflow: 'linebreak' }
-            });
-
-            currentDocObject = doc;
-            currentPdfBlob = doc.output('blob');
-            const pdfUrl = URL.createObjectURL(currentPdfBlob);
-
-            pdfFrame.src = pdfUrl;
-            pdfModal.classList.remove('hidden');
-
-            savePdfModalBtn.onclick = async () => {
-                const todayStr = new Date().toISOString().split('T')[0];
-                const storagePath = `transcripts/transcript_${todayStr}_${Date.now()}.pdf`;
-
-                savePdfModalBtn.disabled = true;
-                savePdfModalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
-
-                const { error: uploadError } = await supabase.storage
-                    .from('chat-files')
-                    .upload(storagePath, currentPdfBlob, { contentType: 'application/pdf', upsert: true });
-
-                if (uploadError) {
-                    alert('Storage Upload Error: ' + uploadError.message);
-                    savePdfModalBtn.disabled = false;
-                    savePdfModalBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish for All Members';
-                    return;
-                }
-
-                const { data: urlData } = supabase.storage.from('chat-files').getPublicUrl(storagePath);
-
-                const { error: dbError } = await supabase.from('daily_transcripts').insert([{
-                    transcript_date: todayStr,
-                    file_url: urlData.publicUrl,
-                    created_by: currentUser.email
-                }]);
-
-                if (dbError) {
-                    alert('Database insert error: ' + dbError.message);
-                } else {
-                    doc.save(`Nexus_Chat_Transcript_${todayStr}.pdf`);
-                    alert('Daily transcript successfully published to the Archive!');
-                }
-
-                savePdfModalBtn.disabled = false;
-                savePdfModalBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish for All Members';
-                pdfModal.classList.add('hidden');
-                pdfFrame.src = '';
-                URL.revokeObjectURL(pdfUrl);
-
-                loadTranscriptArchive();
-            };
-
-            closePdfModalBtn.onclick = () => {
-                pdfModal.classList.add('hidden');
-                pdfFrame.src = '';
-                URL.revokeObjectURL(pdfUrl);
-            };
-        }
-
-        async function loadTranscriptArchive() {
-            const { data, error } = await supabase
-                .from('daily_transcripts')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.warn('daily_transcripts query warning:', error.message);
-                return;
-            }
-
-            if (data && data.length > 0) {
-                transcriptArchiveList.innerHTML = '';
-                modalTranscriptList.innerHTML = '';
-                transcriptCount.textContent = data.length;
-
-                data.forEach(item => {
-                    const timeStr = new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    
-                    const sidebarHtml = `
-                        <div class="p-2 rounded-lg bg-white/5 border border-white/10 text-xs flex items-center justify-between gap-2 hover:bg-white/10 transition">
-                            <div class="truncate">
-                                <div class="font-bold text-amber-300 truncate">${item.transcript_date}</div>
-                                <div class="text-[10px] text-gray-400 truncate">By ${item.created_by.split('@')[0]} at ${timeStr}</div>
-                            </div>
-                            <a href="${item.file_url}" target="_blank" download="Nexus_Transcript_${item.transcript_date}.pdf" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded text-xs font-bold shrink-0 transition flex items-center gap-1">
-                                <i class="fa-solid fa-download"></i> Get
-                            </a>
-                        </div>
-                    `;
-
-                    const modalHtml = `
-                        <div class="p-3 rounded-xl bg-white/5 border border-white/10 text-sm flex items-center justify-between gap-3 hover:bg-white/10 transition">
-                            <div>
-                                <div class="font-bold text-amber-300 text-base">${item.transcript_date}</div>
-                                <div class="text-xs text-gray-300 mt-0.5">Archived by <strong>${item.created_by.split('@')[0]}</strong> at ${timeStr}</div>
-                            </div>
-                            <a href="${item.file_url}" target="_blank" download="Nexus_Transcript_${item.transcript_date}.pdf" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-4 py-2 rounded-lg text-xs transition flex items-center gap-2 shadow">
-                                <i class="fa-solid fa-file-arrow-down text-sm"></i> Download PDF
-                            </a>
-                        </div>
-                    `;
-
-                    transcriptArchiveList.insertAdjacentHTML('beforeend', sidebarHtml);
-                    modalTranscriptList.insertAdjacentHTML('beforeend', modalHtml);
-                });
-            } else {
-                transcriptArchiveList.innerHTML = '<div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts yet</div>';
-                modalTranscriptList.innerHTML = '<div class="text-xs text-gray-400 italic text-center py-4">No archived transcripts found. Click "Export PDF" above to publish today\'s log.</div>';
-                transcriptCount.textContent = '0';
-            }
-        }
-
-        googleLoginBtn.addEventListener('click', async () => {
-            const redirectUrl = window.location.origin + window.location.pathname;
-            const { error } = await supabase.auth.signInWithOAuth({ 
-                provider: 'google',
-                options: { redirectTo: redirectUrl }
-            });
-            if (error) alert('Authentication failed: ' + error.message);
-        });
-
-        selectSellerBtn.addEventListener('click', () => setRole('Seller'));
-        selectBuyerBtn.addEventListener('click', () => setRole('Buyer'));
-
-        function setRole(role) {
-            userRole = role;
-            localStorage.setItem('nexus_user_role', role);
-            showChat();
-            loadMessages();
-            loadTranscriptArchive();
-            subscribeToRealtime();
-        }
-
-        logoutBtn.addEventListener('click', async () => {
-            localStorage.removeItem('nexus_user_role');
+        async function logout() {
             await supabase.auth.signOut();
             window.location.reload();
-        });
-
-        function showLogin() {
-            loginScreen.classList.remove('hidden');
-            roleScreen.classList.add('hidden');
-            chatScreen.classList.add('hidden');
         }
 
-        function showRoleSelection() {
-            loginScreen.classList.add('hidden');
-            roleScreen.classList.remove('hidden');
-            chatScreen.classList.add('hidden');
+        // Fetch Messages from Database with Error Diagnostics
+        async function loadMessages() {
+            const { data, error } = await supabase
+                .from('messages')
+                .select('*')
+                .order('created_at', { ascending: true })
+                .limit(200);
+
+            if (error) {
+                console.error('Error loading messages from Supabase:', error.message);
+                chatMessages.innerHTML = `<p class="text-center text-red-500">Failed to load messages: ${error.message}</p>`;
+                return;
+            }
+
+            if (data) {
+                chatMessages.innerHTML = ''; 
+                allSessionMessages = [];
+                data.forEach(msg => renderOrUpdateMessage(msg, false));
+                scrollToBottom(true);
+            }
         }
 
-        function showChat() {
-            loginScreen.classList.add('hidden');
-            roleScreen.classList.add('hidden');
-            chatScreen.classList.remove('hidden');
-            userDisplay.textContent = currentUser.email;
-            userRoleBadge.textContent = `(${userRole})`;
-            userRoleBadge.className = userRole === 'Seller' 
-                ? 'text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                : 'text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+        // Render Message to UI
+        function renderOrUpdateMessage(msg, isNew = false) {
+            let existingMsgIndex = allSessionMessages.findIndex(m => m.id === msg.id);
+            
+            if (existingMsgIndex !== -1) {
+                allSessionMessages[existingMsgIndex] = msg;
+                const existingElem = document.getElementById(`msg-${msg.id}`);
+                if (existingElem) existingElem.outerHTML = buildMessageHTML(msg);
+                return;
+            }
+
+            allSessionMessages.push(msg);
+            chatMessages.insertAdjacentHTML('beforeend', buildMessageHTML(msg));
+            if (isNew) scrollToBottom();
         }
 
-        window.copyText = function(text) {
-            navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
-        };
-
-        function renderOrUpdateMessage(msg, autoScroll = true) {
-            const existingIndex = allSessionMessages.findIndex(m => m.id === msg.id);
-            if (existingIndex > -1) {
-                allSessionMessages[existingIndex] = msg;
-            } else {
-                allSessionMessages.push(msg);
-            }
-            resetChatInactivityTimer();
-
-            const isMe = currentUser && msg.user_id === currentUser.id;
-            const alignClass = isMe ? 'flex-row-reverse' : 'flex-row';
-            const bgClass = isMe ? 'bg-cyan-600/80 text-white' : 'bg-white/10 text-gray-100';
-            const role = msg.user_role || 'Buyer';
-            const roleColor = role === 'Seller' ? 'text-cyan-400' : 'text-emerald-400';
-
-            const msgTime = new Date(msg.created_at).getTime();
-            if (role === 'Buyer') {
-                lastBuyerTimestamp = msgTime;
-            } else if (role === 'Seller' && lastBuyerTimestamp && msgTime > lastBuyerTimestamp) {
-                const diffSeconds = Math.round((msgTime - lastBuyerTimestamp) / 1000);
-                recordSellerSpeed(msg.user_id, msg.user_email, diffSeconds);
-                lastBuyerTimestamp = null;
-            }
-
-            let replyQuoteHtml = '';
-            if (msg.reply_to_email) {
-                replyQuoteHtml = `
-                    <div onclick="scrollToMessage('${msg.reply_to_id}')" class="mb-2 p-2 rounded bg-black/30 border-l-2 border-cyan-400 text-xs cursor-pointer hover:bg-black/50 transition group/reply">
-                        <div class="font-semibold text-cyan-300 flex items-center justify-between gap-1">
-                            <span><i class="fa-solid fa-reply text-[10px] mr-1"></i> ${msg.reply_to_email.split('@')[0]}</span>
-                            <span class="text-[10px] text-gray-400 opacity-0 group-hover/reply:opacity-100 transition">Jump to original</span>
-                        </div>
-                        <div class="text-gray-300 truncate mt-0.5">${msg.reply_to_content || '(Attachment)'}</div>
+        function buildMessageHTML(msg) {
+            const isSelf = currentUser && currentUser.id === msg.user_id;
+            return `
+                <div id="msg-${msg.id}" class="flex flex-col ${isSelf ? 'items-end' : 'items-start'} my-2">
+                    <span class="text-xs text-gray-400 mb-1">${msg.user_email || 'User'}</span>
+                    <div class="max-w-md ${isSelf ? 'bg-blue-600 text-white' : 'bg-white text-gray-800'} p-3 rounded-xl shadow-sm border border-gray-100">
+                        ${msg.reply_to_content ? `<div class="text-xs opacity-75 border-l-2 pl-2 mb-1 italic">Replying to: ${msg.reply_to_content}</div>` : ''}
+                        <p class="whitespace-pre-wrap text-sm">${msg.content || ''}</p>
+                        ${msg.file_url ? `<a href="${msg.file_url}" target="_blank" class="text-xs underline block mt-2 opacity-90">View Attachment</a>` : ''}
+                        ${msg.is_edited ? `<span class="text-[10px] opacity-60 block mt-1">(edited)</span>` : ''}
                     </div>
-                `;
-            }
-
-            let fileHtml = '';
-            if (msg.file_url) {
-                const isImage = msg.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-                if (isImage) {
-                    fileHtml = `<img src="${msg.file_url}" class="max-w-xs rounded-lg mt-2 cursor-pointer hover:opacity-80 transition" onclick="window.open('${msg.file_url}')" onload="scrollToBottom(${isMe})" />`;
-                } else {
-                    fileHtml = `<a href="${msg.file_url}" target="_blank" class="block mt-2 text-cyan-200 underline text-sm"><i class="fa-solid fa-file-arrow-down"></i> Download Attachment</a>`;
-                }
-            }
-
-            let reactionsHtml = '';
-            const reactions = msg.reactions || {};
-            const reactionKeys = Object.keys(reactions);
-            if (reactionKeys.length > 0) {
-                reactionsHtml = '<div class="flex flex-wrap gap-1 mt-2">';
-                reactionKeys.forEach(emoji => {
-                    const users = reactions[emoji];
-                    const isMyReaction = currentUser && users.includes(currentUser.email.split('@')[0]);
-                    const badgeClass = isMyReaction 
-                        ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200 font-bold' 
-                        : 'bg-black/30 border-white/10 text-gray-300';
-                    reactionsHtml += `
-                        <button onclick="toggleReaction('${msg.id}', '${emoji}')" class="text-xs px-2 py-0.5 rounded-full border ${badgeClass} hover:scale-105 transition flex items-center gap-1">
-                            <span>${emoji}</span>
-                            <span class="text-[10px]">${users.length}</span>
-                        </button>
-                    `;
-                });
-                reactionsHtml += '</div>';
-            }
-
-            let reactionPresetsButtonsHtml = '';
-            REACTION_PRESETS.forEach(emoji => {
-                reactionPresetsButtonsHtml += `
-                    <button onclick="toggleReaction('${msg.id}', '${emoji}'); toggleReactionPicker('${msg.id}')" class="hover:scale-125 transition text-base p-1">
-                        ${emoji}
-                    </button>
-                `;
-            });
-
-            const formattedContent = (msg.content || '').replace(/\n/g, '<br>');
-            const cleanContent = (msg.content || '').replace(/'/g, "\\'").replace(/\n/g, " ");
-
-            const messageHtml = `
-                <div id="msg-${msg.id}" class="flex ${alignClass} gap-3 message-bubble p-1 relative">
-                    <div class="w-8 h-8 rounded-full bg-gray-700 border border-white/10 flex items-center justify-center text-xs font-bold shrink-0">
-                        ${msg.user_email.charAt(0).toUpperCase()}
-                    </div>
-                    <div class="${bgClass} px-4 py-2 rounded-2xl max-w-[75%] relative group">
-                        <div class="text-xs text-gray-300/80 mb-1 flex items-center gap-2">
-                            <span class="font-semibold">${msg.user_email.split('@')[0]}</span>
-                            <span class="${roleColor} font-bold text-[10px]">(${role})</span>
-                            ${msg.is_edited ? '<span class="text-[10px] italic text-gray-400">(edited)</span>' : ''}
-                        </div>
-                        ${replyQuoteHtml}
-                        <div class="break-words whitespace-pre-wrap">${formattedContent}</div>
-                        ${fileHtml}
-                        ${reactionsHtml}
-                        
-                        <div class="absolute top-2 ${isMe ? '-left-24' : '-right-24'} opacity-0 group-hover:opacity-100 transition flex items-center gap-1 bg-black/70 p-1 rounded-lg backdrop-blur-sm z-10 border border-white/10">
-                            <button onclick="toggleReactionPicker('${msg.id}')" class="text-gray-300 hover:text-yellow-400 p-1 transition" title="React">
-                                <i class="fa-regular fa-face-smile text-xs"></i>
-                            </button>
-                            <button onclick="setReplyMessage('${msg.id}', '${msg.user_email.replace(/'/g, "\\'")}', '${cleanContent}')" class="text-gray-300 hover:text-cyan-400 p-1 transition" title="Reply">
-                                <i class="fa-solid fa-reply text-xs"></i>
-                            </button>
-                            ${isMe ? `
-                            <button onclick="startEditMessage('${msg.id}', '${cleanContent}')" class="text-gray-300 hover:text-amber-400 p-1 transition" title="Edit">
-                                <i class="fa-solid fa-pen text-xs"></i>
-                            </button>` : ''}
-                            ${msg.content ? `
-                            <button onclick="copyText('${cleanContent}')" class="text-gray-300 hover:text-cyan-400 p-1 transition" title="Copy text">
-                                <i class="fa-regular fa-copy text-xs"></i>
-                            </button>` : ''}
-                        </div>
-
-                        <div id="reaction-picker-${msg.id}" class="hidden absolute -top-10 ${isMe ? 'right-0' : 'left-0'} z-20 bg-slate-900/90 border border-white/20 rounded-full px-2 py-1 shadow-xl flex items-center gap-1 backdrop-blur-md">
-                            ${reactionPresetsButtonsHtml}
-                        </div>
-                    </div>
+                    ${isSelf ? `<button onclick="startEdit('${msg.id}', '${msg.content}')" class="text-[10px] text-gray-400 hover:underline mt-1">Edit</button>` : ''}
                 </div>
             `;
-
-            const existingElem = document.getElementById(`msg-${msg.id}`);
-            if (existingElem) {
-                existingElem.outerHTML = messageHtml;
-            } else {
-                chatMessages.insertAdjacentHTML('beforeend', messageHtml);
-                if (autoScroll) {
-                    scrollToBottom(isMe);
-                }
-            }
         }
 
-        function recordSellerSpeed(sellerId, sellerEmail, diffSeconds) {
-            if (!sellerMetrics[sellerId]) {
-                sellerMetrics[sellerId] = { email: sellerEmail, times: [] };
-            }
-            sellerMetrics[sellerId].times.push(diffSeconds);
-            renderSellerLeaderboard();
-        }
-
-        function renderSellerLeaderboard() {
-            const keys = Object.keys(sellerMetrics);
-            if (keys.length === 0) return;
-
-            sellerSpeedList.innerHTML = '';
-            sellerCount.textContent = `${keys.length} Active`;
-
-            keys.forEach(sellerId => {
-                const seller = sellerMetrics[sellerId];
-                const avgSeconds = Math.round(seller.times.reduce((a, b) => a + b, 0) / seller.times.length);
-
-                let badgeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-                let icon = '⚡';
-                let barWidth = '100%';
-                let barColor = 'bg-emerald-400';
-
-                if (avgSeconds > 15 && avgSeconds <= 60) {
-                    badgeClass = 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
-                    icon = '⏱️';
-                    barWidth = '65%';
-                    barColor = 'bg-yellow-400';
-                } else if (avgSeconds > 60) {
-                    badgeClass = 'bg-red-500/20 text-red-300 border-red-500/30';
-                    icon = '🐢';
-                    barWidth = '30%';
-                    barColor = 'bg-red-500';
-                }
-
-                const itemHtml = `
-                    <div class="p-2 rounded-lg bg-white/5 border border-white/10 text-xs space-y-1">
-                        <div class="flex justify-between items-center">
-                            <span class="font-semibold text-cyan-300 truncate max-w-[130px]">${seller.email.split('@')[0]} (Seller)</span>
-                            <span class="px-1.5 py-0.5 rounded border text-[10px] font-bold ${badgeClass}">
-                                ${icon} ${avgSeconds}s avg
-                            </span>
-                        </div>
-                        <div class="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
-                            <div class="${barColor} h-full transition-all duration-500" style="width: ${barWidth}"></div>
-                        </div>
-                    </div>
-                `;
-                sellerSpeedList.insertAdjacentHTML('beforeend', itemHtml);
-            });
-        }
-
-        async function loadMessages() {
-            const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(200);
-            if (data) {
-                data.forEach(msg => renderOrUpdateMessage(msg, false));
-            }
-        }
-
-        function subscribeToRealtime() {
-            if (roomChannel) {
-                supabase.removeChannel(roomChannel);
-            }
-
-            roomChannel = supabase.channel('nexus-room', {
-                config: { presence: { key: currentUser.id } }
-            });
-
-            // Postgres DB insert listener
-            roomChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                renderOrUpdateMessage(payload.new, true);
-            });
-
-            // Immediate direct WebSocket Broadcast listener (bypasses DB WAL latency)
-            roomChannel.on('broadcast', { event: 'new_message' }, ({ payload }) => {
-                if (payload) {
-                    renderOrUpdateMessage(payload, true);
-                }
-            });
-
-            roomChannel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
-                renderOrUpdateMessage(payload.new, false);
-            });
-
-            roomChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'daily_transcripts' }, () => {
-                loadTranscriptArchive();
-            });
-
-            roomChannel.on('broadcast', { event: 'typing' }, ({ payload }) => {
-                if (!payload || payload.email === currentUser.email.split('@')[0]) return;
-                if (payload.isTyping) {
-                    typingUsers.add(payload.email);
-                } else {
-                    typingUsers.delete(payload.email);
-                }
-                updateTypingUI();
-            });
-
-            roomChannel.on('broadcast', { event: 'reaction_update' }, ({ payload }) => {
-                const msg = allSessionMessages.find(m => m.id === payload.id);
-                if (msg) {
-                    msg.reactions = payload.reactions;
-                    renderOrUpdateMessage(msg, false);
-                }
-            });
-
-            roomChannel.on('presence', { event: 'sync' }, () => {
-                const state = roomChannel.presenceState();
-                renderPresence(state);
-            });
-
-            roomChannel.subscribe(async (status) => {
-                if (status === 'SUBSCRIBED') {
-                    loadMessages();
-                    await roomChannel.track({
-                        user_id: currentUser.id,
-                        email: currentUser.email,
-                        role: userRole
-                    });
-                } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                    setTimeout(() => subscribeToRealtime(), 2000);
-                }
-            });
-        }
-
-        // Periodic Background Sync every 10s to guarantee all connected participants stay 100% updated
-        setInterval(() => {
-            if (currentUser && userRole) {
-                loadMessages();
-            }
-        }, 10000);
-
-        async function syncAndReconnect() {
-            if (currentUser && userRole) {
-                await loadMessages();
-                subscribeToRealtime();
-            }
-        }
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                syncAndReconnect();
-            }
-        });
-
-        window.addEventListener('online', () => {
-            syncAndReconnect();
-        });
-
-        function renderPresence(state) {
-            presenceList.innerHTML = '';
-            let count = 0;
-            for (const id in state) {
-                const user = state[id][0];
-                if (!user) continue;
-                count++;
-                const roleColor = user.role === 'Seller' ? 'text-cyan-400' : 'text-emerald-400';
-                const item = `
-                    <div class="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5 text-sm">
-                        <div class="flex items-center gap-2 overflow-hidden">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
-                            <span class="truncate text-gray-200 text-xs">${user.email.split('@')[0]}</span>
-                        </div>
-                        <span class="${roleColor} font-bold text-xs shrink-0">(${user.role || 'Buyer'})</span>
-                    </div>
-                `;
-                presenceList.insertAdjacentHTML('beforeend', item);
-            }
-            onlineCount.textContent = count;
-        }
-
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                if (file.size > MAX_FILE_SIZE) {
-                    alert('File exceeds 50MB limit!');
-                    fileInput.value = '';
-                    return;
-                }
-                selectedFile = file;
-                fileName.textContent = file.name;
-                filePreview.classList.remove('hidden');
-            }
-        });
-
-        removeFileBtn.addEventListener('click', () => {
-            selectedFile = null;
-            fileInput.value = '';
-            filePreview.classList.add('hidden');
-        });
-
+        // Submit Form Handler (Handles Inserts, Edits, File Uploads, & Broadcast)
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (!currentUser) return alert('Please login first!');
 
             const content = messageInput.value.trim();
             if (!content && !selectedFile && !editingMessageId) return;
 
+            // EDIT MODE
             if (editingMessageId) {
-                const { data: updatedMsg } = await supabase.from('messages').update({
+                const { data: updatedMsg, error: updateErr } = await supabase.from('messages').update({
                     content: content,
                     is_edited: true
                 }).eq('id', editingMessageId).select().single();
 
-                if (updatedMsg && roomChannel) {
-                    roomChannel.send({
-                        type: 'broadcast',
-                        event: 'new_message',
-                        payload: updatedMsg
-                    });
+                if (updateErr) {
+                    alert('Failed to update message: ' + updateErr.message);
+                    return;
                 }
 
-                window.cancelEdit();
+                if (updatedMsg && roomChannel) {
+                    roomChannel.send({ type: 'broadcast', event: 'new_message', payload: updatedMsg });
+                }
+
+                cancelAction();
                 return;
             }
 
+            // NEW MESSAGE MODE
             messageInput.value = '';
             adjustTextareaHeight();
             filePreview.classList.add('hidden');
@@ -1159,7 +208,10 @@
                 const filePath = `${currentUser.id}/${Date.now()}.${fileExt}`;
                 const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, fileToUpload);
 
-                if (!uploadError) {
+                if (uploadError) {
+                    alert('File storage upload failed: ' + uploadError.message);
+                    return;
+                } else {
                     const { data } = supabase.storage.from('chat-files').getPublicUrl(filePath);
                     file_url = data.publicUrl;
                 }
@@ -1180,14 +232,24 @@
                 messageData.reply_to_content = replyingToMessage.content;
             }
 
-            window.cancelReply();
+            cancelAction();
 
-            const { data: insertedMsg } = await supabase.from('messages').insert([messageData]).select().single();
+            // Insert into Supabase with explicit error check
+            const { data: insertedMsg, error: insertError } = await supabase
+                .from('messages')
+                .insert([messageData])
+                .select()
+                .single();
             
+            if (insertError) {
+                console.error('Database Insert Error:', insertError);
+                alert('Message could not be saved to database: ' + insertError.message);
+                return;
+            }
+
             if (insertedMsg) {
                 renderOrUpdateMessage(insertedMsg, true);
                 
-                // Broadcast newly posted message directly over WebSocket
                 if (roomChannel) {
                     roomChannel.send({
                         type: 'broadcast',
@@ -1196,33 +258,75 @@
                     });
                 }
             }
+        });
 
-            if (roomChannel) {
-                roomChannel.send({
-                    type: 'broadcast',
-                    event: 'typing',
-                    payload: { email: currentUser.email.split('@')[0], isTyping: false }
+        // Realtime Subscriptions & Presence
+        function setupRealtimeChannel() {
+            roomChannel = supabase.channel('room-1', {
+                config: { presence: { key: currentUser.id } }
+            });
+
+            roomChannel
+                .on('broadcast', { event: 'new_message' }, payload => {
+                    renderOrUpdateMessage(payload.payload, true);
+                })
+                .on('presence', { event: 'sync' }, () => {
+                    const state = roomChannel.presenceState();
+                    const count = Object.keys(state).length;
+                    document.getElementById('presence-count').innerText = `${count} online`;
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await roomChannel.track({ email: currentUser.email, online_at: new Date() });
+                    }
                 });
-            }
-        });
+        }
 
-        supabase.auth.onAuthStateChange((event, session) => {
-            if (session) {
-                currentUser = session.user;
-                resetChatInactivityTimer();
-
-                if (!userRole) {
-                    showRoleSelection();
-                } else {
-                    showChat();
-                    loadMessages();
-                    loadTranscriptArchive();
-                    subscribeToRealtime();
-                }
-            } else {
-                showLogin();
+        // Helpers & UI State Management
+        function handleFileSelect(e) {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+                fileNameSpan.innerText = selectedFile.name;
+                filePreview.classList.remove('hidden');
             }
-        });
+        }
+
+        function clearFile() {
+            selectedFile = null;
+            fileInput.value = '';
+            filePreview.classList.add('hidden');
+        }
+
+        function startEdit(id, content) {
+            editingMessageId = id;
+            messageInput.value = content;
+            bannerText.innerText = 'Editing message...';
+            actionBanner.classList.remove('hidden');
+            messageInput.focus();
+        }
+
+        function cancelAction() {
+            editingMessageId = null;
+            replyingToMessage = null;
+            messageInput.value = '';
+            actionBanner.classList.add('hidden');
+            adjustTextareaHeight();
+        }
+
+        function scrollToBottom(smooth = false) {
+            chatMessages.scrollTo({
+                top: chatMessages.scrollHeight,
+                behavior: smooth ? 'smooth' : 'auto'
+            });
+        }
+
+        function adjustTextareaHeight() {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = messageInput.scrollHeight + 'px';
+        }
+
+        // Launch
+        init();
     </script>
 </body>
 </html>
