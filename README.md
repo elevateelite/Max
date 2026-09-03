@@ -325,6 +325,17 @@
 
         const REACTION_PRESETS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '🚀', '🎉'];
 
+        // Helper to safely sanitize dynamic text string
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         // DOM Elements
         const loginScreen = document.getElementById('login-screen');
         const roleScreen = document.getElementById('role-screen');
@@ -370,6 +381,17 @@
         // Floating Scroll Button & Unread Counter Elements
         const scrollBottomBtn = document.getElementById('scroll-bottom-btn');
         const unreadBadge = document.getElementById('unread-badge');
+
+        // Modal Elements
+        const openArchiveModalBtn = document.getElementById('open-archive-modal-btn');
+        const archiveModal = document.getElementById('archive-modal');
+        const closeArchiveModalBtn = document.getElementById('close-archive-modal-btn');
+        const modalTranscriptList = document.getElementById('modal-transcript-list');
+
+        const pdfModal = document.getElementById('pdf-modal');
+        const closePdfModalBtn = document.getElementById('close-pdf-modal-btn');
+        const savePdfModalBtn = document.getElementById('save-pdf-modal-btn');
+        const pdfFrame = document.getElementById('pdf-frame');
 
         function scrollToBottom(force = false) {
             const doScroll = () => {
@@ -446,18 +468,24 @@
             sidebarPanel.classList.toggle('hidden');
         });
 
-        openArchiveModalBtn.addEventListener('click', () => {
-            archiveModal.classList.remove('hidden');
-            loadTranscriptArchive();
-        });
+        if (openArchiveModalBtn) {
+            openArchiveModalBtn.addEventListener('click', () => {
+                archiveModal.classList.remove('hidden');
+                loadTranscriptArchive();
+            });
+        }
 
-        closeArchiveModalBtn.addEventListener('click', () => {
-            archiveModal.classList.add('hidden');
-        });
+        if (closeArchiveModalBtn) {
+            closeArchiveModalBtn.addEventListener('click', () => {
+                archiveModal.classList.add('hidden');
+            });
+        }
 
-        closePdfModalBtn.addEventListener('click', () => {
-            pdfModal.classList.add('hidden');
-        });
+        if (closePdfModalBtn) {
+            closePdfModalBtn.addEventListener('click', () => {
+                pdfModal.classList.add('hidden');
+            });
+        }
 
         function adjustTextareaHeight() {
             messageInput.style.height = 'auto';
@@ -708,44 +736,46 @@
         }
 
         // Save PDF Archive to Supabase
-        savePdfModalBtn.addEventListener('click', async () => {
-            if (!currentPdfBlob) return;
-            const todayStr = new Date().toISOString().split('T')[0];
-            const fileName = `transcript-${todayStr}-${Date.now()}.pdf`;
+        if (savePdfModalBtn) {
+            savePdfModalBtn.addEventListener('click', async () => {
+                if (!currentPdfBlob) return;
+                const todayStr = new Date().toISOString().split('T')[0];
+                const fileNameStr = `transcript-${todayStr}-${Date.now()}.pdf`;
 
-            savePdfModalBtn.disabled = true;
-            savePdfModalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+                savePdfModalBtn.disabled = true;
+                savePdfModalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
 
-            try {
-                const { error: uploadErr } = await supabase.storage.from('chat-transcripts').upload(fileName, currentPdfBlob, {
-                    contentType: 'application/pdf',
-                    upsert: true
-                });
+                try {
+                    const { error: uploadErr } = await supabase.storage.from('chat-transcripts').upload(fileNameStr, currentPdfBlob, {
+                        contentType: 'application/pdf',
+                        upsert: true
+                    });
 
-                if (uploadErr) throw uploadErr;
+                    if (uploadErr) throw uploadErr;
 
-                const { data: publicUrlData } = supabase.storage.from('chat-transcripts').getPublicUrl(fileName);
+                    const { data: publicUrlData } = supabase.storage.from('chat-transcripts').getPublicUrl(fileNameStr);
 
-                const { error: dbErr } = await supabase.from('daily_transcripts').insert([{
-                    transcript_date: todayStr,
-                    file_url: publicUrlData.publicUrl,
-                    created_by: currentUser?.email || 'System'
-                }]);
+                    const { error: dbErr } = await supabase.from('daily_transcripts').insert([{
+                        transcript_date: todayStr,
+                        file_url: publicUrlData.publicUrl,
+                        created_by: currentUser?.email || 'System'
+                    }]);
 
-                if (dbErr) throw dbErr;
+                    if (dbErr) throw dbErr;
 
-                alert('Transcript successfully saved & published to room archives!');
-                pdfModal.classList.add('hidden');
-                loadTranscriptArchive();
-            } catch (err) {
-                console.error(err);
-                alert('Downloading locally as backup.');
-                if (currentDocObject) currentDocObject.save(`Nexus-Transcript-${todayStr}.pdf`);
-            } finally {
-                savePdfModalBtn.disabled = false;
-                savePdfModalBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish';
-            }
-        });
+                    alert('Transcript successfully saved & published to room archives!');
+                    pdfModal.classList.add('hidden');
+                    loadTranscriptArchive();
+                } catch (err) {
+                    console.error(err);
+                    alert('Downloading locally as backup.');
+                    if (currentDocObject) currentDocObject.save(`Nexus-Transcript-${todayStr}.pdf`);
+                } finally {
+                    savePdfModalBtn.disabled = false;
+                    savePdfModalBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish';
+                }
+            });
+        }
 
         // Load Archived Transcripts
         async function loadTranscriptArchive() {
@@ -755,7 +785,7 @@
                 if (error || !data || data.length === 0) {
                     const emptyState = `<div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts found</div>`;
                     transcriptArchiveList.innerHTML = emptyState;
-                    modalTranscriptList.innerHTML = emptyState;
+                    if (modalTranscriptList) modalTranscriptList.innerHTML = emptyState;
                     transcriptCount.textContent = '0';
                     return;
                 }
@@ -764,13 +794,17 @@
                 let html = '';
 
                 data.forEach(item => {
+                    const cleanDate = escapeHTML(item.transcript_date);
+                    const cleanCreator = escapeHTML(item.created_by ? item.created_by.split('@')[0] : 'User');
+                    const cleanUrl = escapeHTML(item.file_url);
+
                     html += `
                         <div class="bg-white/5 border border-white/10 rounded-xl p-2.5 flex items-center justify-between text-xs hover:bg-white/10 transition">
                             <div class="truncate pr-2">
-                                <p class="font-bold text-amber-300 truncate">Transcript - ${item.transcript_date}</p>
-                                <p class="text-[10px] text-gray-400">By: ${item.created_by.split('@')[0]}</p>
+                                <p class="font-bold text-amber-300 truncate">Transcript - ${cleanDate}</p>
+                                <p class="text-[10px] text-gray-400">By: ${cleanCreator}</p>
                             </div>
-                            <a href="${item.file_url}" target="_blank" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded transition flex items-center gap-1 shrink-0">
+                            <a href="${cleanUrl}" target="_blank" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded transition flex items-center gap-1 shrink-0">
                                 <i class="fa-solid fa-download"></i> View
                             </a>
                         </div>
@@ -778,7 +812,7 @@
                 });
 
                 transcriptArchiveList.innerHTML = html;
-                modalTranscriptList.innerHTML = html;
+                if (modalTranscriptList) modalTranscriptList.innerHTML = html;
             } catch (err) {
                 console.log('Archive table check:', err.message);
             }
@@ -871,7 +905,7 @@
                 .limit(300);
 
             if (error) {
-                chatMessages.innerHTML = `<p class="text-center text-red-400 text-xs py-4">Error loading history: ${error.message}</p>`;
+                chatMessages.innerHTML = `<p class="text-center text-red-400 text-xs py-4">Error loading history: ${escapeHTML(error.message)}</p>`;
                 return;
             }
 
@@ -944,32 +978,36 @@
                 reactionsHTML += '</div>';
             }
 
+            const cleanContent = escapeHTML(msg.content || '');
+            const cleanReplyContent = escapeHTML(msg.reply_to_content || '');
+            const cleanReplyEmail = escapeHTML(msg.reply_to_email ? msg.reply_to_email.split('@')[0] : 'User');
+
             return `
                 <div id="msg-${msg.id}" class="message-bubble flex flex-col ${isSelf ? 'items-end' : 'items-start'} my-2 group">
                     <div class="flex items-center gap-2 mb-1 text-xs text-gray-400 px-1">
-                        <span class="font-bold text-gray-200">${senderName}</span>
-                        <span class="text-[10px] px-1.5 py-0.2 rounded border ${roleColor}">${role}</span>
+                        <span class="font-bold text-gray-200">${escapeHTML(senderName)}</span>
+                        <span class="text-[10px] px-1.5 py-0.2 rounded border ${roleColor}">${escapeHTML(role)}</span>
                         <span class="text-[10px] text-gray-400">${timeStr}</span>
                     </div>
 
                     <div class="max-w-xs sm:max-w-md ${isSelf ? 'bg-cyan-600/80 text-white rounded-2xl rounded-tr-none' : 'glass text-gray-100 rounded-2xl rounded-tl-none'} p-3 shadow-lg relative border border-white/10">
                         ${msg.reply_to_content ? `
                             <div onclick="scrollToMessage('${msg.reply_to_id}')" class="cursor-pointer text-xs bg-black/20 p-2 rounded-lg mb-2 border-l-2 border-cyan-400 hover:bg-black/30 transition">
-                                <span class="font-bold text-cyan-300 block">${msg.reply_to_email ? msg.reply_to_email.split('@')[0] : 'User'}</span>
-                                <span class="opacity-80 italic line-clamp-1">${msg.reply_to_content}</span>
+                                <span class="font-bold text-cyan-300 block">${cleanReplyEmail}</span>
+                                <span class="opacity-80 italic line-clamp-1">${cleanReplyContent}</span>
                             </div>
                         ` : ''}
 
-                        <p class="whitespace-pre-wrap text-sm leading-relaxed">${msg.content || ''}</p>
+                        <p class="whitespace-pre-wrap text-sm leading-relaxed">${cleanContent}</p>
 
                         ${msg.file_url ? `
                             <div class="mt-2">
                                 ${msg.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? `
-                                    <a href="${msg.file_url}" target="_blank">
-                                        <img src="${msg.file_url}" class="rounded-lg max-h-48 w-full object-cover border border-white/10 hover:opacity-90 transition">
+                                    <a href="${escapeHTML(msg.file_url)}" target="_blank">
+                                        <img src="${escapeHTML(msg.file_url)}" class="rounded-lg max-h-48 w-full object-cover border border-white/10 hover:opacity-90 transition">
                                     </a>
                                 ` : `
-                                    <a href="${msg.file_url}" target="_blank" class="inline-flex items-center gap-2 text-xs bg-black/30 hover:bg-black/40 text-cyan-300 p-2 rounded-lg border border-white/10 transition">
+                                    <a href="${escapeHTML(msg.file_url)}" target="_blank" class="inline-flex items-center gap-2 text-xs bg-black/30 hover:bg-black/40 text-cyan-300 p-2 rounded-lg border border-white/10 transition">
                                         <i class="fa-solid fa-paperclip"></i> View Attached Document
                                     </a>
                                 `}
@@ -983,7 +1021,7 @@
                         <!-- Message Action Toolbar -->
                         <div class="opacity-0 group-hover:opacity-100 transition absolute ${isSelf ? '-left-20' : '-right-20'} top-2 flex items-center gap-1 bg-slate-900/90 border border-white/10 p-1 rounded-lg backdrop-blur-md z-20">
                             <button onclick="toggleReactionPicker('${msg.id}')" class="p-1 hover:text-yellow-400 text-gray-300 text-xs" title="React"><i class="fa-regular fa-face-smile"></i></button>
-                            <button onclick="setReplyMessage('${msg.id}', '${msg.user_email}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-cyan-400 text-gray-300 text-xs" title="Reply"><i class="fa-solid fa-reply"></i></button>
+                            <button onclick="setReplyMessage('${msg.id}', '${escapeHTML(msg.user_email)}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-cyan-400 text-gray-300 text-xs" title="Reply"><i class="fa-solid fa-reply"></i></button>
                             ${isSelf ? `<button onclick="startEditMessage('${msg.id}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-amber-400 text-gray-300 text-xs" title="Edit"><i class="fa-solid fa-pen"></i></button>` : ''}
                         </div>
 
@@ -1095,7 +1133,7 @@
                 const avgSec = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
                 listHtml += `
                     <div class="bg-white/5 border border-white/10 rounded-xl p-2 flex items-center justify-between text-xs">
-                        <span class="font-bold text-cyan-300 truncate">${seller}</span>
+                        <span class="font-bold text-cyan-300 truncate">${escapeHTML(seller)}</span>
                         <span class="bg-cyan-500/20 text-cyan-200 px-2 py-0.5 rounded-full text-[10px] font-mono">
                             ⚡ Avg: ${avgSec}s
                         </span>
@@ -1163,9 +1201,9 @@
                 <div class="flex items-center justify-between text-xs bg-white/5 border border-white/10 p-2 rounded-xl">
                     <div class="flex items-center gap-2 truncate">
                         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span class="truncate font-medium text-gray-200">${u.email ? u.email.split('@')[0] : 'User'}</span>
+                        <span class="truncate font-medium text-gray-200">${u.email ? escapeHTML(u.email.split('@')[0]) : 'User'}</span>
                     </div>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded ${u.role === 'Seller' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-emerald-500/20 text-emerald-300'}">${u.role || 'Member'}</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded ${u.role === 'Seller' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-emerald-500/20 text-emerald-300'}">${escapeHTML(u.role || 'Member')}</span>
                 </div>
             `).join('');
         }
