@@ -83,9 +83,9 @@
 </div>
 
 <script>
-  // Insert your Supabase details here (from Supabase > Settings > API)
-  const SUPABASE_URL = "YOUR_SUPABASE_URL"; 
-  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+  // Updated with your Supabase credentials
+  const SUPABASE_URL = "https://uavklixceheysspmgilk.supabase.co"; 
+  const SUPABASE_ANON_KEY = "sb_publishable_Y9vPgA1CYXcFgk2SVqMXRg_M-jLuk_8";
   
   let supabase = null;
   if (SUPABASE_URL && SUPABASE_URL !== "YOUR_SUPABASE_URL") {
