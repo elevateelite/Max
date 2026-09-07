@@ -1,233 +1,1215 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Store Outreach</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
-    .container { max-width: 480px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
-    h2 { font-size: 1.25rem; margin-top: 0; color: #111; }
-    label { font-size: 0.85rem; font-weight: 600; color: #555; display: block; margin-top: 14px; }
-    input, select { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.95rem; }
-    button { width: 100%; background: #0066ff; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; margin-top: 18px; cursor: pointer; font-size: 0.95rem; }
-    button:disabled { background: #99c2ff; cursor: not-allowed; }
-    
-    .card { margin-top: 20px; padding: 14px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; display: none; }
-    .card h3 { margin: 0 0 8px 0; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; }
-    .pitch-box { font-size: 0.92rem; line-height: 1.5; color: #1e293b; white-space: pre-line; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; }
-    .status { font-size: 0.85rem; color: #0066ff; margin-top: 10px; text-align: center; font-weight: 600; }
-    
-    /* Login & Role Modal Overlays */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-    .modal-card { background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
-    .google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: white; color: #333; border: 1px solid #d1d5db; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 16px; font-size: 0.95rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .role-btn { display: block; width: 100%; padding: 14px; margin-top: 12px; border-radius: 8px; border: 2px solid #0066ff; font-weight: bold; font-size: 1rem; cursor: pointer; }
-    .btn-seller { background: #0066ff; color: white; }
-    .btn-buyer { background: white; color: #0066ff; }
-    .role-badge { display: inline-block; background: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Nexus Marketplace Chat</title>
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Nexus Market">
+    <meta name="theme-color" content="#0f2027">
+
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png">
+    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Nexus%20Marketplace%20Chat%22%2C%22short_name%22%3A%22NexusChat%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230f2027%22%2C%22theme_color%22%3A%22%230f2027%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F1041%2F1041916.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            height: 100dvh;
+            width: 100vw;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .message-bubble { 
+            animation: fadeIn 0.3s ease-out;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .highlight-msg {
+            animation: highlightPulse 2s ease-in-out;
+            border-radius: 1rem;
+        }
+        @keyframes highlightPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+            50% { box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.8); }
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+    </style>
 </head>
-<body>
+<body class="flex items-center justify-center p-2 sm:p-4 relative">
 
-<div id="authModal" class="modal-overlay">
-  <div class="modal-card">
-    <h2>Welcome 👋</h2>
-    <p style="font-size: 0.9rem; color: #666;">Sign in to save your generated pitches and store leads.</p>
-    <button type="button" class="google-btn" onclick="signInWithGoogle()">
-      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
-      Continue with Google
-    </button>
-  </div>
-</div>
+    <!-- Login Screen -->
+    <div id="login-screen" class="glass rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
+        <div class="mb-8">
+            <i class="fa-solid fa-store text-5xl text-cyan-400 mb-4"></i>
+            <h1 class="text-3xl font-bold tracking-wider">NEXUS MARKET</h1>
+            <p class="text-gray-300 text-sm mt-2">Connect buyers & sellers instantly.</p>
+        </div>
+        <button id="google-login-btn" class="w-full bg-white text-gray-900 font-semibold py-3 px-4 rounded-lg hover:bg-gray-100 transition duration-300 flex items-center justify-center gap-3 active:scale-95">
+            <i class="fa-brands fa-google text-red-500"></i> Continue with Google
+        </button>
+    </div>
 
-<div id="roleModal" class="modal-overlay" style="display: none;">
-  <div class="modal-card">
-    <h2>Select Your Activity 👋</h2>
-    <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">Choose your primary activity for this session:</p>
-    <button type="button" class="role-btn btn-seller" onclick="selectRole('Seller')">Continue as Seller</button>
-    <button type="button" class="role-btn btn-buyer" onclick="selectRole('Buyer')">Continue as Buyer</button>
-  </div>
-</div>
+    <!-- Role Selection Screen -->
+    <div id="role-screen" class="hidden glass rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
+        <h2 class="text-2xl font-bold mb-2">Select Account Type</h2>
+        <p class="text-gray-300 text-sm mb-6">Choose how you want to participate in this group room:</p>
 
-<div class="container" id="appContent" style="display: none;">
-  <div style="display: flex; justify-content: space-between; align-items: center;">
-    <h2>Smart Store Outreach</h2>
-    <span id="activeRoleBadge" class="role-badge">Role: Seller</span>
-  </div>
-  
-  <label for="platform">Platform</label>
-  <select id="platform">
-    <option value="Instagram">Instagram</option>
-    <option value="TikTok">TikTok</option>
-  </select>
+        <div class="space-y-4">
+            <button id="select-seller-btn" class="w-full p-4 border border-cyan-400/40 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/60 transition flex items-center justify-between text-left group">
+                <div>
+                    <h3 class="font-bold text-cyan-300 text-lg">Seller</h3>
+                    <p class="text-xs text-gray-300">Respond to buyer inquiries & measure speed</p>
+                </div>
+                <i class="fa-solid fa-user-tag text-2xl text-cyan-400 group-hover:scale-110 transition"></i>
+            </button>
 
-  <label for="username">Profile Username</label>
-  <input type="text" id="username" placeholder="e.g. storename">
+            <button id="select-buyer-btn" class="w-full p-4 border border-emerald-400/40 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 transition flex items-center justify-between text-left group">
+                <div>
+                    <h3 class="font-bold text-emerald-300 text-lg">Buyer</h3>
+                    <p class="text-xs text-gray-300">Post requests & get instant seller replies</p>
+                </div>
+                <i class="fa-solid fa-cart-shopping text-2xl text-emerald-400 group-hover:scale-110 transition"></i>
+            </button>
+        </div>
+    </div>
 
-  <button id="analyzeBtn" onclick="analyzeAndPitch()">Analyze Profile & Generate Pitch</button>
-  <div id="statusText" class="status"></div>
+    <!-- Chat Screen -->
+    <div id="chat-screen" class="hidden glass rounded-2xl w-full max-w-6xl h-[98dvh] md:h-[92vh] flex flex-col md:flex-row shadow-2xl overflow-hidden relative">
+        <div class="flex-1 flex flex-col h-full border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden">
 
-  <div id="bioCard" class="card">
-    <h3>Profile Details</h3>
-    <div id="bioText" style="font-size:0.88rem; color:#334155;"></div>
-  </div>
+            <div id="pdf-banner" class="hidden bg-amber-500/20 border-b border-amber-500/30 p-3 text-xs flex flex-wrap items-center justify-between gap-2 backdrop-blur-md z-10">
+                <div class="flex items-center gap-2 text-amber-200">
+                    <i class="fa-solid fa-clock text-amber-400 text-sm"></i>
+                    <span><strong>Chat Inactive for 5 Minutes:</strong> You can export today's chat history now.</span>
+                </div>
+                <button id="download-pdf-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-file-pdf"></i> Export PDF Transcript
+                </button>
+            </div>
 
-  <div id="pitchCard" class="card">
-    <h3>Suggested Outreach Pitch</h3>
-    <div id="pitchText" class="pitch-box"></div>
-    <button id="saveBtn" style="background: #10b981; margin-top:12px;" onclick="saveToSupabase()">Save Lead to Supabase</button>
-  </div>
-</div>
+            <header class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20 shrink-0">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-comments text-cyan-400 text-xl"></i>
+                    <div>
+                        <h2 class="font-bold text-lg leading-tight">Nexus Trading Room</h2>
+                        <span id="user-role-badge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300"></span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="manual-export-btn" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="Generate and archive today's discussion PDF">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span class="hidden sm:inline">Export PDF</span>
+                    </button>
 
-<script>
-  // Updated with your Supabase credentials
-  const SUPABASE_URL = "https://uavklixceheysspmgilk.supabase.co"; 
-  const SUPABASE_ANON_KEY = "sb_publishable_Y9vPgA1CYXcFgk2SVqMXRg_M-jLuk_8";
-  
-  let supabase = null;
-  if (SUPABASE_URL && SUPABASE_URL !== "YOUR_SUPABASE_URL") {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  }
+                    <button id="open-archive-modal-btn" class="bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 border border-cyan-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="View all daily archives">
+                        <i class="fa-solid fa-box-archive"></i>
+                        <span>Archives</span>
+                    </button>
 
-  let currentUser = null;
-  let selectedUserRole = "Seller";
-  let currentProfileData = {};
+                    <button id="toggle-sidebar-btn" type="button" class="md:hidden bg-white/10 hover:bg-white/20 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
 
-  window.addEventListener('load', async () => {
-    if (!supabase) return;
+                    <span id="user-display" class="text-xs text-gray-300 hidden lg:block ml-2"></span>
+                    <button id="logout-btn" class="text-gray-400 hover:text-white transition p-1.5" title="Logout">
+                        <i class="fa-solid fa-right-from-bracket text-lg"></i>
+                    </button>
+                </div>
+            </header>
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      currentUser = session.user;
-      
-      await supabase.from('profiles').upsert({ id: currentUser.id, email: currentUser.email });
-      
-      document.getElementById('authModal').style.display = 'none';
-      document.getElementById('roleModal').style.display = 'flex';
-    }
-  });
+            <main id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+            </main>
 
-  async function signInWithGoogle() {
-    if (!supabase) {
-      alert("Please enter your Supabase URL and Anon Key inside script tags!");
-      return;
-    }
+            <div id="typing-indicator" class="text-xs text-cyan-300 italic min-h-[1.25rem] px-4 opacity-0 transition-opacity flex items-center gap-2">
+                <i class="fa-solid fa-ellipsis fa-bounce"></i>
+                <span id="typing-text">Someone is typing...</span>
+            </div>
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.href
-      }
-    });
+            <!-- Scroll to Bottom Floating Button with Unread Counter -->
+            <button id="scroll-bottom-btn" type="button" 
+                class="hidden absolute bottom-20 right-6 z-30 bg-cyan-500 hover:bg-cyan-400 text-white p-3 rounded-full shadow-2xl border border-white/20 transition-all duration-300 hover:scale-110 flex items-center justify-center w-11 h-11 active:scale-95">
+                <i class="fa-solid fa-arrow-down text-base"></i>
+                <span id="unread-badge" class="hidden absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border-2 border-slate-900 animate-pulse">0</span>
+            </button>
 
-    if (error) alert("Login error: " + error.message);
-  }
+            <footer class="p-4 border-t border-white/10 bg-black/20 shrink-0 relative">
+                <div id="emoji-picker" class="hidden absolute bottom-20 left-4 z-50 glass bg-slate-900/95 border border-white/20 rounded-2xl p-3 w-72 sm:w-80 shadow-2xl backdrop-blur-xl">
+                    <div class="flex justify-between items-center pb-2 border-b border-white/10 mb-2">
+                        <span class="text-xs font-bold text-gray-300">Choose Emoji</span>
+                        <button type="button" id="close-emoji-picker" class="text-gray-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div id="emoji-grid" class="grid grid-cols-6 sm:grid-cols-7 gap-1.5 max-h-48 overflow-y-auto text-xl p-1">
+                    </div>
+                </div>
 
-  function selectRole(role) {
-    selectedUserRole = role;
-    document.getElementById('activeRoleBadge').innerText = `Role: ${role}`;
-    document.getElementById('roleModal').style.display = 'none';
-    document.getElementById('appContent').style.display = 'block';
-  }
+                <div id="edit-preview" class="hidden text-xs text-amber-200 mb-2 flex justify-between items-center bg-amber-950/60 p-2.5 rounded-lg border-l-4 border-amber-400 backdrop-blur-md">
+                    <div class="truncate pr-2">
+                        <span class="text-amber-400 font-bold block"><i class="fa-solid fa-pen-to-square mr-1"></i> Editing Message</span>
+                        <span id="edit-text" class="text-gray-300 italic truncate block mt-0.5"></span>
+                    </div>
+                    <button id="cancel-edit-btn" type="button" class="text-gray-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+                </div>
 
-  async function analyzeAndPitch() {
-    const platform = document.getElementById('platform').value;
-    const username = document.getElementById('username').value.trim().replace('@', '');
-    const analyzeBtn = document.getElementById('analyzeBtn');
-    const statusText = document.getElementById('statusText');
+                <div id="reply-preview" class="hidden text-xs text-cyan-200 mb-2 flex justify-between items-center bg-cyan-950/60 p-2.5 rounded-lg border-l-4 border-cyan-400 backdrop-blur-md">
+                    <div class="truncate pr-2">
+                        <span class="text-cyan-400 font-bold block"><i class="fa-solid fa-reply mr-1"></i> Replying to <span id="reply-user"></span></span>
+                        <span id="reply-text" class="text-gray-300 italic truncate block mt-0.5"></span>
+                    </div>
+                    <button id="cancel-reply-btn" type="button" class="text-gray-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+                </div>
 
-    if (!username) {
-      alert("Please enter a username.");
-      return;
-    }
+                <div id="file-preview" class="hidden text-sm text-cyan-300 mb-2 flex justify-between items-center bg-cyan-900/30 p-2 rounded">
+                    <span id="file-name"></span>
+                    <button id="remove-file-btn" type="button" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
+                </div>
 
-    analyzeBtn.disabled = true;
-    statusText.innerText = `Fetching ${platform} profile for @${username}...`;
+                <form id="chat-form" class="flex items-end gap-2">
+                    <button type="button" id="emoji-btn" class="p-3 text-gray-400 hover:text-yellow-400 transition" title="Add Emoji">
+                        <i class="fa-regular fa-face-smile text-xl"></i>
+                    </button>
 
-    let bioFound = "";
+                    <label for="file-input" class="p-3 text-gray-400 hover:text-cyan-400 cursor-pointer transition" title="Attach File (Max 50MB)">
+                        <i class="fa-solid fa-paperclip text-xl"></i>
+                    </label>
+                    <input type="file" id="file-input" class="hidden">
 
-    try {
-      if (platform === "Instagram") {
-        const targetUrl = `https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`;
-        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+                    <textarea id="message-input" rows="1" enterkeyhint="newline" placeholder="Type a message..." 
+                              class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-2 text-white focus:outline-none focus:border-cyan-400 transition resize-none max-h-36 overflow-y-auto leading-normal"></textarea>
 
-        const res = await fetch(proxyUrl, {
-          headers: { 'x-ig-app-id': '936619743392459' }
+                    <button type="submit" class="bg-cyan-500 hover:bg-cyan-400 text-white p-3 rounded-full transition w-12 h-12 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+            </footer>
+        </div>
+
+        <aside id="sidebar-panel" class="hidden md:flex w-full md:w-80 bg-black/30 flex-col h-auto md:h-full p-4 space-y-4 overflow-y-auto border-t md:border-t-0 md:border-l border-white/10 shrink-0">
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-box-archive"></i> Saved Daily Transcripts
+                    </h3>
+                    <span id="transcript-count" class="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                </div>
+                <div id="transcript-archive-list" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    <div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts yet</div>
+                </div>
+            </div>
+
+            <hr class="border-white/10">
+
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400">Seller Speed Tracker</h3>
+                    <span id="seller-count" class="bg-cyan-500/20 text-cyan-300 text-xs px-2 py-0.5 rounded-full font-bold">0 Active</span>
+                </div>
+                <div id="seller-speed-list" class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                    <div class="text-xs text-gray-400 italic text-center py-2">No seller responses recorded yet</div>
+                </div>
+            </div>
+
+            <hr class="border-white/10">
+
+            <div class="flex-1">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Online Participants</h3>
+                    <span id="online-count" class="bg-emerald-500/20 text-emerald-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                </div>
+                <div id="presence-list" class="space-y-2">
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Archive Modal -->
+    <div id="archive-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass w-full max-w-2xl max-h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
+            <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
+                <div class="flex items-center gap-2 text-amber-400 font-bold text-base">
+                    <i class="fa-solid fa-box-archive text-lg"></i>
+                    <span>Daily Message Transcripts Archive</span>
+                </div>
+                <button id="close-archive-modal-btn" class="text-gray-400 hover:text-white text-lg px-2"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1 space-y-3">
+                <p class="text-xs text-gray-300">Below are all recorded daily chat history PDFs for this room. Any room member can access and download them at any time.</p>
+                <div id="modal-transcript-list" class="space-y-2">
+                    <div class="text-xs text-gray-400 italic text-center py-4">Loading archives...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Modal -->
+    <div id="pdf-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
+        <div class="glass w-full max-w-4xl h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
+            <div class="p-3 sm:p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
+                <div class="flex items-center gap-2 text-cyan-400 font-bold text-sm sm:text-base">
+                    <i class="fa-solid fa-file-pdf text-lg"></i>
+                    <span>Chat Transcript Preview</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="save-pdf-modal-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm transition flex items-center gap-1.5 shadow">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish
+                    </button>
+                    <button id="close-pdf-modal-btn" class="bg-white/10 hover:bg-white/20 text-white font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm transition">
+                        Close
+                    </button>
+                </div>
+            </div>
+            <iframe id="pdf-frame" class="w-full flex-1 bg-white border-0"></iframe>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+        const SUPABASE_URL = 'https://uavklixceheysspmgilk.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_Y9vPgA1CYXcFgk2SVqMXRg_M-jLuk_8';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: true,
+                storageKey: 'nexus-market-auth-token',
+                storage: window.localStorage
+            }
         });
 
-        if (res.ok) {
-          const json = await res.json();
-          bioFound = json?.data?.user?.biography || "";
+        let currentUser = null;
+        let userRole = localStorage.getItem('nexus_user_role') || null;
+        let selectedFile = null;
+        let allSessionMessages = []; 
+        let replyingToMessage = null;
+        let editingMessageId = null;
+        let roomChannel = null;
+        let currentDocObject = null;
+        let currentPdfBlob = null;
+        let unreadCount = 0;
+
+        let typingTimeout = null;
+        const typingUsers = new Set();
+
+        const CHAT_INACTIVITY_MS = 5 * 60 * 1000;
+        let chatInactivityTimer = null;
+        const MAX_FILE_SIZE = 50 * 1024 * 1024;
+
+        const EMOJI_LIST = [
+            '😀','😂','😅','😍','😎','🥳','🔥','❤️','👍','👎','👏','🎉','🚀','💡','💯',
+            '😊','😭','😮','🤔','🙏','🤝','✨','⭐','💸','🛒','📦','✅','❌','⚠️','💬',
+            '⚡','🎯','💪','🙌','🤩','😜','🙄','🤯','💤','💩','🙈','🙋','🏼','☕','🍻'
+        ];
+
+        const REACTION_PRESETS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '🚀', '🎉'];
+
+        // Helper to safely sanitize dynamic text string
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
         }
-      }
-    } catch (e) {
-      console.log("Live fetch bypassed, using local generator.");
-    }
 
-    if (!bioFound) {
-      bioFound = `Active ${platform} handle: @${username}. Profile target evaluated.`;
-    }
+        // DOM Elements
+        const loginScreen = document.getElementById('login-screen');
+        const roleScreen = document.getElementById('role-screen');
+        const chatScreen = document.getElementById('chat-screen');
+        const googleLoginBtn = document.getElementById('google-login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const selectSellerBtn = document.getElementById('select-seller-btn');
+        const selectBuyerBtn = document.getElementById('select-buyer-btn');
+        const userRoleBadge = document.getElementById('user-role-badge');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const userDisplay = document.getElementById('user-display');
+        const fileInput = document.getElementById('file-input');
+        const filePreview = document.getElementById('file-preview');
+        const fileName = document.getElementById('file-name');
+        const removeFileBtn = document.getElementById('remove-file-btn');
+        const emojiBtn = document.getElementById('emoji-btn');
+        const emojiPicker = document.getElementById('emoji-picker');
+        const emojiGrid = document.getElementById('emoji-grid');
+        const closeEmojiPicker = document.getElementById('close-emoji-picker');
+        const presenceList = document.getElementById('presence-list');
+        const onlineCount = document.getElementById('online-count');
+        const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
+        const sidebarPanel = document.getElementById('sidebar-panel');
+        const sellerSpeedList = document.getElementById('seller-speed-list');
+        const sellerCount = document.getElementById('seller-count');
+        const pdfBanner = document.getElementById('pdf-banner');
+        const downloadPdfBtn = document.getElementById('download-pdf-btn');
+        const manualExportBtn = document.getElementById('manual-export-btn');
+        const replyPreview = document.getElementById('reply-preview');
+        const replyUser = document.getElementById('reply-user');
+        const replyText = document.getElementById('reply-text');
+        const cancelReplyBtn = document.getElementById('cancel-reply-btn');
+        const editPreview = document.getElementById('edit-preview');
+        const editText = document.getElementById('edit-text');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const typingText = document.getElementById('typing-text');
+        const transcriptArchiveList = document.getElementById('transcript-archive-list');
+        const transcriptCount = document.getElementById('transcript-count');
 
-    document.getElementById('bioText').innerText = bioFound;
-    document.getElementById('bioCard').style.display = 'block';
+        // Floating Scroll Button & Unread Counter Elements
+        const scrollBottomBtn = document.getElementById('scroll-bottom-btn');
+        const unreadBadge = document.getElementById('unread-badge');
 
-    const generatedPitch = buildPitch(username, platform, bioFound);
-    document.getElementById('pitchText').innerText = generatedPitch;
-    document.getElementById('pitchCard').style.display = 'block';
+        // Modal Elements
+        const openArchiveModalBtn = document.getElementById('open-archive-modal-btn');
+        const archiveModal = document.getElementById('archive-modal');
+        const closeArchiveModalBtn = document.getElementById('close-archive-modal-btn');
+        const modalTranscriptList = document.getElementById('modal-transcript-list');
 
-    currentProfileData = {
-      user_id: currentUser ? currentUser.id : null,
-      platform: platform,
-      handle: `@${username}`,
-      bio_notes: bioFound,
-      suggested_message: generatedPitch,
-      user_role: selectedUserRole
-    };
+        const pdfModal = document.getElementById('pdf-modal');
+        const closePdfModalBtn = document.getElementById('close-pdf-modal-btn');
+        const savePdfModalBtn = document.getElementById('save-pdf-modal-btn');
+        const pdfFrame = document.getElementById('pdf-frame');
 
-    statusText.innerText = "Analysis Complete!";
-    analyzeBtn.disabled = false;
-  }
+        function scrollToBottom(force = false) {
+            const doScroll = () => {
+                if (chatMessages) {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            };
 
-  function buildPitch(handle, platform, bio) {
-    let niche = "brand";
-    const bioLower = bio.toLowerCase();
+            doScroll();
+            requestAnimationFrame(() => {
+                doScroll();
+                setTimeout(doScroll, 50);
+                setTimeout(doScroll, 150);
+                setTimeout(doScroll, 400);
+            });
+        }
 
-    if (bioLower.includes("wear") || bioLower.includes("apparel") || bioLower.includes("clothing")) niche = "clothing line";
-    else if (bioLower.includes("skin") || bioLower.includes("beauty") || bioLower.includes("cosmetics")) niche = "beauty store";
-    else if (bioLower.includes("shop") || bioLower.includes("store")) niche = "e-commerce store";
+        function resetUnreadCount() {
+            unreadCount = 0;
+            if (unreadBadge) {
+                unreadBadge.textContent = '0';
+                unreadBadge.classList.add('hidden');
+            }
+        }
 
-    if (selectedUserRole === "Seller") {
-      return `Hey @${handle}! 👋\n\n` +
-        `Came across your ${platform} page and love the visual direction of your ${niche}.\n\n` +
-        `Quick question—are you open to reviewing a 1-minute visual design concept to help boost your store conversion rate this month?\n\n` +
-        `Would love to send it over if you're open to taking a look!`;
-    } else {
-      return `Hey @${handle}! 👋\n\n` +
-        `I noticed your ${niche} products on ${platform} and wanted to reach out regarding product inquiries and wholesale options.\n\n` +
-        `Do you have an active store catalog or order link available?`;
-    }
-  }
+        // Scroll listener for floating button and unread counter reset
+        if (chatMessages && scrollBottomBtn) {
+            chatMessages.addEventListener('scroll', () => {
+                const distanceFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight;
+                
+                if (distanceFromBottom > 150) {
+                    scrollBottomBtn.classList.remove('hidden');
+                } else {
+                    scrollBottomBtn.classList.add('hidden');
+                    resetUnreadCount();
+                }
+            });
 
-  async function saveToSupabase() {
-    if (!supabase) {
-      alert("Please add your Supabase credentials inside index.html script tags.");
-      return;
-    }
+            scrollBottomBtn.addEventListener('click', () => {
+                chatMessages.scrollTo({
+                    top: chatMessages.scrollHeight,
+                    behavior: 'smooth'
+                });
+                resetUnreadCount();
+            });
+        }
 
-    const { error } = await supabase
-      .from('store_leads')
-      .insert([currentProfileData]);
+        // Render Emoji Grid
+        EMOJI_LIST.forEach(emoji => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'hover:bg-white/10 rounded p-1 transition flex items-center justify-center';
+            btn.textContent = emoji;
+            btn.onclick = () => {
+                messageInput.value += emoji;
+                adjustTextareaHeight();
+                messageInput.focus();
+            };
+            emojiGrid.appendChild(btn);
+        });
 
-    if (error) {
-      alert('Error saving lead: ' + error.message);
-    } else {
-      alert(`Lead successfully saved to your profile as ${selectedUserRole}!`);
-    }
-  }
-</script>
+        emojiBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            emojiPicker.classList.toggle('hidden');
+        });
+        closeEmojiPicker.addEventListener('click', () => emojiPicker.classList.add('hidden'));
+        document.addEventListener('click', (e) => {
+            if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+                emojiPicker.classList.add('hidden');
+            }
+        });
 
+        toggleSidebarBtn.addEventListener('click', () => {
+            sidebarPanel.classList.toggle('hidden');
+        });
+
+        if (openArchiveModalBtn) {
+            openArchiveModalBtn.addEventListener('click', () => {
+                archiveModal.classList.remove('hidden');
+                loadTranscriptArchive();
+            });
+        }
+
+        if (closeArchiveModalBtn) {
+            closeArchiveModalBtn.addEventListener('click', () => {
+                archiveModal.classList.add('hidden');
+            });
+        }
+
+        if (closePdfModalBtn) {
+            closePdfModalBtn.addEventListener('click', () => {
+                pdfModal.classList.add('hidden');
+            });
+        }
+
+        function adjustTextareaHeight() {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 144) + 'px';
+        }
+
+        // Typing logic
+        messageInput.addEventListener('input', () => {
+            adjustTextareaHeight();
+            resetChatInactivityTimer();
+
+            if (!roomChannel || !currentUser) return;
+            
+            roomChannel.send({
+                type: 'broadcast',
+                event: 'typing',
+                payload: { email: currentUser.email.split('@')[0], isTyping: true }
+            });
+
+            if (typingTimeout) clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                roomChannel.send({
+                    type: 'broadcast',
+                    event: 'typing',
+                    payload: { email: currentUser.email.split('@')[0], isTyping: false }
+                });
+            }, 2000);
+        });
+
+        messageInput.addEventListener('keydown', (e) => {
+            const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 768);
+
+            if (e.key === 'Enter' && !e.shiftKey && !isTouchDevice) {
+                e.preventDefault();
+                chatForm.requestSubmit();
+            }
+        });
+
+        function updateTypingUI() {
+            if (typingUsers.size === 0) {
+                typingIndicator.classList.add('opacity-0');
+            } else {
+                const names = Array.from(typingUsers).join(', ');
+                typingText.textContent = `${names} ${typingUsers.size === 1 ? 'is' : 'are'} typing...`;
+                typingIndicator.classList.remove('opacity-0');
+            }
+        }
+
+        // Edit and Reply UI logic
+        window.startEditMessage = function(id, content) {
+            window.cancelReply();
+            editingMessageId = id;
+            editText.textContent = content;
+            editPreview.classList.remove('hidden');
+            messageInput.value = content;
+            adjustTextareaHeight();
+            messageInput.focus();
+        };
+
+        window.cancelEdit = function() {
+            editingMessageId = null;
+            editPreview.classList.add('hidden');
+            messageInput.value = '';
+            adjustTextareaHeight();
+        };
+
+        cancelEditBtn.addEventListener('click', () => window.cancelEdit());
+
+        window.setReplyMessage = function(id, email, content) {
+            window.cancelEdit();
+            replyingToMessage = { id, email, content };
+            replyUser.textContent = email.split('@')[0];
+            replyText.textContent = content || '(Attachment)';
+            replyPreview.classList.remove('hidden');
+            messageInput.focus();
+        };
+
+        window.cancelReply = function() {
+            replyingToMessage = null;
+            replyPreview.classList.add('hidden');
+        };
+
+        window.scrollToMessage = function(msgId) {
+            if (!msgId) return;
+            const targetEl = document.getElementById(`msg-${msgId}`);
+            if (targetEl) {
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                targetEl.classList.add('highlight-msg');
+                setTimeout(() => targetEl.classList.remove('highlight-msg'), 2000);
+            }
+        };
+
+        cancelReplyBtn.addEventListener('click', () => window.cancelReply());
+
+        // File Selection logic
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > MAX_FILE_SIZE) {
+                alert('File size exceeds the 50MB limit.');
+                fileInput.value = '';
+                return;
+            }
+            selectedFile = file;
+            fileName.textContent = file.name;
+            filePreview.classList.remove('hidden');
+        });
+
+        removeFileBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            filePreview.classList.add('hidden');
+        });
+
+        // Reaction handling
+        window.toggleReactionPicker = function(msgId) {
+            const pickerEl = document.getElementById(`reaction-picker-${msgId}`);
+            if (pickerEl) pickerEl.classList.toggle('hidden');
+        };
+
+        window.toggleReaction = async function(msgId, emoji) {
+            if (!currentUser) return;
+            try {
+                await supabase.rpc('toggle_reaction', {
+                    p_message_id: msgId,
+                    p_emoji: emoji,
+                    p_user_email: currentUser.email.split('@')[0]
+                });
+            } catch (e) {
+                console.error('Reaction update error:', e);
+            }
+        };
+
+        function resetChatInactivityTimer() {
+            if (chatInactivityTimer) clearTimeout(chatInactivityTimer);
+            pdfBanner.classList.add('hidden'); 
+            chatInactivityTimer = setTimeout(() => {
+                pdfBanner.classList.remove('hidden'); 
+            }, CHAT_INACTIVITY_MS);
+        }
+
+        downloadPdfBtn.addEventListener('click', () => generatePDFTranscript());
+        manualExportBtn.addEventListener('click', () => generatePDFTranscript());
+
+        // PDF Transcript Generation with autoTable styling and page footer support
+        function generatePDFTranscript() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            const todaysMessages = allSessionMessages.filter(msg => {
+                if (!msg.created_at) return true;
+                return new Date(msg.created_at).toISOString().split('T')[0] === todayStr;
+            });
+
+            if (todaysMessages.length === 0) {
+                alert("No messages recorded for today yet!");
+                return;
+            }
+
+            // Header Banner
+            doc.setFillColor(15, 32, 39); 
+            doc.rect(0, 0, 210, 32, 'F');
+            doc.setTextColor(34, 211, 238);
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text('NEXUS MARKETPLACE', 14, 15);
+
+            doc.setTextColor(203, 213, 225);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Official Daily Chat Transcript & Room Log`, 14, 23);
+
+            // Context Card
+            doc.setDrawColor(226, 232, 240);
+            doc.setFillColor(248, 250, 252);
+            doc.roundedRect(14, 36, 182, 22, 2, 2, 'FD');
+
+            doc.setTextColor(15, 23, 42);
+            doc.setFontSize(8.5);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Export Context:`, 18, 43);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Nexus Trading Room`, 45, 43);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Today's Date:`, 18, 50);
+            doc.setFont('helvetica', 'normal');
+            doc.text(todayStr, 45, 50);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Export Time:`, 110, 43);
+            doc.setFont('helvetica', 'normal');
+            doc.text(new Date().toLocaleTimeString(), 135, 43);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Total Messages:`, 110, 50);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${todaysMessages.length} Messages`, 135, 50);
+
+            // Table Data Mapping
+            const tableData = todaysMessages.map(msg => {
+                let contentBody = msg.content || '';
+                if (msg.reply_to_content) {
+                    const replyUser = msg.reply_to_email ? msg.reply_to_email.split('@')[0] : 'User';
+                    contentBody = `[Replying to ${replyUser}: "${msg.reply_to_content}"]\n${contentBody}`;
+                }
+                if (msg.file_url) {
+                    contentBody += contentBody ? `\n[Attachment: ${msg.file_url}]` : `[Attachment: ${msg.file_url}]`;
+                }
+
+                return [
+                    msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
+                    msg.user_email ? msg.user_email.split('@')[0] : 'Unknown',
+                    (msg.user_role || 'Member').toUpperCase(),
+                    contentBody
+                ];
+            });
+
+            // autoTable Render
+            doc.autoTable({
+                startY: 64,
+                head: [['Time', 'User', 'Role', 'Message Content']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [15, 32, 39], textColor: [255, 255, 255], fontStyle: 'bold' },
+                styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak' },
+                columnStyles: {
+                    0: { cellWidth: 20 },
+                    1: { cellWidth: 32 },
+                    2: { cellWidth: 22 },
+                    3: { cellWidth: 'auto' }
+                },
+                didDrawPage: (data) => {
+                    const totalPages = doc.internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.setTextColor(148, 163, 184);
+                    doc.text(`Page ${data.pageNumber} of ${totalPages}`, 196, 287, { align: 'right' });
+                    doc.text(`Nexus Marketplace Transcript • Room Log`, 14, 287);
+                }
+            });
+
+            currentDocObject = doc;
+            currentPdfBlob = doc.output('blob');
+            const blobUrl = URL.createObjectURL(currentPdfBlob);
+            pdfFrame.src = blobUrl;
+            pdfModal.classList.remove('hidden');
+        }
+
+        // Save PDF Archive to Supabase
+        if (savePdfModalBtn) {
+            savePdfModalBtn.addEventListener('click', async () => {
+                if (!currentPdfBlob) return;
+                const todayStr = new Date().toISOString().split('T')[0];
+                const fileNameStr = `transcript-${todayStr}-${Date.now()}.pdf`;
+
+                savePdfModalBtn.disabled = true;
+                savePdfModalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+                try {
+                    const { error: uploadErr } = await supabase.storage.from('chat-transcripts').upload(fileNameStr, currentPdfBlob, {
+                        contentType: 'application/pdf',
+                        upsert: true
+                    });
+
+                    if (uploadErr) throw uploadErr;
+
+                    const { data: publicUrlData } = supabase.storage.from('chat-transcripts').getPublicUrl(fileNameStr);
+
+                    const { error: dbErr } = await supabase.from('daily_transcripts').insert([{
+                        transcript_date: todayStr,
+                        file_url: publicUrlData.publicUrl,
+                        created_by: currentUser?.email || 'System'
+                    }]);
+
+                    if (dbErr) throw dbErr;
+
+                    alert('Transcript successfully saved & published to room archives!');
+                    pdfModal.classList.add('hidden');
+                    loadTranscriptArchive();
+                } catch (err) {
+                    console.error(err);
+                    alert('Downloading locally as backup.');
+                    if (currentDocObject) currentDocObject.save(`Nexus-Transcript-${todayStr}.pdf`);
+                } finally {
+                    savePdfModalBtn.disabled = false;
+                    savePdfModalBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish';
+                }
+            });
+        }
+
+        // Load Archived Transcripts
+        async function loadTranscriptArchive() {
+            try {
+                const { data, error } = await supabase.from('daily_transcripts').select('*').order('created_at', { ascending: false });
+                
+                if (error || !data || data.length === 0) {
+                    const emptyState = `<div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts found</div>`;
+                    transcriptArchiveList.innerHTML = emptyState;
+                    if (modalTranscriptList) modalTranscriptList.innerHTML = emptyState;
+                    transcriptCount.textContent = '0';
+                    return;
+                }
+
+                transcriptCount.textContent = data.length.toString();
+                let html = '';
+
+                data.forEach(item => {
+                    const cleanDate = escapeHTML(item.transcript_date);
+                    const cleanCreator = escapeHTML(item.created_by ? item.created_by.split('@')[0] : 'User');
+                    const cleanUrl = escapeHTML(item.file_url);
+
+                    html += `
+                        <div class="bg-white/5 border border-white/10 rounded-xl p-2.5 flex items-center justify-between text-xs hover:bg-white/10 transition">
+                            <div class="truncate pr-2">
+                                <p class="font-bold text-amber-300 truncate">Transcript - ${cleanDate}</p>
+                                <p class="text-[10px] text-gray-400">By: ${cleanCreator}</p>
+                            </div>
+                            <a href="${cleanUrl}" target="_blank" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded transition flex items-center gap-1 shrink-0">
+                                <i class="fa-solid fa-download"></i> View
+                            </a>
+                        </div>
+                    `;
+                });
+
+                transcriptArchiveList.innerHTML = html;
+                if (modalTranscriptList) modalTranscriptList.innerHTML = html;
+            } catch (err) {
+                console.log('Archive table check:', err.message);
+            }
+        }
+
+        // Auth and App Initialization
+        async function init() {
+            const { data: { session } } = await supabase.auth.getSession();
+            currentUser = session?.user || null;
+
+            if (currentUser) {
+                userDisplay.textContent = currentUser.email;
+                if (!userRole) {
+                    showScreen('role');
+                } else {
+                    setupChatRoom();
+                }
+            } else {
+                showScreen('login');
+            }
+
+            supabase.auth.onAuthStateChange((event, session) => {
+                currentUser = session?.user || null;
+                if (currentUser) {
+                    userDisplay.textContent = currentUser.email;
+                    if (!userRole) showScreen('role');
+                    else setupChatRoom();
+                } else {
+                    showScreen('login');
+                }
+            });
+        }
+
+        function showScreen(screen) {
+            loginScreen.classList.add('hidden');
+            roleScreen.classList.add('hidden');
+            chatScreen.classList.add('hidden');
+
+            if (screen === 'login') loginScreen.classList.remove('hidden');
+            if (screen === 'role') roleScreen.classList.remove('hidden');
+            if (screen === 'chat') chatScreen.classList.remove('hidden');
+        }
+
+        googleLoginBtn.addEventListener('click', async () => {
+            await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.href }
+            });
+        });
+
+        selectSellerBtn.addEventListener('click', () => setRole('Seller'));
+        selectBuyerBtn.addEventListener('click', () => setRole('Buyer'));
+
+        function setRole(role) {
+            userRole = role;
+            localStorage.setItem('nexus_user_role', role);
+            setupChatRoom();
+        }
+
+        logoutBtn.addEventListener('click', async () => {
+            localStorage.removeItem('nexus_user_role');
+            userRole = null;
+            await supabase.auth.signOut();
+            window.location.reload();
+        });
+
+        async function setupChatRoom() {
+            showScreen('chat');
+
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            userRoleBadge.textContent = userRole;
+            userRoleBadge.className = `text-xs font-semibold px-2 py-0.5 rounded-full ${userRole === 'Seller' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-emerald-500/20 text-emerald-300'}`;
+            
+            await loadMessages();
+            setupRealtimeChannel();
+            loadTranscriptArchive();
+            resetChatInactivityTimer();
+
+            scrollToBottom(true);
+        }
+
+        async function loadMessages() {
+            chatMessages.innerHTML = '<div class="text-center text-gray-400 py-8"><i class="fa-solid fa-spinner fa-spin text-2xl"></i><p class="mt-2 text-xs">Loading room history...</p></div>';
+
+            const { data, error } = await supabase
+                .from('messages')
+                .select('*')
+                .order('created_at', { ascending: true })
+                .limit(300);
+
+            if (error) {
+                chatMessages.innerHTML = `<p class="text-center text-red-400 text-xs py-4">Error loading history: ${escapeHTML(error.message)}</p>`;
+                return;
+            }
+
+            chatMessages.innerHTML = '';
+            allSessionMessages = [];
+            
+            if (data && data.length > 0) {
+                data.forEach(msg => renderOrUpdateMessage(msg, false));
+                calculateSellerSpeeds();
+                scrollToBottom(true);
+            } else {
+                chatMessages.innerHTML = `<div class="text-center text-gray-400 italic text-xs py-10">No messages in room yet. Start the conversation!</div>`;
+            }
+        }
+
+        function renderOrUpdateMessage(msg, isNew = false) {
+            const emptyPlaceholder = chatMessages.querySelector('.italic');
+            if (emptyPlaceholder) emptyPlaceholder.remove();
+
+            const existingIndex = allSessionMessages.findIndex(m => m.id === msg.id);
+            if (existingIndex !== -1) {
+                allSessionMessages[existingIndex] = msg;
+                const existingElem = document.getElementById(`msg-${msg.id}`);
+                if (existingElem) existingElem.outerHTML = buildMessageHTML(msg);
+                return;
+            }
+
+            allSessionMessages.push(msg);
+            chatMessages.insertAdjacentHTML('beforeend', buildMessageHTML(msg));
+
+            if (isNew) {
+                const distanceFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight;
+                
+                if (distanceFromBottom > 150) {
+                    unreadCount++;
+                    if (unreadBadge) {
+                        unreadBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                        unreadBadge.classList.remove('hidden');
+                    }
+                    if (scrollBottomBtn) {
+                        scrollBottomBtn.classList.remove('hidden');
+                    }
+                } else {
+                    scrollToBottom(true);
+                }
+            }
+        }
+
+        function buildMessageHTML(msg) {
+            const isSelf = currentUser && currentUser.email === msg.user_email;
+            const senderName = msg.user_email ? msg.user_email.split('@')[0] : 'User';
+            const role = msg.user_role || 'Member';
+            const roleColor = role === 'Seller' ? 'text-cyan-400 border-cyan-400/30 bg-cyan-950/40' : 'text-emerald-400 border-emerald-400/30 bg-emerald-950/40';
+            const timeStr = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+            let reactionsHTML = '';
+            if (msg.reactions && Object.keys(msg.reactions).length > 0) {
+                reactionsHTML = '<div class="flex flex-wrap gap-1 mt-2">';
+                for (const [emoji, users] of Object.entries(msg.reactions)) {
+                    if (users && users.length > 0) {
+                        const hasReacted = currentUser && users.includes(currentUser.email.split('@')[0]);
+                        reactionsHTML += `
+                            <button onclick="toggleReaction('${msg.id}', '${emoji}')" class="text-xs ${hasReacted ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200' : 'bg-white/5 border-white/10 text-gray-300'} border px-2 py-0.5 rounded-full flex items-center gap-1 hover:bg-white/20 transition">
+                                <span>${emoji}</span>
+                                <span class="text-[10px] opacity-80">${users.length}</span>
+                            </button>
+                        `;
+                    }
+                }
+                reactionsHTML += '</div>';
+            }
+
+            const cleanContent = escapeHTML(msg.content || '');
+            const cleanReplyContent = escapeHTML(msg.reply_to_content || '');
+            const cleanReplyEmail = escapeHTML(msg.reply_to_email ? msg.reply_to_email.split('@')[0] : 'User');
+
+            return `
+                <div id="msg-${msg.id}" class="message-bubble flex flex-col ${isSelf ? 'items-end' : 'items-start'} my-2 group">
+                    <div class="flex items-center gap-2 mb-1 text-xs text-gray-400 px-1">
+                        <span class="font-bold text-gray-200">${escapeHTML(senderName)}</span>
+                        <span class="text-[10px] px-1.5 py-0.2 rounded border ${roleColor}">${escapeHTML(role)}</span>
+                        <span class="text-[10px] text-gray-400">${timeStr}</span>
+                    </div>
+
+                    <div class="max-w-xs sm:max-w-md ${isSelf ? 'bg-cyan-600/80 text-white rounded-2xl rounded-tr-none' : 'glass text-gray-100 rounded-2xl rounded-tl-none'} p-3 shadow-lg relative border border-white/10">
+                        ${msg.reply_to_content ? `
+                            <div onclick="scrollToMessage('${msg.reply_to_id}')" class="cursor-pointer text-xs bg-black/20 p-2 rounded-lg mb-2 border-l-2 border-cyan-400 hover:bg-black/30 transition">
+                                <span class="font-bold text-cyan-300 block">${cleanReplyEmail}</span>
+                                <span class="opacity-80 italic line-clamp-1">${cleanReplyContent}</span>
+                            </div>
+                        ` : ''}
+
+                        <p class="whitespace-pre-wrap text-sm leading-relaxed">${cleanContent}</p>
+
+                        ${msg.file_url ? `
+                            <div class="mt-2">
+                                ${msg.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? `
+                                    <a href="${escapeHTML(msg.file_url)}" target="_blank">
+                                        <img src="${escapeHTML(msg.file_url)}" class="rounded-lg max-h-48 w-full object-cover border border-white/10 hover:opacity-90 transition">
+                                    </a>
+                                ` : `
+                                    <a href="${escapeHTML(msg.file_url)}" target="_blank" class="inline-flex items-center gap-2 text-xs bg-black/30 hover:bg-black/40 text-cyan-300 p-2 rounded-lg border border-white/10 transition">
+                                        <i class="fa-solid fa-paperclip"></i> View Attached Document
+                                    </a>
+                                `}
+                            </div>
+                        ` : ''}
+
+                        ${msg.is_edited ? `<span class="text-[9px] opacity-60 block text-right mt-1">(edited)</span>` : ''}
+                        
+                        ${reactionsHTML}
+
+                        <!-- Message Action Toolbar -->
+                        <div class="opacity-0 group-hover:opacity-100 transition absolute ${isSelf ? '-left-20' : '-right-20'} top-2 flex items-center gap-1 bg-slate-900/90 border border-white/10 p-1 rounded-lg backdrop-blur-md z-20">
+                            <button onclick="toggleReactionPicker('${msg.id}')" class="p-1 hover:text-yellow-400 text-gray-300 text-xs" title="React"><i class="fa-regular fa-face-smile"></i></button>
+                            <button onclick="setReplyMessage('${msg.id}', '${escapeHTML(msg.user_email)}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-cyan-400 text-gray-300 text-xs" title="Reply"><i class="fa-solid fa-reply"></i></button>
+                            ${isSelf ? `<button onclick="startEditMessage('${msg.id}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-amber-400 text-gray-300 text-xs" title="Edit"><i class="fa-solid fa-pen"></i></button>` : ''}
+                        </div>
+
+                        <!-- Popup Reaction Selector -->
+                        <div id="reaction-picker-${msg.id}" class="hidden absolute ${isSelf ? 'right-0' : 'left-0'} -top-10 bg-slate-900/95 border border-white/20 p-1.5 rounded-full flex gap-1 shadow-2xl z-30 backdrop-blur-md">
+                            ${REACTION_PRESETS.map(e => `<button onclick="toggleReaction('${msg.id}', '${e}'); toggleReactionPicker('${msg.id}')" class="hover:scale-125 transition text-base px-1">${e}</button>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Form Submit Logic
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            resetChatInactivityTimer();
+
+            const content = messageInput.value.trim();
+            if (!content && !selectedFile && !editingMessageId) return;
+
+            // Handle Edit
+            if (editingMessageId) {
+                const { error } = await supabase
+                    .from('messages')
+                    .update({ content, is_edited: true })
+                    .eq('id', editingMessageId);
+
+                if (error) alert('Edit error: ' + error.message);
+                window.cancelEdit();
+                return;
+            }
+
+            // Upload Attached File
+            let file_url = null;
+            if (selectedFile) {
+                const fileExt = selectedFile.name.split('.').pop();
+                const filePath = `${currentUser.id}/${Date.now()}.${fileExt}`;
+                const { error: uploadError } = await supabase.storage.from('chat-files').upload(filePath, selectedFile);
+
+                if (uploadError) {
+                    alert('File upload failed: ' + uploadError.message);
+                    return;
+                }
+                const { data } = supabase.storage.from('chat-files').getPublicUrl(filePath);
+                file_url = data.publicUrl;
+            }
+
+            const newMsg = {
+                user_id: currentUser.id,
+                user_email: currentUser.email,
+                user_role: userRole,
+                content: content,
+                file_url: file_url,
+                reactions: {},
+                reply_to_id: replyingToMessage?.id || null,
+                reply_to_email: replyingToMessage?.email || null,
+                reply_to_content: replyingToMessage?.content || null
+            };
+
+            // Clear inputs
+            messageInput.value = '';
+            selectedFile = null;
+            fileInput.value = '';
+            filePreview.classList.add('hidden');
+            window.cancelReply();
+            adjustTextareaHeight();
+
+            // Insert message directly into Database
+            const { error: insertError } = await supabase
+                .from('messages')
+                .insert([newMsg]);
+
+            if (insertError) {
+                alert('Message send error: ' + insertError.message);
+            }
+        });
+
+        // Speed tracker calculation
+        function calculateSellerSpeeds() {
+            let lastBuyerMsgTime = null;
+            const sellerStats = {};
+
+            allSessionMessages.forEach(msg => {
+                const msgTime = new Date(msg.created_at).getTime();
+                if (msg.user_role === 'Buyer') {
+                    lastBuyerMsgTime = msgTime;
+                } else if (msg.user_role === 'Seller' && lastBuyerMsgTime) {
+                    const responseSec = Math.round((msgTime - lastBuyerMsgTime) / 1000);
+                    if (responseSec >= 0 && responseSec < 3600) {
+                        const seller = msg.user_email.split('@')[0];
+                        if (!sellerStats[seller]) sellerStats[seller] = [];
+                        sellerStats[seller].push(responseSec);
+                    }
+                    lastBuyerMsgTime = null;
+                }
+            });
+
+            const sellers = Object.keys(sellerStats);
+            if (sellers.length === 0) {
+                sellerSpeedList.innerHTML = `<div class="text-xs text-gray-400 italic text-center py-2">No seller responses recorded yet</div>`;
+                sellerCount.textContent = '0 Active';
+                return;
+            }
+
+            sellerCount.textContent = `${sellers.length} Active`;
+            let listHtml = '';
+            sellers.forEach(seller => {
+                const times = sellerStats[seller];
+                const avgSec = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+                listHtml += `
+                    <div class="bg-white/5 border border-white/10 rounded-xl p-2 flex items-center justify-between text-xs">
+                        <span class="font-bold text-cyan-300 truncate">${escapeHTML(seller)}</span>
+                        <span class="bg-cyan-500/20 text-cyan-200 px-2 py-0.5 rounded-full text-[10px] font-mono">
+                            ⚡ Avg: ${avgSec}s
+                        </span>
+                    </div>
+                `;
+            });
+            sellerSpeedList.innerHTML = listHtml;
+        }
+
+        // Realtime setup & presence tracking using Postgres Changes
+        function setupRealtimeChannel() {
+            if (roomChannel) supabase.removeChannel(roomChannel);
+
+            roomChannel = supabase.channel('nexus-trading-room', {
+                config: { presence: { key: currentUser.id } }
+            });
+
+            roomChannel
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                    renderOrUpdateMessage(payload.new, true);
+                    calculateSellerSpeeds();
+                })
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
+                    renderOrUpdateMessage(payload.new, false);
+                    calculateSellerSpeeds();
+                })
+                .on('broadcast', { event: 'typing' }, payload => {
+                    if (payload.payload.isTyping) {
+                        typingUsers.add(payload.payload.email);
+                    } else {
+                        typingUsers.delete(payload.payload.email);
+                    }
+                    updateTypingUI();
+                })
+                .on('presence', { event: 'sync' }, () => {
+                    const state = roomChannel.presenceState();
+                    updatePresenceUI(state);
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await roomChannel.track({
+                            email: currentUser.email,
+                            role: userRole,
+                            online_at: new Date().toISOString()
+                        });
+                    }
+                });
+        }
+
+        function updatePresenceUI(state) {
+            const users = [];
+            for (const key in state) {
+                if (state[key].length > 0) {
+                    users.push(state[key][0]);
+                }
+            }
+
+            onlineCount.textContent = users.length.toString();
+            if (users.length === 0) {
+                presenceList.innerHTML = `<div class="text-xs text-gray-400 italic">No users online</div>`;
+                return;
+            }
+
+            presenceList.innerHTML = users.map(u => `
+                <div class="flex items-center justify-between text-xs bg-white/5 border border-white/10 p-2 rounded-xl">
+                    <div class="flex items-center gap-2 truncate">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="truncate font-medium text-gray-200">${u.email ? escapeHTML(u.email.split('@')[0]) : 'User'}</span>
+                    </div>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded ${u.role === 'Seller' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-emerald-500/20 text-emerald-300'}">${escapeHTML(u.role || 'Member')}</span>
+                </div>
+            `).join('');
+        }
+
+        // Initialize Application
+        init();
+    </script>
 </body>
 </html>
