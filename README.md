@@ -9,10 +9,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Nexus Market">
-    <meta name="theme-color" content="#0f2027">
+    <meta name="theme-color" content="#090d16">
 
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png">
-    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Nexus%20Marketplace%20Chat%22%2C%22short_name%22%3A%22NexusChat%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230f2027%22%2C%22theme_color%22%3A%22%230f2027%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F1041%2F1041916.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Nexus%20Marketplace%20Chat%22%2C%22short_name%22%3A%22NexusChat%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23090d16%22%2C%22theme_color%22%3A%22%23090d16%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F1041%2F1041916.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -21,199 +21,249 @@
 
     <style>
         body {
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            background-color: #090d16;
+            background-image: 
+                radial-gradient(at 10% 10%, rgba(34, 211, 238, 0.12) 0px, transparent 50%),
+                radial-gradient(at 90% 90%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.8) 0px, transparent 100%);
             color: #ffffff;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             height: 100dvh;
             width: 100vw;
             overflow: hidden;
             -webkit-tap-highlight-color: transparent;
         }
-        .glass {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
         }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
         .message-bubble { 
-            animation: fadeIn 0.3s ease-out;
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.2s ease;
         }
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(8px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
+
         .highlight-msg {
             animation: highlightPulse 2s ease-in-out;
             border-radius: 1rem;
         }
+
         @keyframes highlightPulse {
             0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
-            50% { box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.8); }
+            50% { box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.6); }
         }
-        ::-webkit-scrollbar { width: 6px; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="flex items-center justify-center p-2 sm:p-4 relative">
 
     <!-- Login Screen -->
-    <div id="login-screen" class="glass rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
-        <div class="mb-8">
-            <i class="fa-solid fa-store text-5xl text-cyan-400 mb-4"></i>
-            <h1 class="text-3xl font-bold tracking-wider">NEXUS MARKET</h1>
-            <p class="text-gray-300 text-sm mt-2">Connect buyers & sellers instantly.</p>
+    <div id="login-screen" class="glass-panel rounded-3xl p-8 w-full max-w-md text-center shadow-2xl relative overflow-hidden">
+        <div class="absolute -top-10 -left-10 w-32 h-32 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="mb-8 relative z-10">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-cyan-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                <i class="fa-solid fa-store text-3xl text-slate-950"></i>
+            </div>
+            <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">NEXUS MARKET</h1>
+            <p class="text-slate-400 text-sm mt-2">Instant Social Commerce & Trading Room</p>
         </div>
-        <button id="google-login-btn" class="w-full bg-white text-gray-900 font-semibold py-3 px-4 rounded-lg hover:bg-gray-100 transition duration-300 flex items-center justify-center gap-3 active:scale-95">
-            <i class="fa-brands fa-google text-red-500"></i> Continue with Google
+        <button id="google-login-btn" class="w-full bg-white text-slate-900 font-semibold py-3.5 px-4 rounded-xl hover:bg-slate-100 transition duration-300 flex items-center justify-center gap-3 active:scale-95 shadow-xl">
+            <i class="fa-brands fa-google text-red-500 text-lg"></i> Continue with Google
         </button>
     </div>
 
     <!-- Role Selection Screen -->
-    <div id="role-screen" class="hidden glass rounded-2xl p-8 w-full max-w-md text-center shadow-2xl">
-        <h2 class="text-2xl font-bold mb-2">Select Account Type</h2>
-        <p class="text-gray-300 text-sm mb-6">Choose how you want to participate in this group room:</p>
+    <div id="role-screen" class="hidden glass-panel rounded-3xl p-8 w-full max-w-md text-center shadow-2xl">
+        <h2 class="text-2xl font-bold mb-2 text-white">Select Account Type</h2>
+        <p class="text-slate-400 text-sm mb-6">Choose how you want to participate in this group room:</p>
 
         <div class="space-y-4">
-            <button id="select-seller-btn" class="w-full p-4 border border-cyan-400/40 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/60 transition flex items-center justify-between text-left group">
+            <button id="select-seller-btn" class="w-full p-4 border border-cyan-500/30 rounded-2xl bg-cyan-950/30 hover:bg-cyan-900/40 hover:border-cyan-400/60 transition flex items-center justify-between text-left group">
                 <div>
-                    <h3 class="font-bold text-cyan-300 text-lg">Seller</h3>
-                    <p class="text-xs text-gray-300">Respond to buyer inquiries & measure speed</p>
+                    <h3 class="font-bold text-cyan-300 text-lg flex items-center gap-2">Seller <i class="fa-solid fa-bolt text-xs text-amber-400"></i></h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Respond to buyer inquiries & measure speed</p>
                 </div>
-                <i class="fa-solid fa-user-tag text-2xl text-cyan-400 group-hover:scale-110 transition"></i>
+                <div class="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition">
+                    <i class="fa-solid fa-user-tag text-lg"></i>
+                </div>
             </button>
 
-            <button id="select-buyer-btn" class="w-full p-4 border border-emerald-400/40 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 transition flex items-center justify-between text-left group">
+            <button id="select-buyer-btn" class="w-full p-4 border border-emerald-500/30 rounded-2xl bg-emerald-950/30 hover:bg-emerald-900/40 hover:border-emerald-400/60 transition flex items-center justify-between text-left group">
                 <div>
-                    <h3 class="font-bold text-emerald-300 text-lg">Buyer</h3>
-                    <p class="text-xs text-gray-300">Post requests & get instant seller replies</p>
+                    <h3 class="font-bold text-emerald-300 text-lg flex items-center gap-2">Buyer <i class="fa-solid fa-bag-shopping text-xs text-emerald-400"></i></h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Post requests & get instant seller replies</p>
                 </div>
-                <i class="fa-solid fa-cart-shopping text-2xl text-emerald-400 group-hover:scale-110 transition"></i>
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition">
+                    <i class="fa-solid fa-cart-shopping text-lg"></i>
+                </div>
             </button>
         </div>
     </div>
 
     <!-- Chat Screen -->
-    <div id="chat-screen" class="hidden glass rounded-2xl w-full max-w-6xl h-[98dvh] md:h-[92vh] flex flex-col md:flex-row shadow-2xl overflow-hidden relative">
-        <div class="flex-1 flex flex-col h-full border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden">
+    <div id="chat-screen" class="hidden glass-panel rounded-3xl w-full max-w-6xl h-[98dvh] md:h-[92vh] flex flex-col md:flex-row shadow-2xl overflow-hidden relative border border-white/10">
+        
+        <!-- Main Chat Area -->
+        <div class="flex-1 flex flex-col h-full border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden bg-slate-950/40">
 
-            <div id="pdf-banner" class="hidden bg-amber-500/20 border-b border-amber-500/30 p-3 text-xs flex flex-wrap items-center justify-between gap-2 backdrop-blur-md z-10">
+            <div id="pdf-banner" class="hidden bg-amber-500/10 border-b border-amber-500/20 p-3 text-xs flex flex-wrap items-center justify-between gap-2 backdrop-blur-md z-10">
                 <div class="flex items-center gap-2 text-amber-200">
                     <i class="fa-solid fa-clock text-amber-400 text-sm"></i>
                     <span><strong>Chat Inactive for 5 Minutes:</strong> You can export today's chat history now.</span>
                 </div>
-                <button id="download-pdf-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow">
+                <button id="download-pdf-btn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow">
                     <i class="fa-solid fa-file-pdf"></i> Export PDF Transcript
                 </button>
             </div>
 
-            <header class="p-4 border-b border-white/10 flex justify-between items-center bg-black/20 shrink-0">
+            <header class="p-4 border-b border-white/10 flex justify-between items-center bg-slate-950/60 backdrop-blur-md shrink-0">
                 <div class="flex items-center gap-3">
-                    <i class="fa-solid fa-comments text-cyan-400 text-xl"></i>
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 shadow-md">
+                        <i class="fa-solid fa-comments text-lg"></i>
+                    </div>
                     <div>
-                        <h2 class="font-bold text-lg leading-tight">Nexus Trading Room</h2>
-                        <span id="user-role-badge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300"></span>
+                        <h2 class="font-bold text-base leading-tight text-white flex items-center gap-2">
+                            Nexus Trading Room
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Room Active"></span>
+                        </h2>
+                        <span id="user-role-badge" class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 mt-0.5 inline-block"></span>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button id="manual-export-btn" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="Generate and archive today's discussion PDF">
-                        <i class="fa-solid fa-file-pdf"></i>
+                    <button id="manual-export-btn" class="bg-white/5 hover:bg-white/10 text-amber-300 border border-white/10 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5" title="Generate and archive today's discussion PDF">
+                        <i class="fa-solid fa-file-pdf text-amber-400"></i>
                         <span class="hidden sm:inline">Export PDF</span>
                     </button>
 
-                    <button id="open-archive-modal-btn" class="bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 border border-cyan-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5" title="View all daily archives">
-                        <i class="fa-solid fa-box-archive"></i>
+                    <button id="open-archive-modal-btn" class="bg-white/5 hover:bg-white/10 text-cyan-300 border border-white/10 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5" title="View all daily archives">
+                        <i class="fa-solid fa-box-archive text-cyan-400"></i>
                         <span>Archives</span>
                     </button>
 
-                    <button id="toggle-sidebar-btn" type="button" class="md:hidden bg-white/10 hover:bg-white/20 text-white px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1">
-                        <i class="fa-solid fa-bars"></i>
+                    <button id="toggle-sidebar-btn" type="button" class="md:hidden bg-white/10 hover:bg-white/20 text-white p-2 rounded-xl text-xs transition flex items-center">
+                        <i class="fa-solid fa-bars text-sm"></i>
                     </button>
 
-                    <span id="user-display" class="text-xs text-gray-300 hidden lg:block ml-2"></span>
-                    <button id="logout-btn" class="text-gray-400 hover:text-white transition p-1.5" title="Logout">
-                        <i class="fa-solid fa-right-from-bracket text-lg"></i>
+                    <span id="user-display" class="text-xs text-slate-400 hidden lg:block ml-2 border-l border-white/10 pl-3"></span>
+                    <button id="logout-btn" class="text-slate-400 hover:text-red-400 transition p-2 rounded-xl hover:bg-white/5" title="Logout">
+                        <i class="fa-solid fa-right-from-bracket text-base"></i>
                     </button>
                 </div>
             </header>
 
+            <!-- Social Media Instagram-Style Highlights Bar -->
+            <div id="status-stories-bar" class="px-4 py-2 border-b border-white/5 bg-slate-900/40 flex items-center gap-3 overflow-x-auto no-scrollbar shrink-0">
+                <div class="flex items-center gap-2 text-[11px] text-slate-400 font-semibold pr-2 border-r border-white/10 shrink-0">
+                    <i class="fa-solid fa-fire text-amber-400"></i> Top Sellers
+                </div>
+                <div id="stories-container" class="flex items-center gap-3 shrink-0">
+                    <div class="text-[11px] text-slate-500 italic">Waiting for activity...</div>
+                </div>
+            </div>
+
             <main id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
             </main>
 
-            <div id="typing-indicator" class="text-xs text-cyan-300 italic min-h-[1.25rem] px-4 opacity-0 transition-opacity flex items-center gap-2">
+            <div id="typing-indicator" class="text-xs text-cyan-400 italic min-h-[1.25rem] px-4 opacity-0 transition-opacity flex items-center gap-2">
                 <i class="fa-solid fa-ellipsis fa-bounce"></i>
                 <span id="typing-text">Someone is typing...</span>
             </div>
 
             <!-- Scroll to Bottom Floating Button with Unread Counter -->
             <button id="scroll-bottom-btn" type="button" 
-                class="hidden absolute bottom-20 right-6 z-30 bg-cyan-500 hover:bg-cyan-400 text-white p-3 rounded-full shadow-2xl border border-white/20 transition-all duration-300 hover:scale-110 flex items-center justify-center w-11 h-11 active:scale-95">
+                class="hidden absolute bottom-20 right-6 z-30 bg-cyan-500 hover:bg-cyan-400 text-slate-950 p-3 rounded-full shadow-2xl border border-white/20 transition-all duration-300 hover:scale-110 flex items-center justify-center w-11 h-11 active:scale-95">
                 <i class="fa-solid fa-arrow-down text-base"></i>
                 <span id="unread-badge" class="hidden absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border-2 border-slate-900 animate-pulse">0</span>
             </button>
 
-            <footer class="p-4 border-t border-white/10 bg-black/20 shrink-0 relative">
-                <div id="emoji-picker" class="hidden absolute bottom-20 left-4 z-50 glass bg-slate-900/95 border border-white/20 rounded-2xl p-3 w-72 sm:w-80 shadow-2xl backdrop-blur-xl">
+            <footer class="p-3 sm:p-4 border-t border-white/10 bg-slate-950/80 backdrop-blur-md shrink-0 relative">
+                <div id="emoji-picker" class="hidden absolute bottom-20 left-4 z-50 glass-panel bg-slate-900/95 border border-white/20 rounded-2xl p-3 w-72 sm:w-80 shadow-2xl backdrop-blur-2xl">
                     <div class="flex justify-between items-center pb-2 border-b border-white/10 mb-2">
-                        <span class="text-xs font-bold text-gray-300">Choose Emoji</span>
-                        <button type="button" id="close-emoji-picker" class="text-gray-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
+                        <span class="text-xs font-bold text-slate-300">Choose Emoji</span>
+                        <button type="button" id="close-emoji-picker" class="text-slate-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                     <div id="emoji-grid" class="grid grid-cols-6 sm:grid-cols-7 gap-1.5 max-h-48 overflow-y-auto text-xl p-1">
                     </div>
                 </div>
 
-                <div id="edit-preview" class="hidden text-xs text-amber-200 mb-2 flex justify-between items-center bg-amber-950/60 p-2.5 rounded-lg border-l-4 border-amber-400 backdrop-blur-md">
+                <div id="edit-preview" class="hidden text-xs text-amber-200 mb-2 flex justify-between items-center bg-amber-950/40 p-2.5 rounded-xl border-l-4 border-amber-400 backdrop-blur-md">
                     <div class="truncate pr-2">
                         <span class="text-amber-400 font-bold block"><i class="fa-solid fa-pen-to-square mr-1"></i> Editing Message</span>
-                        <span id="edit-text" class="text-gray-300 italic truncate block mt-0.5"></span>
+                        <span id="edit-text" class="text-slate-300 italic truncate block mt-0.5"></span>
                     </div>
-                    <button id="cancel-edit-btn" type="button" class="text-gray-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+                    <button id="cancel-edit-btn" type="button" class="text-slate-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <div id="reply-preview" class="hidden text-xs text-cyan-200 mb-2 flex justify-between items-center bg-cyan-950/60 p-2.5 rounded-lg border-l-4 border-cyan-400 backdrop-blur-md">
+                <div id="reply-preview" class="hidden text-xs text-cyan-200 mb-2 flex justify-between items-center bg-cyan-950/40 p-2.5 rounded-xl border-l-4 border-cyan-400 backdrop-blur-md">
                     <div class="truncate pr-2">
                         <span class="text-cyan-400 font-bold block"><i class="fa-solid fa-reply mr-1"></i> Replying to <span id="reply-user"></span></span>
-                        <span id="reply-text" class="text-gray-300 italic truncate block mt-0.5"></span>
+                        <span id="reply-text" class="text-slate-300 italic truncate block mt-0.5"></span>
                     </div>
-                    <button id="cancel-reply-btn" type="button" class="text-gray-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+                    <button id="cancel-reply-btn" type="button" class="text-slate-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <div id="file-preview" class="hidden text-sm text-cyan-300 mb-2 flex justify-between items-center bg-cyan-900/30 p-2 rounded">
-                    <span id="file-name"></span>
+                <div id="file-preview" class="hidden text-xs text-cyan-300 mb-2 flex justify-between items-center bg-cyan-950/40 p-2 rounded-xl border border-cyan-500/30">
+                    <span id="file-name" class="truncate pr-2"></span>
                     <button id="remove-file-btn" type="button" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
                 </div>
 
                 <form id="chat-form" class="flex items-end gap-2">
-                    <button type="button" id="emoji-btn" class="p-3 text-gray-400 hover:text-yellow-400 transition" title="Add Emoji">
-                        <i class="fa-regular fa-face-smile text-xl"></i>
-                    </button>
+                    <div class="flex items-center gap-1 bg-white/5 rounded-2xl p-1 border border-white/10 flex-1 focus-within:border-cyan-400/60 transition">
+                        <button type="button" id="emoji-btn" class="p-2.5 text-slate-400 hover:text-amber-400 transition rounded-xl" title="Add Emoji">
+                            <i class="fa-regular fa-face-smile text-lg"></i>
+                        </button>
 
-                    <label for="file-input" class="p-3 text-gray-400 hover:text-cyan-400 cursor-pointer transition" title="Attach File (Max 50MB)">
-                        <i class="fa-solid fa-paperclip text-xl"></i>
-                    </label>
-                    <input type="file" id="file-input" class="hidden">
+                        <label for="file-input" class="p-2.5 text-slate-400 hover:text-cyan-400 cursor-pointer transition rounded-xl" title="Attach File (Max 50MB)">
+                            <i class="fa-solid fa-paperclip text-lg"></i>
+                        </label>
+                        <input type="file" id="file-input" class="hidden">
 
-                    <textarea id="message-input" rows="1" enterkeyhint="newline" placeholder="Type a message..." 
-                              class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-2 text-white focus:outline-none focus:border-cyan-400 transition resize-none max-h-36 overflow-y-auto leading-normal"></textarea>
+                        <textarea id="message-input" rows="1" enterkeyhint="newline" placeholder="Type a message..." 
+                                  class="w-full bg-transparent border-0 px-2 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-0 transition resize-none max-h-36 overflow-y-auto leading-normal text-sm"></textarea>
+                    </div>
 
-                    <button type="submit" class="bg-cyan-500 hover:bg-cyan-400 text-white p-3 rounded-full transition w-12 h-12 flex items-center justify-center shrink-0">
-                        <i class="fa-solid fa-paper-plane"></i>
+                    <button type="submit" class="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 p-3 rounded-2xl transition duration-200 w-12 h-12 flex items-center justify-center shrink-0 shadow-lg shadow-cyan-500/20 active:scale-95">
+                        <i class="fa-solid fa-paper-plane text-base"></i>
                     </button>
                 </form>
             </footer>
         </div>
 
-        <aside id="sidebar-panel" class="hidden md:flex w-full md:w-80 bg-black/30 flex-col h-auto md:h-full p-4 space-y-4 overflow-y-auto border-t md:border-t-0 md:border-l border-white/10 shrink-0">
+        <!-- Sidebar Panel -->
+        <aside id="sidebar-panel" class="hidden md:flex w-full md:w-80 bg-slate-950/80 flex-col h-auto md:h-full p-4 space-y-4 overflow-y-auto border-t md:border-t-0 md:border-l border-white/10 shrink-0">
             <div>
                 <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                    <h3 class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                         <i class="fa-solid fa-box-archive"></i> Saved Daily Transcripts
                     </h3>
-                    <span id="transcript-count" class="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                    <span id="transcript-count" class="bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
                 </div>
-                <div id="transcript-archive-list" class="space-y-2 max-h-56 overflow-y-auto pr-1">
-                    <div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts yet</div>
+                <div id="transcript-archive-list" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <div class="text-xs text-slate-500 italic text-center py-2">No archived transcripts yet</div>
                 </div>
             </div>
 
@@ -221,11 +271,13 @@
 
             <div>
                 <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400">Seller Speed Tracker</h3>
-                    <span id="seller-count" class="bg-cyan-500/20 text-cyan-300 text-xs px-2 py-0.5 rounded-full font-bold">0 Active</span>
+                    <h3 class="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-bolt"></i> Seller Speed Tracker
+                    </h3>
+                    <span id="seller-count" class="bg-cyan-500/20 text-cyan-300 text-[10px] px-2 py-0.5 rounded-full font-bold">0 Active</span>
                 </div>
                 <div id="seller-speed-list" class="space-y-2 max-h-36 overflow-y-auto pr-1">
-                    <div class="text-xs text-gray-400 italic text-center py-2">No seller responses recorded yet</div>
+                    <div class="text-xs text-slate-500 italic text-center py-2">No seller responses recorded yet</div>
                 </div>
             </div>
 
@@ -233,8 +285,10 @@
 
             <div class="flex-1">
                 <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">Online Participants</h3>
-                    <span id="online-count" class="bg-emerald-500/20 text-emerald-300 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                    <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-users"></i> Online Participants
+                    </h3>
+                    <span id="online-count" class="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
                 </div>
                 <div id="presence-list" class="space-y-2">
                 </div>
@@ -243,37 +297,37 @@
     </div>
 
     <!-- Archive Modal -->
-    <div id="archive-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="glass w-full max-w-2xl max-h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
-            <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
+    <div id="archive-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
+            <div class="p-4 border-b border-white/10 flex justify-between items-center bg-slate-950/60 shrink-0">
                 <div class="flex items-center gap-2 text-amber-400 font-bold text-base">
                     <i class="fa-solid fa-box-archive text-lg"></i>
                     <span>Daily Message Transcripts Archive</span>
                 </div>
-                <button id="close-archive-modal-btn" class="text-gray-400 hover:text-white text-lg px-2"><i class="fa-solid fa-xmark"></i></button>
+                <button id="close-archive-modal-btn" class="text-slate-400 hover:text-white text-lg px-2"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="p-4 overflow-y-auto flex-1 space-y-3">
-                <p class="text-xs text-gray-300">Below are all recorded daily chat history PDFs for this room. Any room member can access and download them at any time.</p>
+                <p class="text-xs text-slate-400">Below are all recorded daily chat history PDFs for this room. Any room member can access and download them at any time.</p>
                 <div id="modal-transcript-list" class="space-y-2">
-                    <div class="text-xs text-gray-400 italic text-center py-4">Loading archives...</div>
+                    <div class="text-xs text-slate-500 italic text-center py-4">Loading archives...</div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- PDF Modal -->
-    <div id="pdf-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
-        <div class="glass w-full max-w-4xl h-[85vh] rounded-2xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
-            <div class="p-3 sm:p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
+    <div id="pdf-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
+        <div class="glass-panel w-full max-w-4xl h-[85vh] rounded-3xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
+            <div class="p-3 sm:p-4 border-b border-white/10 flex justify-between items-center bg-slate-950/60 shrink-0">
                 <div class="flex items-center gap-2 text-cyan-400 font-bold text-sm sm:text-base">
                     <i class="fa-solid fa-file-pdf text-lg"></i>
                     <span>Chat Transcript Preview</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button id="save-pdf-modal-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm transition flex items-center gap-1.5 shadow">
+                    <button id="save-pdf-modal-btn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5 shadow">
                         <i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish
                     </button>
-                    <button id="close-pdf-modal-btn" class="bg-white/10 hover:bg-white/20 text-white font-bold px-3 py-1.5 rounded-lg text-xs sm:text-sm transition">
+                    <button id="close-pdf-modal-btn" class="bg-white/10 hover:bg-white/20 text-white font-bold px-3 py-1.5 rounded-xl text-xs sm:text-sm transition">
                         Close
                     </button>
                 </div>
@@ -325,7 +379,6 @@
 
         const REACTION_PRESETS = ['👍', '❤️', '😂', '😮', '😢', '🔥', '🚀', '🎉'];
 
-        // Helper to safely sanitize dynamic text string
         function escapeHTML(str) {
             if (!str) return '';
             return String(str)
@@ -377,6 +430,7 @@
         const typingText = document.getElementById('typing-text');
         const transcriptArchiveList = document.getElementById('transcript-archive-list');
         const transcriptCount = document.getElementById('transcript-count');
+        const storiesContainer = document.getElementById('stories-container');
 
         // Floating Scroll Button & Unread Counter Elements
         const scrollBottomBtn = document.getElementById('scroll-bottom-btn');
@@ -417,7 +471,6 @@
             }
         }
 
-        // Scroll listener for floating button and unread counter reset
         if (chatMessages && scrollBottomBtn) {
             chatMessages.addEventListener('scroll', () => {
                 const distanceFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight;
@@ -443,7 +496,7 @@
         EMOJI_LIST.forEach(emoji => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'hover:bg-white/10 rounded p-1 transition flex items-center justify-center';
+            btn.className = 'hover:bg-white/10 rounded-lg p-1 transition flex items-center justify-center';
             btn.textContent = emoji;
             btn.onclick = () => {
                 messageInput.value += emoji;
@@ -492,7 +545,6 @@
             messageInput.style.height = Math.min(messageInput.scrollHeight, 144) + 'px';
         }
 
-        // Typing logic
         messageInput.addEventListener('input', () => {
             adjustTextareaHeight();
             resetChatInactivityTimer();
@@ -534,7 +586,6 @@
             }
         }
 
-        // Edit and Reply UI logic
         window.startEditMessage = function(id, content) {
             window.cancelReply();
             editingMessageId = id;
@@ -580,7 +631,6 @@
 
         cancelReplyBtn.addEventListener('click', () => window.cancelReply());
 
-        // File Selection logic
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -600,7 +650,6 @@
             filePreview.classList.add('hidden');
         });
 
-        // Reaction handling
         window.toggleReactionPicker = function(msgId) {
             const pickerEl = document.getElementById(`reaction-picker-${msgId}`);
             if (pickerEl) pickerEl.classList.toggle('hidden');
@@ -630,7 +679,6 @@
         downloadPdfBtn.addEventListener('click', () => generatePDFTranscript());
         manualExportBtn.addEventListener('click', () => generatePDFTranscript());
 
-        // PDF Transcript Generation with autoTable styling and page footer support
         function generatePDFTranscript() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -646,8 +694,7 @@
                 return;
             }
 
-            // Header Banner
-            doc.setFillColor(15, 32, 39); 
+            doc.setFillColor(9, 13, 22); 
             doc.rect(0, 0, 210, 32, 'F');
             doc.setTextColor(34, 211, 238);
             doc.setFontSize(18);
@@ -659,7 +706,6 @@
             doc.setFont('helvetica', 'normal');
             doc.text(`Official Daily Chat Transcript & Room Log`, 14, 23);
 
-            // Context Card
             doc.setDrawColor(226, 232, 240);
             doc.setFillColor(248, 250, 252);
             doc.roundedRect(14, 36, 182, 22, 2, 2, 'FD');
@@ -686,7 +732,6 @@
             doc.setFont('helvetica', 'normal');
             doc.text(`${todaysMessages.length} Messages`, 135, 50);
 
-            // Table Data Mapping
             const tableData = todaysMessages.map(msg => {
                 let contentBody = msg.content || '';
                 if (msg.reply_to_content) {
@@ -705,13 +750,12 @@
                 ];
             });
 
-            // autoTable Render
             doc.autoTable({
                 startY: 64,
                 head: [['Time', 'User', 'Role', 'Message Content']],
                 body: tableData,
                 theme: 'striped',
-                headStyles: { fillColor: [15, 32, 39], textColor: [255, 255, 255], fontStyle: 'bold' },
+                headStyles: { fillColor: [9, 13, 22], textColor: [255, 255, 255], fontStyle: 'bold' },
                 styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak' },
                 columnStyles: {
                     0: { cellWidth: 20 },
@@ -735,7 +779,6 @@
             pdfModal.classList.remove('hidden');
         }
 
-        // Save PDF Archive to Supabase
         if (savePdfModalBtn) {
             savePdfModalBtn.addEventListener('click', async () => {
                 if (!currentPdfBlob) return;
@@ -777,13 +820,12 @@
             });
         }
 
-        // Load Archived Transcripts
         async function loadTranscriptArchive() {
             try {
                 const { data, error } = await supabase.from('daily_transcripts').select('*').order('created_at', { ascending: false });
                 
                 if (error || !data || data.length === 0) {
-                    const emptyState = `<div class="text-xs text-gray-400 italic text-center py-2">No archived transcripts found</div>`;
+                    const emptyState = `<div class="text-xs text-slate-500 italic text-center py-2">No archived transcripts found</div>`;
                     transcriptArchiveList.innerHTML = emptyState;
                     if (modalTranscriptList) modalTranscriptList.innerHTML = emptyState;
                     transcriptCount.textContent = '0';
@@ -799,12 +841,12 @@
                     const cleanUrl = escapeHTML(item.file_url);
 
                     html += `
-                        <div class="bg-white/5 border border-white/10 rounded-xl p-2.5 flex items-center justify-between text-xs hover:bg-white/10 transition">
+                        <div class="glass-card rounded-2xl p-2.5 flex items-center justify-between text-xs hover:border-white/20 transition">
                             <div class="truncate pr-2">
                                 <p class="font-bold text-amber-300 truncate">Transcript - ${cleanDate}</p>
-                                <p class="text-[10px] text-gray-400">By: ${cleanCreator}</p>
+                                <p class="text-[10px] text-slate-400">By: ${cleanCreator}</p>
                             </div>
-                            <a href="${cleanUrl}" target="_blank" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded transition flex items-center gap-1 shrink-0">
+                            <a href="${cleanUrl}" target="_blank" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-xl transition flex items-center gap-1 shrink-0 text-[11px]">
                                 <i class="fa-solid fa-download"></i> View
                             </a>
                         </div>
@@ -818,7 +860,6 @@
             }
         }
 
-        // Auth and App Initialization
         async function init() {
             const { data: { session } } = await supabase.auth.getSession();
             currentUser = session?.user || null;
@@ -885,7 +926,7 @@
             await new Promise(resolve => setTimeout(resolve, 50));
 
             userRoleBadge.textContent = userRole;
-            userRoleBadge.className = `text-xs font-semibold px-2 py-0.5 rounded-full ${userRole === 'Seller' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-emerald-500/20 text-emerald-300'}`;
+            userRoleBadge.className = `text-[11px] font-semibold px-2 py-0.5 rounded-md ${userRole === 'Seller' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}`;
             
             await loadMessages();
             setupRealtimeChannel();
@@ -896,7 +937,7 @@
         }
 
         async function loadMessages() {
-            chatMessages.innerHTML = '<div class="text-center text-gray-400 py-8"><i class="fa-solid fa-spinner fa-spin text-2xl"></i><p class="mt-2 text-xs">Loading room history...</p></div>';
+            chatMessages.innerHTML = '<div class="text-center text-slate-500 py-8"><i class="fa-solid fa-spinner fa-spin text-2xl text-cyan-400"></i><p class="mt-2 text-xs">Loading room history...</p></div>';
 
             const { data, error } = await supabase
                 .from('messages')
@@ -917,7 +958,7 @@
                 calculateSellerSpeeds();
                 scrollToBottom(true);
             } else {
-                chatMessages.innerHTML = `<div class="text-center text-gray-400 italic text-xs py-10">No messages in room yet. Start the conversation!</div>`;
+                chatMessages.innerHTML = `<div class="text-center text-slate-500 italic text-xs py-10">No messages in room yet. Start the conversation!</div>`;
             }
         }
 
@@ -958,7 +999,7 @@
             const isSelf = currentUser && currentUser.email === msg.user_email;
             const senderName = msg.user_email ? msg.user_email.split('@')[0] : 'User';
             const role = msg.user_role || 'Member';
-            const roleColor = role === 'Seller' ? 'text-cyan-400 border-cyan-400/30 bg-cyan-950/40' : 'text-emerald-400 border-emerald-400/30 bg-emerald-950/40';
+            const roleColor = role === 'Seller' ? 'text-cyan-400 border-cyan-500/30 bg-cyan-950/40' : 'text-emerald-400 border-emerald-500/30 bg-emerald-950/40';
             const timeStr = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
             let reactionsHTML = '';
@@ -968,7 +1009,7 @@
                     if (users && users.length > 0) {
                         const hasReacted = currentUser && users.includes(currentUser.email.split('@')[0]);
                         reactionsHTML += `
-                            <button onclick="toggleReaction('${msg.id}', '${emoji}')" class="text-xs ${hasReacted ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200' : 'bg-white/5 border-white/10 text-gray-300'} border px-2 py-0.5 rounded-full flex items-center gap-1 hover:bg-white/20 transition">
+                            <button onclick="toggleReaction('${msg.id}', '${emoji}')" class="text-xs ${hasReacted ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200' : 'bg-white/5 border-white/10 text-slate-300'} border px-2 py-0.5 rounded-full flex items-center gap-1 hover:bg-white/20 transition">
                                 <span>${emoji}</span>
                                 <span class="text-[10px] opacity-80">${users.length}</span>
                             </button>
@@ -983,16 +1024,16 @@
             const cleanReplyEmail = escapeHTML(msg.reply_to_email ? msg.reply_to_email.split('@')[0] : 'User');
 
             return `
-                <div id="msg-${msg.id}" class="message-bubble flex flex-col ${isSelf ? 'items-end' : 'items-start'} my-2 group">
-                    <div class="flex items-center gap-2 mb-1 text-xs text-gray-400 px-1">
-                        <span class="font-bold text-gray-200">${escapeHTML(senderName)}</span>
-                        <span class="text-[10px] px-1.5 py-0.2 rounded border ${roleColor}">${escapeHTML(role)}</span>
-                        <span class="text-[10px] text-gray-400">${timeStr}</span>
+                <div id="msg-${msg.id}" class="message-bubble flex flex-col ${isSelf ? 'items-end' : 'items-start'} my-2.5 group">
+                    <div class="flex items-center gap-2 mb-1 text-xs text-slate-400 px-1">
+                        <span class="font-bold text-slate-200">${escapeHTML(senderName)}</span>
+                        <span class="text-[9px] px-1.5 py-0.2 rounded border ${roleColor}">${escapeHTML(role)}</span>
+                        <span class="text-[10px] text-slate-500">${timeStr}</span>
                     </div>
 
-                    <div class="max-w-xs sm:max-w-md ${isSelf ? 'bg-cyan-600/80 text-white rounded-2xl rounded-tr-none' : 'glass text-gray-100 rounded-2xl rounded-tl-none'} p-3 shadow-lg relative border border-white/10">
+                    <div class="max-w-xs sm:max-w-md ${isSelf ? 'bg-gradient-to-tr from-cyan-600 to-blue-600 text-white rounded-3xl rounded-tr-xs shadow-cyan-950/50' : 'glass-card text-slate-100 rounded-3xl rounded-tl-xs'} p-3.5 shadow-lg relative border border-white/10">
                         ${msg.reply_to_content ? `
-                            <div onclick="scrollToMessage('${msg.reply_to_id}')" class="cursor-pointer text-xs bg-black/20 p-2 rounded-lg mb-2 border-l-2 border-cyan-400 hover:bg-black/30 transition">
+                            <div onclick="scrollToMessage('${msg.reply_to_id}')" class="cursor-pointer text-xs bg-black/30 p-2 rounded-xl mb-2 border-l-2 border-cyan-400 hover:bg-black/40 transition">
                                 <span class="font-bold text-cyan-300 block">${cleanReplyEmail}</span>
                                 <span class="opacity-80 italic line-clamp-1">${cleanReplyContent}</span>
                             </div>
@@ -1004,10 +1045,10 @@
                             <div class="mt-2">
                                 ${msg.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? `
                                     <a href="${escapeHTML(msg.file_url)}" target="_blank">
-                                        <img src="${escapeHTML(msg.file_url)}" class="rounded-lg max-h-48 w-full object-cover border border-white/10 hover:opacity-90 transition">
+                                        <img src="${escapeHTML(msg.file_url)}" class="rounded-2xl max-h-48 w-full object-cover border border-white/10 hover:opacity-90 transition">
                                     </a>
                                 ` : `
-                                    <a href="${escapeHTML(msg.file_url)}" target="_blank" class="inline-flex items-center gap-2 text-xs bg-black/30 hover:bg-black/40 text-cyan-300 p-2 rounded-lg border border-white/10 transition">
+                                    <a href="${escapeHTML(msg.file_url)}" target="_blank" class="inline-flex items-center gap-2 text-xs bg-black/40 hover:bg-black/60 text-cyan-300 p-2.5 rounded-xl border border-white/10 transition">
                                         <i class="fa-solid fa-paperclip"></i> View Attached Document
                                     </a>
                                 `}
@@ -1019,14 +1060,14 @@
                         ${reactionsHTML}
 
                         <!-- Message Action Toolbar -->
-                        <div class="opacity-0 group-hover:opacity-100 transition absolute ${isSelf ? '-left-20' : '-right-20'} top-2 flex items-center gap-1 bg-slate-900/90 border border-white/10 p-1 rounded-lg backdrop-blur-md z-20">
-                            <button onclick="toggleReactionPicker('${msg.id}')" class="p-1 hover:text-yellow-400 text-gray-300 text-xs" title="React"><i class="fa-regular fa-face-smile"></i></button>
-                            <button onclick="setReplyMessage('${msg.id}', '${escapeHTML(msg.user_email)}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-cyan-400 text-gray-300 text-xs" title="Reply"><i class="fa-solid fa-reply"></i></button>
-                            ${isSelf ? `<button onclick="startEditMessage('${msg.id}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-amber-400 text-gray-300 text-xs" title="Edit"><i class="fa-solid fa-pen"></i></button>` : ''}
+                        <div class="opacity-0 group-hover:opacity-100 transition absolute ${isSelf ? '-left-24' : '-right-24'} top-2 flex items-center gap-1 bg-slate-900/90 border border-white/10 p-1 rounded-xl backdrop-blur-md z-20 shadow-xl">
+                            <button onclick="toggleReactionPicker('${msg.id}')" class="p-1.5 hover:text-amber-400 text-slate-300 text-xs transition" title="React"><i class="fa-regular fa-face-smile"></i></button>
+                            <button onclick="setReplyMessage('${msg.id}', '${escapeHTML(msg.user_email)}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1.5 hover:text-cyan-400 text-slate-300 text-xs transition" title="Reply"><i class="fa-solid fa-reply"></i></button>
+                            ${isSelf ? `<button onclick="startEditMessage('${msg.id}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1.5 hover:text-amber-400 text-slate-300 text-xs transition" title="Edit"><i class="fa-solid fa-pen"></i></button>` : ''}
                         </div>
 
                         <!-- Popup Reaction Selector -->
-                        <div id="reaction-picker-${msg.id}" class="hidden absolute ${isSelf ? 'right-0' : 'left-0'} -top-10 bg-slate-900/95 border border-white/20 p-1.5 rounded-full flex gap-1 shadow-2xl z-30 backdrop-blur-md">
+                        <div id="reaction-picker-${msg.id}" class="hidden absolute ${isSelf ? 'right-0' : 'left-0'} -top-11 bg-slate-900/95 border border-white/20 p-1.5 rounded-2xl flex gap-1 shadow-2xl z-30 backdrop-blur-md">
                             ${REACTION_PRESETS.map(e => `<button onclick="toggleReaction('${msg.id}', '${e}'); toggleReactionPicker('${msg.id}')" class="hover:scale-125 transition text-base px-1">${e}</button>`).join('')}
                         </div>
                     </div>
@@ -1034,7 +1075,6 @@
             `;
         }
 
-        // Form Submit Logic
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             resetChatInactivityTimer();
@@ -1042,7 +1082,6 @@
             const content = messageInput.value.trim();
             if (!content && !selectedFile && !editingMessageId) return;
 
-            // Handle Edit
             if (editingMessageId) {
                 const { error } = await supabase
                     .from('messages')
@@ -1054,7 +1093,6 @@
                 return;
             }
 
-            // Upload Attached File
             let file_url = null;
             if (selectedFile) {
                 const fileExt = selectedFile.name.split('.').pop();
@@ -1081,7 +1119,6 @@
                 reply_to_content: replyingToMessage?.content || null
             };
 
-            // Clear inputs
             messageInput.value = '';
             selectedFile = null;
             fileInput.value = '';
@@ -1089,7 +1126,6 @@
             window.cancelReply();
             adjustTextareaHeight();
 
-            // Insert message directly into Database
             const { error: insertError } = await supabase
                 .from('messages')
                 .insert([newMsg]);
@@ -1099,7 +1135,6 @@
             }
         });
 
-        // Speed tracker calculation
         function calculateSellerSpeeds() {
             let lastBuyerMsgTime = null;
             const sellerStats = {};
@@ -1121,29 +1156,42 @@
 
             const sellers = Object.keys(sellerStats);
             if (sellers.length === 0) {
-                sellerSpeedList.innerHTML = `<div class="text-xs text-gray-400 italic text-center py-2">No seller responses recorded yet</div>`;
+                sellerSpeedList.innerHTML = `<div class="text-xs text-slate-500 italic text-center py-2">No seller responses recorded yet</div>`;
                 sellerCount.textContent = '0 Active';
+                storiesContainer.innerHTML = `<div class="text-[11px] text-slate-500 italic">Waiting for activity...</div>`;
                 return;
             }
 
             sellerCount.textContent = `${sellers.length} Active`;
             let listHtml = '';
+            let storiesHtml = '';
+
             sellers.forEach(seller => {
                 const times = sellerStats[seller];
                 const avgSec = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+                
                 listHtml += `
-                    <div class="bg-white/5 border border-white/10 rounded-xl p-2 flex items-center justify-between text-xs">
+                    <div class="glass-card rounded-2xl p-2 flex items-center justify-between text-xs">
                         <span class="font-bold text-cyan-300 truncate">${escapeHTML(seller)}</span>
-                        <span class="bg-cyan-500/20 text-cyan-200 px-2 py-0.5 rounded-full text-[10px] font-mono">
-                            ⚡ Avg: ${avgSec}s
+                        <span class="bg-cyan-500/20 text-cyan-200 px-2 py-0.5 rounded-full text-[10px] font-mono border border-cyan-500/30">
+                            ⚡ ${avgSec}s
                         </span>
                     </div>
                 `;
+
+                storiesHtml += `
+                    <div class="flex items-center gap-1.5 bg-gradient-to-r from-cyan-950/60 to-slate-900/80 border border-cyan-500/30 px-2.5 py-1 rounded-full text-xs shrink-0">
+                        <div class="w-2 h-2 rounded-full bg-cyan-400"></div>
+                        <span class="font-semibold text-slate-200 text-[11px]">${escapeHTML(seller)}</span>
+                        <span class="text-[10px] text-cyan-300 font-mono font-bold">⚡${avgSec}s</span>
+                    </div>
+                `;
             });
+
             sellerSpeedList.innerHTML = listHtml;
+            storiesContainer.innerHTML = storiesHtml;
         }
 
-        // Realtime setup & presence tracking using Postgres Changes
         function setupRealtimeChannel() {
             if (roomChannel) supabase.removeChannel(roomChannel);
 
@@ -1193,22 +1241,21 @@
 
             onlineCount.textContent = users.length.toString();
             if (users.length === 0) {
-                presenceList.innerHTML = `<div class="text-xs text-gray-400 italic">No users online</div>`;
+                presenceList.innerHTML = `<div class="text-xs text-slate-500 italic">No users online</div>`;
                 return;
             }
 
             presenceList.innerHTML = users.map(u => `
-                <div class="flex items-center justify-between text-xs bg-white/5 border border-white/10 p-2 rounded-xl">
+                <div class="flex items-center justify-between text-xs glass-card p-2 rounded-2xl">
                     <div class="flex items-center gap-2 truncate">
                         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span class="truncate font-medium text-gray-200">${u.email ? escapeHTML(u.email.split('@')[0]) : 'User'}</span>
+                        <span class="truncate font-medium text-slate-200">${u.email ? escapeHTML(u.email.split('@')[0]) : 'User'}</span>
                     </div>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded ${u.role === 'Seller' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-emerald-500/20 text-emerald-300'}">${escapeHTML(u.role || 'Member')}</span>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded border ${u.role === 'Seller' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'}">${escapeHTML(u.role || 'Member')}</span>
                 </div>
             `).join('');
         }
 
-        // Initialize Application
         init();
     </script>
 </body>
