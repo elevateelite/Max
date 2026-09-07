@@ -20,13 +20,13 @@
     .pitch-box { font-size: 0.92rem; line-height: 1.5; color: #1e293b; white-space: pre-line; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; }
     .status { font-size: 0.85rem; color: #0066ff; margin-top: 10px; text-align: center; font-weight: 600; }
     
-    /* Role Modal Overlay */
+    /* Role Selection Modal */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
     .modal-card { background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
-    .role-btn { display: block; width: 100%; padding: 14px; margin-top: 12px; border-radius: 8px; border: 2px solid #0066ff; font-weight: bold; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
+    .role-btn { display: block; width: 100%; padding: 14px; margin-top: 12px; border-radius: 8px; border: 2px solid #0066ff; font-weight: bold; font-size: 1rem; cursor: pointer; }
     .btn-seller { background: #0066ff; color: white; }
     .btn-buyer { background: white; color: #0066ff; }
-    .role-badge { display: inline-block; background: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-bottom: 10px; }
+    .role-badge { display: inline-block; background: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -35,8 +35,8 @@
   <div class="modal-card">
     <h2>Welcome Back 👋</h2>
     <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">Please select your primary activity for this session:</p>
-    <button class="role-btn btn-seller" onclick="selectRole('Seller')">Continue as Seller</button>
-    <button class="role-btn btn-buyer" onclick="selectRole('Buyer')">Continue as Buyer</button>
+    <button type="button" class="role-btn btn-seller" onclick="selectRole('Seller')">Continue as Seller</button>
+    <button type="button" class="role-btn btn-buyer" onclick="selectRole('Buyer')">Continue as Buyer</button>
   </div>
 </div>
 
@@ -71,7 +71,7 @@
 </div>
 
 <script>
-  // Add your Supabase credentials here:
+  // Insert your credentials here
   const SUPABASE_URL = "YOUR_SUPABASE_URL"; 
   const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
   
@@ -83,11 +83,16 @@
   let selectedUserRole = "Seller";
   let currentProfileData = {};
 
+  // This function closes the modal and opens the app
   function selectRole(role) {
     selectedUserRole = role;
-    document.getElementById('activeRoleBadge').innerText = `Role: ${role}`;
-    document.getElementById('roleModal').style.display = 'none';
-    document.getElementById('appContent').style.display = 'block';
+    const badge = document.getElementById('activeRoleBadge');
+    const modal = document.getElementById('roleModal');
+    const app = document.getElementById('appContent');
+
+    if (badge) badge.innerText = `Role: ${role}`;
+    if (modal) modal.style.display = 'none';
+    if (app) app.style.display = 'block';
   }
 
   async function analyzeAndPitch() {
@@ -125,7 +130,7 @@
     }
 
     if (!bioFound) {
-      bioFound = `Active ${platform} target handle: @${username}. Profile designated for store optimization & redesign outreach.`;
+      bioFound = `Active ${platform} target handle: @${username}. Profile designated for outreach.`;
     }
 
     document.getElementById('bioText').innerText = bioFound;
@@ -162,8 +167,8 @@
         `Would love to send it over if you're open to taking a look!`;
     } else {
       return `Hey @${handle}! 👋\n\n` +
-        `I noticed your ${niche} products on ${platform} and wanted to reach out regarding product inquiries and wholesale purchasing.\n\n` +
-        `Do you have an active store catalog or direct order form I can view?`;
+        `I noticed your ${niche} products on ${platform} and wanted to reach out regarding product inquiries and pricing.\n\n` +
+        `Do you have an active store link or wholesale order catalog available?`;
     }
   }
 
