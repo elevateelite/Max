@@ -20,7 +20,7 @@
     .pitch-box { font-size: 0.92rem; line-height: 1.5; color: #1e293b; white-space: pre-line; background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; }
     .status { font-size: 0.85rem; color: #0066ff; margin-top: 10px; text-align: center; font-weight: 600; }
     
-    /* Role Selection Modal */
+    /* Login & Role Modal Overlays */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
     .modal-card { background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
     .role-btn { display: block; width: 100%; padding: 14px; margin-top: 12px; border-radius: 8px; border: 2px solid #0066ff; font-weight: bold; font-size: 1rem; cursor: pointer; }
@@ -31,10 +31,20 @@
 </head>
 <body>
 
-<div id="roleModal" class="modal-overlay">
+<div id="authModal" class="modal-overlay">
   <div class="modal-card">
-    <h2>Welcome Back 👋</h2>
-    <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">Please select your primary activity for this session:</p>
+    <h2>Account Login</h2>
+    <input type="email" id="authEmail" placeholder="Enter your email">
+    <input type="password" id="authPassword" placeholder="Enter password">
+    <button type="button" onclick="handleAuth('login')">Log In</button>
+    <button type="button" style="background:#6c757d; margin-top:8px;" onclick="handleAuth('signup')">Create Account</button>
+  </div>
+</div>
+
+<div id="roleModal" class="modal-overlay" style="display: none;">
+  <div class="modal-card">
+    <h2>Select Your Activity 👋</h2>
+    <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">Choose how you want to use the app today:</p>
     <button type="button" class="role-btn btn-seller" onclick="selectRole('Seller')">Continue as Seller</button>
     <button type="button" class="role-btn btn-buyer" onclick="selectRole('Buyer')">Continue as Buyer</button>
   </div>
@@ -71,7 +81,7 @@
 </div>
 
 <script>
-  // Insert your credentials here
+  // Paste your credentials here
   const SUPABASE_URL = "YOUR_SUPABASE_URL"; 
   const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
   
@@ -80,19 +90,49 @@
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
 
+  let currentUser = null;
   let selectedUserRole = "Seller";
   let currentProfileData = {};
 
-  // This function closes the modal and opens the app
+  async function handleAuth(type) {
+    const email = document.getElementById('authEmail').value;
+    const password = document.getElementById('authPassword').value;
+
+    if (!email || !password) {
+      alert("Please enter both email and password.");
+      return;
+    }
+
+    if (!supabase) {
+      alert("Please configure your Supabase URL and Key in index.html script tags!");
+      return;
+    }
+
+    let result;
+    if (type === 'login') {
+      result = await supabase.auth.signInWithPassword({ email, password });
+    } else {
+      result = await supabase.auth.signUp({ email, password });
+    }
+
+    if (result.error) {
+      alert("Auth error: " + result.error.message);
+    } else {
+      currentUser = result.data.user;
+      
+      // Upsert profile in users table
+      await supabase.from('profiles').upsert({ id: currentUser.id, email: currentUser.email });
+      
+      document.getElementById('authModal').style.display = 'none';
+      document.getElementById('roleModal').style.display = 'flex';
+    }
+  }
+
   function selectRole(role) {
     selectedUserRole = role;
-    const badge = document.getElementById('activeRoleBadge');
-    const modal = document.getElementById('roleModal');
-    const app = document.getElementById('appContent');
-
-    if (badge) badge.innerText = `Role: ${role}`;
-    if (modal) modal.style.display = 'none';
-    if (app) app.style.display = 'block';
+    document.getElementById('activeRoleBadge').innerText = `Role: ${role}`;
+    document.getElementById('roleModal').style.display = 'none';
+    document.getElementById('appContent').style.display = 'block';
   }
 
   async function analyzeAndPitch() {
@@ -102,7 +142,7 @@
     const statusText = document.getElementById('statusText');
 
     if (!username) {
-      alert("Please enter a username first.");
+      alert("Please enter a username.");
       return;
     }
 
@@ -126,11 +166,11 @@
         }
       }
     } catch (e) {
-      console.log("Live fetch bypassed, utilizing direct pitch generator.");
+      console.log("Live fetch bypassed, using template generator.");
     }
 
     if (!bioFound) {
-      bioFound = `Active ${platform} target handle: @${username}. Profile designated for outreach.`;
+      bioFound = `Active ${platform} handle: @${username}. Profile target evaluated.`;
     }
 
     document.getElementById('bioText').innerText = bioFound;
@@ -141,6 +181,7 @@
     document.getElementById('pitchCard').style.display = 'block';
 
     currentProfileData = {
+      user_id: currentUser ? currentUser.id : null,
       platform: platform,
       handle: `@${username}`,
       bio_notes: bioFound,
@@ -163,18 +204,18 @@
     if (selectedUserRole === "Seller") {
       return `Hey @${handle}! 👋\n\n` +
         `Came across your ${platform} page and love the visual direction of your ${niche}.\n\n` +
-        `Quick question—are you currently open to reviewing a 1-minute visual design concept to help boost your store conversion rate this month?\n\n` +
+        `Quick question—are you open to reviewing a 1-minute visual design concept to help boost your store conversion rate this month?\n\n` +
         `Would love to send it over if you're open to taking a look!`;
     } else {
       return `Hey @${handle}! 👋\n\n` +
-        `I noticed your ${niche} products on ${platform} and wanted to reach out regarding product inquiries and pricing.\n\n` +
-        `Do you have an active store link or wholesale order catalog available?`;
+        `I noticed your ${niche} products on ${platform} and wanted to reach out regarding product inquiries and wholesale options.\n\n` +
+        `Do you have an active store catalog or order link available?`;
     }
   }
 
   async function saveToSupabase() {
     if (!supabase) {
-      alert("Please enter your actual SUPABASE_URL and SUPABASE_ANON_KEY inside the script tags to save to database.");
+      alert("Please add your Supabase credentials inside index.html script tags.");
       return;
     }
 
@@ -183,9 +224,9 @@
       .insert([currentProfileData]);
 
     if (error) {
-      alert('Error saving to Supabase: ' + error.message);
+      alert('Error saving lead: ' + error.message);
     } else {
-      alert(`Lead successfully saved as ${selectedUserRole} to Supabase!`);
+      alert(`Lead successfully saved to your profile as ${selectedUserRole}!`);
     }
   }
 </script>
