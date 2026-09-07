@@ -23,6 +23,7 @@
     /* Login & Role Modal Overlays */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
     .modal-card { background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+    .google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: white; color: #333; border: 1px solid #d1d5db; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 16px; font-size: 0.95rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     .role-btn { display: block; width: 100%; padding: 14px; margin-top: 12px; border-radius: 8px; border: 2px solid #0066ff; font-weight: bold; font-size: 1rem; cursor: pointer; }
     .btn-seller { background: #0066ff; color: white; }
     .btn-buyer { background: white; color: #0066ff; }
@@ -33,18 +34,19 @@
 
 <div id="authModal" class="modal-overlay">
   <div class="modal-card">
-    <h2>Account Login</h2>
-    <input type="email" id="authEmail" placeholder="Enter your email">
-    <input type="password" id="authPassword" placeholder="Enter password">
-    <button type="button" onclick="handleAuth('login')">Log In</button>
-    <button type="button" style="background:#6c757d; margin-top:8px;" onclick="handleAuth('signup')">Create Account</button>
+    <h2>Welcome 👋</h2>
+    <p style="font-size: 0.9rem; color: #666;">Sign in to save your generated pitches and store leads.</p>
+    <button type="button" class="google-btn" onclick="signInWithGoogle()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.616z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+      Continue with Google
+    </button>
   </div>
 </div>
 
 <div id="roleModal" class="modal-overlay" style="display: none;">
   <div class="modal-card">
     <h2>Select Your Activity 👋</h2>
-    <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">Choose how you want to use the app today:</p>
+    <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">Choose your primary activity for this session:</p>
     <button type="button" class="role-btn btn-seller" onclick="selectRole('Seller')">Continue as Seller</button>
     <button type="button" class="role-btn btn-buyer" onclick="selectRole('Buyer')">Continue as Buyer</button>
   </div>
@@ -81,7 +83,7 @@
 </div>
 
 <script>
-  // Paste your credentials here
+  // Insert your Supabase details here (from Supabase > Settings > API)
   const SUPABASE_URL = "YOUR_SUPABASE_URL"; 
   const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
   
@@ -94,38 +96,34 @@
   let selectedUserRole = "Seller";
   let currentProfileData = {};
 
-  async function handleAuth(type) {
-    const email = document.getElementById('authEmail').value;
-    const password = document.getElementById('authPassword').value;
+  window.addEventListener('load', async () => {
+    if (!supabase) return;
 
-    if (!email || !password) {
-      alert("Please enter both email and password.");
-      return;
-    }
-
-    if (!supabase) {
-      alert("Please configure your Supabase URL and Key in index.html script tags!");
-      return;
-    }
-
-    let result;
-    if (type === 'login') {
-      result = await supabase.auth.signInWithPassword({ email, password });
-    } else {
-      result = await supabase.auth.signUp({ email, password });
-    }
-
-    if (result.error) {
-      alert("Auth error: " + result.error.message);
-    } else {
-      currentUser = result.data.user;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      currentUser = session.user;
       
-      // Upsert profile in users table
       await supabase.from('profiles').upsert({ id: currentUser.id, email: currentUser.email });
       
       document.getElementById('authModal').style.display = 'none';
       document.getElementById('roleModal').style.display = 'flex';
     }
+  });
+
+  async function signInWithGoogle() {
+    if (!supabase) {
+      alert("Please enter your Supabase URL and Anon Key inside script tags!");
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.href
+      }
+    });
+
+    if (error) alert("Login error: " + error.message);
   }
 
   function selectRole(role) {
@@ -166,7 +164,7 @@
         }
       }
     } catch (e) {
-      console.log("Live fetch bypassed, using template generator.");
+      console.log("Live fetch bypassed, using local generator.");
     }
 
     if (!bioFound) {
