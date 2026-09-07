@@ -9,10 +9,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Nexus Market">
-    <meta name="theme-color" content="#090d16">
+    <meta name="theme-color" content="#0f2027">
 
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1041/1041916.png">
-    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Nexus%20Marketplace%20Chat%22%2C%22short_name%22%3A%22NexusChat%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23090d16%22%2C%22theme_color%22%3A%22%23090d16%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F1041%2F1041916.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Nexus%20Marketplace%20Chat%22%2C%22short_name%22%3A%22NexusChat%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230f2027%22%2C%22theme_color%22%3A%22%230f2027%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F1041%2F1041916.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -21,21 +26,18 @@
 
     <style>
         body {
-            background-color: #090d16;
-            background-image: 
-                radial-gradient(at 10% 10%, rgba(34, 211, 238, 0.12) 0px, transparent 50%),
-                radial-gradient(at 90% 90%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
-                radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.8) 0px, transparent 100%);
+            background: #091319;
             color: #ffffff;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             height: 100dvh;
             width: 100vw;
             overflow: hidden;
             -webkit-tap-highlight-color: transparent;
         }
 
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.65);
+        /* Glassmorphism Refinements */
+        .glass {
+            background: rgba(18, 30, 39, 0.55);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -45,23 +47,26 @@
         .glass-card {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(34, 211, 238, 0.3);
+        }
+
         .message-bubble { 
-            animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             transition: all 0.2s ease;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px) scale(0.98); }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(12px) scale(0.98); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .highlight-msg {
             animation: highlightPulse 2s ease-in-out;
-            border-radius: 1rem;
         }
 
         @keyframes highlightPulse {
@@ -73,117 +78,108 @@
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
-
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(34, 211, 238, 0.5); }
     </style>
 </head>
-<body class="flex items-center justify-center p-2 sm:p-4 relative">
+<body class="flex items-center justify-center p-2 sm:p-4 relative selection:bg-cyan-500 selection:text-black">
+
+    <!-- Ambient Ambient Lighting Background Gradients -->
+    <div class="absolute -top-32 -left-32 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
     <!-- Login Screen -->
-    <div id="login-screen" class="glass-panel rounded-3xl p-8 w-full max-w-md text-center shadow-2xl relative overflow-hidden">
-        <div class="absolute -top-10 -left-10 w-32 h-32 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none"></div>
-        <div class="mb-8 relative z-10">
-            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-cyan-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-                <i class="fa-solid fa-store text-3xl text-slate-950"></i>
+    <div id="login-screen" class="glass rounded-3xl p-8 sm:p-10 w-full max-w-md text-center shadow-2xl relative z-10 border border-white/10">
+        <div class="mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-tr from-cyan-500 to-emerald-400 shadow-lg shadow-cyan-500/30 mb-6 transform hover:rotate-6 transition duration-300">
+                <i class="fa-solid fa-store text-3xl text-gray-950"></i>
             </div>
-            <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">NEXUS MARKET</h1>
-            <p class="text-slate-400 text-sm mt-2">Instant Social Commerce & Trading Room</p>
+            <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-gray-100 to-cyan-300 bg-clip-text text-transparent">NEXUS MARKET</h1>
+            <p class="text-gray-400 text-sm mt-2">Instant high-speed buyer & seller trading room.</p>
         </div>
-        <button id="google-login-btn" class="w-full bg-white text-slate-900 font-semibold py-3.5 px-4 rounded-xl hover:bg-slate-100 transition duration-300 flex items-center justify-center gap-3 active:scale-95 shadow-xl">
+        <button id="google-login-btn" class="w-full bg-white hover:bg-gray-100 text-gray-900 font-bold py-3.5 px-4 rounded-xl transition duration-200 flex items-center justify-center gap-3 active:scale-95 shadow-lg shadow-white/10">
             <i class="fa-brands fa-google text-red-500 text-lg"></i> Continue with Google
         </button>
     </div>
 
     <!-- Role Selection Screen -->
-    <div id="role-screen" class="hidden glass-panel rounded-3xl p-8 w-full max-w-md text-center shadow-2xl">
-        <h2 class="text-2xl font-bold mb-2 text-white">Select Account Type</h2>
-        <p class="text-slate-400 text-sm mb-6">Choose how you want to participate in this group room:</p>
+    <div id="role-screen" class="hidden glass rounded-3xl p-8 sm:p-10 w-full max-w-md text-center shadow-2xl relative z-10 border border-white/10">
+        <h2 class="text-2xl font-extrabold mb-2 text-white">Select Account Type</h2>
+        <p class="text-gray-400 text-sm mb-6">Choose your trading role in this live room:</p>
 
         <div class="space-y-4">
-            <button id="select-seller-btn" class="w-full p-4 border border-cyan-500/30 rounded-2xl bg-cyan-950/30 hover:bg-cyan-900/40 hover:border-cyan-400/60 transition flex items-center justify-between text-left group">
-                <div>
-                    <h3 class="font-bold text-cyan-300 text-lg flex items-center gap-2">Seller <i class="fa-solid fa-bolt text-xs text-amber-400"></i></h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Respond to buyer inquiries & measure speed</p>
+            <button id="select-seller-btn" class="w-full p-4 border border-cyan-500/30 rounded-2xl bg-cyan-950/30 hover:bg-cyan-900/40 hover:border-cyan-400 transition flex items-center justify-between text-left group active:scale-98">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition">
+                        <i class="fa-solid fa-user-tag"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-cyan-300 text-base">Seller</h3>
+                        <p class="text-xs text-gray-400">Respond to requests & track response speed</p>
+                    </div>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition">
-                    <i class="fa-solid fa-user-tag text-lg"></i>
-                </div>
+                <i class="fa-solid fa-chevron-right text-gray-500 group-hover:text-cyan-400 group-hover:translate-x-1 transition"></i>
             </button>
 
-            <button id="select-buyer-btn" class="w-full p-4 border border-emerald-500/30 rounded-2xl bg-emerald-950/30 hover:bg-emerald-900/40 hover:border-emerald-400/60 transition flex items-center justify-between text-left group">
-                <div>
-                    <h3 class="font-bold text-emerald-300 text-lg flex items-center gap-2">Buyer <i class="fa-solid fa-bag-shopping text-xs text-emerald-400"></i></h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Post requests & get instant seller replies</p>
+            <button id="select-buyer-btn" class="w-full p-4 border border-emerald-500/30 rounded-2xl bg-emerald-950/30 hover:bg-emerald-900/40 hover:border-emerald-400 transition flex items-center justify-between text-left group active:scale-98">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-emerald-300 text-base">Buyer</h3>
+                        <p class="text-xs text-gray-400">Post buy requests & receive instant offers</p>
+                    </div>
                 </div>
-                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition">
-                    <i class="fa-solid fa-cart-shopping text-lg"></i>
-                </div>
+                <i class="fa-solid fa-chevron-right text-gray-500 group-hover:text-emerald-400 group-hover:translate-x-1 transition"></i>
             </button>
         </div>
     </div>
 
     <!-- Chat Screen -->
-    <div id="chat-screen" class="hidden glass-panel rounded-3xl w-full max-w-6xl h-[98dvh] md:h-[92vh] flex flex-col md:flex-row shadow-2xl overflow-hidden relative border border-white/10">
-        
-        <!-- Main Chat Area -->
-        <div class="flex-1 flex flex-col h-full border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden bg-slate-950/40">
+    <div id="chat-screen" class="hidden glass rounded-3xl w-full max-w-6xl h-[98dvh] md:h-[92vh] flex flex-col md:flex-row shadow-2xl overflow-hidden relative border border-white/10 z-10">
+        <div class="flex-1 flex flex-col h-full border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden">
 
-            <div id="pdf-banner" class="hidden bg-amber-500/10 border-b border-amber-500/20 p-3 text-xs flex flex-wrap items-center justify-between gap-2 backdrop-blur-md z-10">
+            <div id="pdf-banner" class="hidden bg-amber-500/20 border-b border-amber-500/30 p-3 text-xs flex flex-wrap items-center justify-between gap-2 backdrop-blur-md z-10 animate-fade-in">
                 <div class="flex items-center gap-2 text-amber-200">
                     <i class="fa-solid fa-clock text-amber-400 text-sm"></i>
-                    <span><strong>Chat Inactive for 5 Minutes:</strong> You can export today's chat history now.</span>
+                    <span><strong>Room Inactive (5m):</strong> You can export today's chat transcript.</span>
                 </div>
-                <button id="download-pdf-btn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow">
+                <button id="download-pdf-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-md">
                     <i class="fa-solid fa-file-pdf"></i> Export PDF Transcript
                 </button>
             </div>
 
-            <header class="p-4 border-b border-white/10 flex justify-between items-center bg-slate-950/60 backdrop-blur-md shrink-0">
+            <header class="p-4 border-b border-white/10 flex justify-between items-center bg-slate-950/40 backdrop-blur-lg shrink-0">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 shadow-md">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
                         <i class="fa-solid fa-comments text-lg"></i>
                     </div>
                     <div>
-                        <h2 class="font-bold text-base leading-tight text-white flex items-center gap-2">
-                            Nexus Trading Room
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Room Active"></span>
-                        </h2>
-                        <span id="user-role-badge" class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 mt-0.5 inline-block"></span>
+                        <h2 class="font-bold text-base leading-tight text-white">Nexus Trading Room</h2>
+                        <span id="user-role-badge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300"></span>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button id="manual-export-btn" class="bg-white/5 hover:bg-white/10 text-amber-300 border border-white/10 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5" title="Generate and archive today's discussion PDF">
-                        <i class="fa-solid fa-file-pdf text-amber-400"></i>
+                    <button id="manual-export-btn" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5" title="Export PDF">
+                        <i class="fa-solid fa-file-pdf"></i>
                         <span class="hidden sm:inline">Export PDF</span>
                     </button>
 
-                    <button id="open-archive-modal-btn" class="bg-white/5 hover:bg-white/10 text-cyan-300 border border-white/10 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5" title="View all daily archives">
-                        <i class="fa-solid fa-box-archive text-cyan-400"></i>
+                    <button id="open-archive-modal-btn" class="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5" title="Archives">
+                        <i class="fa-solid fa-box-archive"></i>
                         <span>Archives</span>
                     </button>
 
-                    <button id="toggle-sidebar-btn" type="button" class="md:hidden bg-white/10 hover:bg-white/20 text-white p-2 rounded-xl text-xs transition flex items-center">
-                        <i class="fa-solid fa-bars text-sm"></i>
+                    <button id="toggle-sidebar-btn" type="button" class="md:hidden bg-white/10 hover:bg-white/20 text-white px-2.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1">
+                        <i class="fa-solid fa-bars"></i>
                     </button>
 
-                    <span id="user-display" class="text-xs text-slate-400 hidden lg:block ml-2 border-l border-white/10 pl-3"></span>
-                    <button id="logout-btn" class="text-slate-400 hover:text-red-400 transition p-2 rounded-xl hover:bg-white/5" title="Logout">
+                    <span id="user-display" class="text-xs text-gray-400 hidden lg:block ml-2"></span>
+                    <button id="logout-btn" class="text-gray-400 hover:text-red-400 transition p-2 hover:bg-white/5 rounded-xl" title="Logout">
                         <i class="fa-solid fa-right-from-bracket text-base"></i>
                     </button>
                 </div>
             </header>
-
-            <!-- Social Media Instagram-Style Highlights Bar -->
-            <div id="status-stories-bar" class="px-4 py-2 border-b border-white/5 bg-slate-900/40 flex items-center gap-3 overflow-x-auto no-scrollbar shrink-0">
-                <div class="flex items-center gap-2 text-[11px] text-slate-400 font-semibold pr-2 border-r border-white/10 shrink-0">
-                    <i class="fa-solid fa-fire text-amber-400"></i> Top Sellers
-                </div>
-                <div id="stories-container" class="flex items-center gap-3 shrink-0">
-                    <div class="text-[11px] text-slate-500 italic">Waiting for activity...</div>
-                </div>
-            </div>
 
             <main id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
             </main>
@@ -193,77 +189,74 @@
                 <span id="typing-text">Someone is typing...</span>
             </div>
 
-            <!-- Scroll to Bottom Floating Button with Unread Counter -->
+            <!-- Scroll to Bottom Floating Button -->
             <button id="scroll-bottom-btn" type="button" 
-                class="hidden absolute bottom-20 right-6 z-30 bg-cyan-500 hover:bg-cyan-400 text-slate-950 p-3 rounded-full shadow-2xl border border-white/20 transition-all duration-300 hover:scale-110 flex items-center justify-center w-11 h-11 active:scale-95">
+                class="hidden absolute bottom-20 right-6 z-30 bg-cyan-500 hover:bg-cyan-400 text-gray-950 p-3 rounded-full shadow-2xl border border-white/20 transition-all duration-300 hover:scale-110 flex items-center justify-center w-11 h-11 active:scale-95">
                 <i class="fa-solid fa-arrow-down text-base"></i>
                 <span id="unread-badge" class="hidden absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border-2 border-slate-900 animate-pulse">0</span>
             </button>
 
-            <footer class="p-3 sm:p-4 border-t border-white/10 bg-slate-950/80 backdrop-blur-md shrink-0 relative">
-                <div id="emoji-picker" class="hidden absolute bottom-20 left-4 z-50 glass-panel bg-slate-900/95 border border-white/20 rounded-2xl p-3 w-72 sm:w-80 shadow-2xl backdrop-blur-2xl">
+            <footer class="p-4 border-t border-white/10 bg-slate-950/40 shrink-0 relative">
+                <div id="emoji-picker" class="hidden absolute bottom-20 left-4 z-50 glass bg-slate-900/95 border border-white/20 rounded-2xl p-3 w-72 sm:w-80 shadow-2xl backdrop-blur-2xl">
                     <div class="flex justify-between items-center pb-2 border-b border-white/10 mb-2">
-                        <span class="text-xs font-bold text-slate-300">Choose Emoji</span>
-                        <button type="button" id="close-emoji-picker" class="text-slate-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
+                        <span class="text-xs font-bold text-gray-300">Select Emoji</span>
+                        <button type="button" id="close-emoji-picker" class="text-gray-400 hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                     <div id="emoji-grid" class="grid grid-cols-6 sm:grid-cols-7 gap-1.5 max-h-48 overflow-y-auto text-xl p-1">
                     </div>
                 </div>
 
-                <div id="edit-preview" class="hidden text-xs text-amber-200 mb-2 flex justify-between items-center bg-amber-950/40 p-2.5 rounded-xl border-l-4 border-amber-400 backdrop-blur-md">
+                <div id="edit-preview" class="hidden text-xs text-amber-200 mb-2 flex justify-between items-center bg-amber-950/50 p-2.5 rounded-xl border-l-4 border-amber-400 backdrop-blur-md">
                     <div class="truncate pr-2">
                         <span class="text-amber-400 font-bold block"><i class="fa-solid fa-pen-to-square mr-1"></i> Editing Message</span>
-                        <span id="edit-text" class="text-slate-300 italic truncate block mt-0.5"></span>
+                        <span id="edit-text" class="text-gray-300 italic truncate block mt-0.5"></span>
                     </div>
-                    <button id="cancel-edit-btn" type="button" class="text-slate-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+                    <button id="cancel-edit-btn" type="button" class="text-gray-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <div id="reply-preview" class="hidden text-xs text-cyan-200 mb-2 flex justify-between items-center bg-cyan-950/40 p-2.5 rounded-xl border-l-4 border-cyan-400 backdrop-blur-md">
+                <div id="reply-preview" class="hidden text-xs text-cyan-200 mb-2 flex justify-between items-center bg-cyan-950/50 p-2.5 rounded-xl border-l-4 border-cyan-400 backdrop-blur-md">
                     <div class="truncate pr-2">
                         <span class="text-cyan-400 font-bold block"><i class="fa-solid fa-reply mr-1"></i> Replying to <span id="reply-user"></span></span>
-                        <span id="reply-text" class="text-slate-300 italic truncate block mt-0.5"></span>
+                        <span id="reply-text" class="text-gray-300 italic truncate block mt-0.5"></span>
                     </div>
-                    <button id="cancel-reply-btn" type="button" class="text-slate-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
+                    <button id="cancel-reply-btn" type="button" class="text-gray-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
-                <div id="file-preview" class="hidden text-xs text-cyan-300 mb-2 flex justify-between items-center bg-cyan-950/40 p-2 rounded-xl border border-cyan-500/30">
-                    <span id="file-name" class="truncate pr-2"></span>
-                    <button id="remove-file-btn" type="button" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-times"></i></button>
+                <div id="file-preview" class="hidden text-sm text-cyan-300 mb-2 flex justify-between items-center bg-cyan-950/40 p-2 rounded-xl border border-cyan-500/20">
+                    <span id="file-name" class="truncate pr-2 text-xs"></span>
+                    <button id="remove-file-btn" type="button" class="text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-times"></i></button>
                 </div>
 
                 <form id="chat-form" class="flex items-end gap-2">
-                    <div class="flex items-center gap-1 bg-white/5 rounded-2xl p-1 border border-white/10 flex-1 focus-within:border-cyan-400/60 transition">
-                        <button type="button" id="emoji-btn" class="p-2.5 text-slate-400 hover:text-amber-400 transition rounded-xl" title="Add Emoji">
-                            <i class="fa-regular fa-face-smile text-lg"></i>
-                        </button>
+                    <button type="button" id="emoji-btn" class="p-3 text-gray-400 hover:text-yellow-400 transition" title="Add Emoji">
+                        <i class="fa-regular fa-face-smile text-xl"></i>
+                    </button>
 
-                        <label for="file-input" class="p-2.5 text-slate-400 hover:text-cyan-400 cursor-pointer transition rounded-xl" title="Attach File (Max 50MB)">
-                            <i class="fa-solid fa-paperclip text-lg"></i>
-                        </label>
-                        <input type="file" id="file-input" class="hidden">
+                    <label for="file-input" class="p-3 text-gray-400 hover:text-cyan-400 cursor-pointer transition" title="Attach File (Max 50MB)">
+                        <i class="fa-solid fa-paperclip text-xl"></i>
+                    </label>
+                    <input type="file" id="file-input" class="hidden">
 
-                        <textarea id="message-input" rows="1" enterkeyhint="newline" placeholder="Type a message..." 
-                                  class="w-full bg-transparent border-0 px-2 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-0 transition resize-none max-h-36 overflow-y-auto leading-normal text-sm"></textarea>
-                    </div>
+                    <textarea id="message-input" rows="1" enterkeyhint="newline" placeholder="Type a message or price offer..." 
+                              class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-2.5 text-white placeholder:text-gray-500 focus:outline-none focus:border-cyan-400/80 focus:ring-2 focus:ring-cyan-500/20 transition resize-none max-h-36 overflow-y-auto text-sm leading-relaxed"></textarea>
 
-                    <button type="submit" class="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 p-3 rounded-2xl transition duration-200 w-12 h-12 flex items-center justify-center shrink-0 shadow-lg shadow-cyan-500/20 active:scale-95">
-                        <i class="fa-solid fa-paper-plane text-base"></i>
+                    <button type="submit" class="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-gray-950 p-3 rounded-2xl transition-all duration-200 w-11 h-11 flex items-center justify-center shrink-0 shadow-lg shadow-cyan-500/25 active:scale-95 font-bold">
+                        <i class="fa-solid fa-paper-plane text-sm"></i>
                     </button>
                 </form>
             </footer>
         </div>
 
-        <!-- Sidebar Panel -->
-        <aside id="sidebar-panel" class="hidden md:flex w-full md:w-80 bg-slate-950/80 flex-col h-auto md:h-full p-4 space-y-4 overflow-y-auto border-t md:border-t-0 md:border-l border-white/10 shrink-0">
+        <aside id="sidebar-panel" class="hidden md:flex w-full md:w-80 bg-slate-950/50 flex-col h-auto md:h-full p-4 space-y-4 overflow-y-auto border-t md:border-t-0 md:border-l border-white/10 shrink-0 backdrop-blur-lg">
             <div>
                 <div class="flex items-center justify-between mb-2">
                     <h3 class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                        <i class="fa-solid fa-box-archive"></i> Saved Daily Transcripts
+                        <i class="fa-solid fa-box-archive"></i> Saved Transcripts
                     </h3>
-                    <span id="transcript-count" class="bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
+                    <span id="transcript-count" class="bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
                 </div>
                 <div id="transcript-archive-list" class="space-y-2 max-h-48 overflow-y-auto pr-1">
-                    <div class="text-xs text-slate-500 italic text-center py-2">No archived transcripts yet</div>
+                    <div class="text-xs text-gray-500 italic text-center py-2">No archived transcripts yet</div>
                 </div>
             </div>
 
@@ -271,13 +264,11 @@
 
             <div>
                 <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
-                        <i class="fa-solid fa-bolt"></i> Seller Speed Tracker
-                    </h3>
-                    <span id="seller-count" class="bg-cyan-500/20 text-cyan-300 text-[10px] px-2 py-0.5 rounded-full font-bold">0 Active</span>
+                    <h3 class="text-[11px] font-bold uppercase tracking-wider text-cyan-400">Seller Speed Tracker</h3>
+                    <span id="seller-count" class="bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[10px] px-2 py-0.5 rounded-full font-bold">0 Active</span>
                 </div>
                 <div id="seller-speed-list" class="space-y-2 max-h-36 overflow-y-auto pr-1">
-                    <div class="text-xs text-slate-500 italic text-center py-2">No seller responses recorded yet</div>
+                    <div class="text-xs text-gray-500 italic text-center py-2">No seller responses recorded yet</div>
                 </div>
             </div>
 
@@ -285,10 +276,8 @@
 
             <div class="flex-1">
                 <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                        <i class="fa-solid fa-users"></i> Online Participants
-                    </h3>
-                    <span id="online-count" class="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
+                    <h3 class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Online Participants</h3>
+                    <span id="online-count" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
                 </div>
                 <div id="presence-list" class="space-y-2">
                 </div>
@@ -297,34 +286,34 @@
     </div>
 
     <!-- Archive Modal -->
-    <div id="archive-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="glass-panel w-full max-w-2xl max-h-[85vh] rounded-3xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
-            <div class="p-4 border-b border-white/10 flex justify-between items-center bg-slate-950/60 shrink-0">
+    <div id="archive-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass w-full max-w-2xl max-h-[85vh] rounded-3xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
+            <div class="p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
                 <div class="flex items-center gap-2 text-amber-400 font-bold text-base">
                     <i class="fa-solid fa-box-archive text-lg"></i>
                     <span>Daily Message Transcripts Archive</span>
                 </div>
-                <button id="close-archive-modal-btn" class="text-slate-400 hover:text-white text-lg px-2"><i class="fa-solid fa-xmark"></i></button>
+                <button id="close-archive-modal-btn" class="text-gray-400 hover:text-white text-lg px-2"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="p-4 overflow-y-auto flex-1 space-y-3">
-                <p class="text-xs text-slate-400">Below are all recorded daily chat history PDFs for this room. Any room member can access and download them at any time.</p>
+                <p class="text-xs text-gray-400">Below are all recorded daily chat history PDFs for this room. Any room member can access and download them at any time.</p>
                 <div id="modal-transcript-list" class="space-y-2">
-                    <div class="text-xs text-slate-500 italic text-center py-4">Loading archives...</div>
+                    <div class="text-xs text-gray-400 italic text-center py-4">Loading archives...</div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- PDF Modal -->
-    <div id="pdf-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
-        <div class="glass-panel w-full max-w-4xl h-[85vh] rounded-3xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
-            <div class="p-3 sm:p-4 border-b border-white/10 flex justify-between items-center bg-slate-950/60 shrink-0">
+    <div id="pdf-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
+        <div class="glass w-full max-w-4xl h-[85vh] rounded-3xl flex flex-col overflow-hidden border border-white/20 shadow-2xl">
+            <div class="p-3 sm:p-4 border-b border-white/10 flex justify-between items-center bg-black/40 shrink-0">
                 <div class="flex items-center gap-2 text-cyan-400 font-bold text-sm sm:text-base">
                     <i class="fa-solid fa-file-pdf text-lg"></i>
                     <span>Chat Transcript Preview</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button id="save-pdf-modal-btn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5 shadow">
+                    <button id="save-pdf-modal-btn" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-3 py-1.5 rounded-xl text-xs sm:text-sm transition flex items-center gap-1.5 shadow-md">
                         <i class="fa-solid fa-cloud-arrow-up"></i> Save & Publish
                     </button>
                     <button id="close-pdf-modal-btn" class="bg-white/10 hover:bg-white/20 text-white font-bold px-3 py-1.5 rounded-xl text-xs sm:text-sm transition">
@@ -389,7 +378,6 @@
                 .replace(/'/g, '&#039;');
         }
 
-        // DOM Elements
         const loginScreen = document.getElementById('login-screen');
         const roleScreen = document.getElementById('role-screen');
         const chatScreen = document.getElementById('chat-screen');
@@ -430,13 +418,10 @@
         const typingText = document.getElementById('typing-text');
         const transcriptArchiveList = document.getElementById('transcript-archive-list');
         const transcriptCount = document.getElementById('transcript-count');
-        const storiesContainer = document.getElementById('stories-container');
 
-        // Floating Scroll Button & Unread Counter Elements
         const scrollBottomBtn = document.getElementById('scroll-bottom-btn');
         const unreadBadge = document.getElementById('unread-badge');
 
-        // Modal Elements
         const openArchiveModalBtn = document.getElementById('open-archive-modal-btn');
         const archiveModal = document.getElementById('archive-modal');
         const closeArchiveModalBtn = document.getElementById('close-archive-modal-btn');
@@ -492,7 +477,6 @@
             });
         }
 
-        // Render Emoji Grid
         EMOJI_LIST.forEach(emoji => {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -635,7 +619,7 @@
             const file = e.target.files[0];
             if (!file) return;
             if (file.size > MAX_FILE_SIZE) {
-                alert('File size exceeds the 50MB limit.');
+                alert('File size exceeds 50MB limit.');
                 fileInput.value = '';
                 return;
             }
@@ -694,7 +678,7 @@
                 return;
             }
 
-            doc.setFillColor(9, 13, 22); 
+            doc.setFillColor(15, 32, 39); 
             doc.rect(0, 0, 210, 32, 'F');
             doc.setTextColor(34, 211, 238);
             doc.setFontSize(18);
@@ -755,7 +739,7 @@
                 head: [['Time', 'User', 'Role', 'Message Content']],
                 body: tableData,
                 theme: 'striped',
-                headStyles: { fillColor: [9, 13, 22], textColor: [255, 255, 255], fontStyle: 'bold' },
+                headStyles: { fillColor: [15, 32, 39], textColor: [255, 255, 255], fontStyle: 'bold' },
                 styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak' },
                 columnStyles: {
                     0: { cellWidth: 20 },
@@ -806,7 +790,7 @@
 
                     if (dbErr) throw dbErr;
 
-                    alert('Transcript successfully saved & published to room archives!');
+                    alert('Transcript saved and published to archives!');
                     pdfModal.classList.add('hidden');
                     loadTranscriptArchive();
                 } catch (err) {
@@ -825,7 +809,7 @@
                 const { data, error } = await supabase.from('daily_transcripts').select('*').order('created_at', { ascending: false });
                 
                 if (error || !data || data.length === 0) {
-                    const emptyState = `<div class="text-xs text-slate-500 italic text-center py-2">No archived transcripts found</div>`;
+                    const emptyState = `<div class="text-xs text-gray-500 italic text-center py-2">No archived transcripts found</div>`;
                     transcriptArchiveList.innerHTML = emptyState;
                     if (modalTranscriptList) modalTranscriptList.innerHTML = emptyState;
                     transcriptCount.textContent = '0';
@@ -841,12 +825,12 @@
                     const cleanUrl = escapeHTML(item.file_url);
 
                     html += `
-                        <div class="glass-card rounded-2xl p-2.5 flex items-center justify-between text-xs hover:border-white/20 transition">
+                        <div class="glass-card rounded-xl p-2.5 flex items-center justify-between text-xs transition">
                             <div class="truncate pr-2">
                                 <p class="font-bold text-amber-300 truncate">Transcript - ${cleanDate}</p>
-                                <p class="text-[10px] text-slate-400">By: ${cleanCreator}</p>
+                                <p class="text-[10px] text-gray-400">By: ${cleanCreator}</p>
                             </div>
-                            <a href="${cleanUrl}" target="_blank" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-xl transition flex items-center gap-1 shrink-0 text-[11px]">
+                            <a href="${cleanUrl}" target="_blank" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-lg transition flex items-center gap-1 shrink-0">
                                 <i class="fa-solid fa-download"></i> View
                             </a>
                         </div>
@@ -926,7 +910,7 @@
             await new Promise(resolve => setTimeout(resolve, 50));
 
             userRoleBadge.textContent = userRole;
-            userRoleBadge.className = `text-[11px] font-semibold px-2 py-0.5 rounded-md ${userRole === 'Seller' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}`;
+            userRoleBadge.className = `text-[11px] font-bold px-2.5 py-0.5 rounded-full ${userRole === 'Seller' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}`;
             
             await loadMessages();
             setupRealtimeChannel();
@@ -937,7 +921,7 @@
         }
 
         async function loadMessages() {
-            chatMessages.innerHTML = '<div class="text-center text-slate-500 py-8"><i class="fa-solid fa-spinner fa-spin text-2xl text-cyan-400"></i><p class="mt-2 text-xs">Loading room history...</p></div>';
+            chatMessages.innerHTML = '<div class="text-center text-gray-400 py-8"><i class="fa-solid fa-spinner fa-spin text-2xl text-cyan-400"></i><p class="mt-2 text-xs">Loading room history...</p></div>';
 
             const { data, error } = await supabase
                 .from('messages')
@@ -958,7 +942,7 @@
                 calculateSellerSpeeds();
                 scrollToBottom(true);
             } else {
-                chatMessages.innerHTML = `<div class="text-center text-slate-500 italic text-xs py-10">No messages in room yet. Start the conversation!</div>`;
+                chatMessages.innerHTML = `<div class="text-center text-gray-500 italic text-xs py-10">No messages in room yet. Start the conversation!</div>`;
             }
         }
 
@@ -998,8 +982,14 @@
         function buildMessageHTML(msg) {
             const isSelf = currentUser && currentUser.email === msg.user_email;
             const senderName = msg.user_email ? msg.user_email.split('@')[0] : 'User';
+            const initial = senderName.charAt(0).toUpperCase();
             const role = msg.user_role || 'Member';
-            const roleColor = role === 'Seller' ? 'text-cyan-400 border-cyan-500/30 bg-cyan-950/40' : 'text-emerald-400 border-emerald-500/30 bg-emerald-950/40';
+            
+            const isSeller = role === 'Seller';
+            const roleBadgeClass = isSeller 
+                ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30' 
+                : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30';
+
             const timeStr = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
             let reactionsHTML = '';
@@ -1009,9 +999,9 @@
                     if (users && users.length > 0) {
                         const hasReacted = currentUser && users.includes(currentUser.email.split('@')[0]);
                         reactionsHTML += `
-                            <button onclick="toggleReaction('${msg.id}', '${emoji}')" class="text-xs ${hasReacted ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200' : 'bg-white/5 border-white/10 text-slate-300'} border px-2 py-0.5 rounded-full flex items-center gap-1 hover:bg-white/20 transition">
+                            <button onclick="toggleReaction('${msg.id}', '${emoji}')" class="text-xs ${hasReacted ? 'bg-cyan-500/30 border-cyan-400 text-cyan-200' : 'bg-white/5 border-white/10 text-gray-300'} border px-2 py-0.5 rounded-full flex items-center gap-1 hover:bg-white/20 transition">
                                 <span>${emoji}</span>
-                                <span class="text-[10px] opacity-80">${users.length}</span>
+                                <span class="text-[10px] opacity-80 font-bold">${users.length}</span>
                             </button>
                         `;
                     }
@@ -1024,51 +1014,58 @@
             const cleanReplyEmail = escapeHTML(msg.reply_to_email ? msg.reply_to_email.split('@')[0] : 'User');
 
             return `
-                <div id="msg-${msg.id}" class="message-bubble flex flex-col ${isSelf ? 'items-end' : 'items-start'} my-2.5 group">
-                    <div class="flex items-center gap-2 mb-1 text-xs text-slate-400 px-1">
-                        <span class="font-bold text-slate-200">${escapeHTML(senderName)}</span>
-                        <span class="text-[9px] px-1.5 py-0.2 rounded border ${roleColor}">${escapeHTML(role)}</span>
-                        <span class="text-[10px] text-slate-500">${timeStr}</span>
+                <div id="msg-${msg.id}" class="message-bubble flex items-start gap-2.5 my-2.5 ${isSelf ? 'flex-row-reverse' : 'flex-row'} group">
+                    <!-- User Avatar Circle -->
+                    <div class="w-8 h-8 rounded-full ${isSelf ? 'bg-cyan-500 text-gray-950 font-bold' : 'bg-slate-800 text-gray-200 font-bold'} flex items-center justify-center text-xs shrink-0 shadow-md border border-white/10 mt-1">
+                        ${initial}
                     </div>
 
-                    <div class="max-w-xs sm:max-w-md ${isSelf ? 'bg-gradient-to-tr from-cyan-600 to-blue-600 text-white rounded-3xl rounded-tr-xs shadow-cyan-950/50' : 'glass-card text-slate-100 rounded-3xl rounded-tl-xs'} p-3.5 shadow-lg relative border border-white/10">
-                        ${msg.reply_to_content ? `
-                            <div onclick="scrollToMessage('${msg.reply_to_id}')" class="cursor-pointer text-xs bg-black/30 p-2 rounded-xl mb-2 border-l-2 border-cyan-400 hover:bg-black/40 transition">
-                                <span class="font-bold text-cyan-300 block">${cleanReplyEmail}</span>
-                                <span class="opacity-80 italic line-clamp-1">${cleanReplyContent}</span>
-                            </div>
-                        ` : ''}
-
-                        <p class="whitespace-pre-wrap text-sm leading-relaxed">${cleanContent}</p>
-
-                        ${msg.file_url ? `
-                            <div class="mt-2">
-                                ${msg.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? `
-                                    <a href="${escapeHTML(msg.file_url)}" target="_blank">
-                                        <img src="${escapeHTML(msg.file_url)}" class="rounded-2xl max-h-48 w-full object-cover border border-white/10 hover:opacity-90 transition">
-                                    </a>
-                                ` : `
-                                    <a href="${escapeHTML(msg.file_url)}" target="_blank" class="inline-flex items-center gap-2 text-xs bg-black/40 hover:bg-black/60 text-cyan-300 p-2.5 rounded-xl border border-white/10 transition">
-                                        <i class="fa-solid fa-paperclip"></i> View Attached Document
-                                    </a>
-                                `}
-                            </div>
-                        ` : ''}
-
-                        ${msg.is_edited ? `<span class="text-[9px] opacity-60 block text-right mt-1">(edited)</span>` : ''}
-                        
-                        ${reactionsHTML}
-
-                        <!-- Message Action Toolbar -->
-                        <div class="opacity-0 group-hover:opacity-100 transition absolute ${isSelf ? '-left-24' : '-right-24'} top-2 flex items-center gap-1 bg-slate-900/90 border border-white/10 p-1 rounded-xl backdrop-blur-md z-20 shadow-xl">
-                            <button onclick="toggleReactionPicker('${msg.id}')" class="p-1.5 hover:text-amber-400 text-slate-300 text-xs transition" title="React"><i class="fa-regular fa-face-smile"></i></button>
-                            <button onclick="setReplyMessage('${msg.id}', '${escapeHTML(msg.user_email)}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1.5 hover:text-cyan-400 text-slate-300 text-xs transition" title="Reply"><i class="fa-solid fa-reply"></i></button>
-                            ${isSelf ? `<button onclick="startEditMessage('${msg.id}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1.5 hover:text-amber-400 text-slate-300 text-xs transition" title="Edit"><i class="fa-solid fa-pen"></i></button>` : ''}
+                    <div class="flex flex-col ${isSelf ? 'items-end' : 'items-start'} max-w-[82%] sm:max-w-md">
+                        <div class="flex items-center gap-2 mb-1 text-xs text-gray-400 px-1">
+                            <span class="font-bold text-gray-200">${escapeHTML(senderName)}</span>
+                            <span class="text-[9px] font-semibold px-1.5 py-0.2 rounded border ${roleBadgeClass}">${escapeHTML(role)}</span>
+                            <span class="text-[10px] text-gray-500">${timeStr}</span>
                         </div>
 
-                        <!-- Popup Reaction Selector -->
-                        <div id="reaction-picker-${msg.id}" class="hidden absolute ${isSelf ? 'right-0' : 'left-0'} -top-11 bg-slate-900/95 border border-white/20 p-1.5 rounded-2xl flex gap-1 shadow-2xl z-30 backdrop-blur-md">
-                            ${REACTION_PRESETS.map(e => `<button onclick="toggleReaction('${msg.id}', '${e}'); toggleReactionPicker('${msg.id}')" class="hover:scale-125 transition text-base px-1">${e}</button>`).join('')}
+                        <div class="${isSelf ? 'bg-gradient-to-tr from-cyan-600 to-blue-600 text-white rounded-2xl rounded-tr-none' : 'glass text-gray-100 rounded-2xl rounded-tl-none'} p-3.5 shadow-xl relative border border-white/10">
+                            ${msg.reply_to_content ? `
+                                <div onclick="scrollToMessage('${msg.reply_to_id}')" class="cursor-pointer text-xs bg-black/20 p-2 rounded-xl mb-2 border-l-2 border-cyan-400 hover:bg-black/30 transition">
+                                    <span class="font-bold text-cyan-300 block">${cleanReplyEmail}</span>
+                                    <span class="opacity-80 italic line-clamp-1">${cleanReplyContent}</span>
+                                </div>
+                            ` : ''}
+
+                            <p class="whitespace-pre-wrap text-sm leading-relaxed">${cleanContent}</p>
+
+                            ${msg.file_url ? `
+                                <div class="mt-2">
+                                    ${msg.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? `
+                                        <a href="${escapeHTML(msg.file_url)}" target="_blank">
+                                            <img src="${escapeHTML(msg.file_url)}" class="rounded-xl max-h-52 w-full object-cover border border-white/10 hover:opacity-90 transition">
+                                        </a>
+                                    ` : `
+                                        <a href="${escapeHTML(msg.file_url)}" target="_blank" class="inline-flex items-center gap-2 text-xs bg-black/30 hover:bg-black/40 text-cyan-300 p-2.5 rounded-xl border border-white/10 transition">
+                                            <i class="fa-solid fa-paperclip"></i> View Attached File
+                                        </a>
+                                    `}
+                                </div>
+                            ` : ''}
+
+                            ${msg.is_edited ? `<span class="text-[9px] opacity-60 block text-right mt-1">(edited)</span>` : ''}
+                            
+                            ${reactionsHTML}
+
+                            <!-- Message Action Toolbar -->
+                            <div class="opacity-0 group-hover:opacity-100 transition duration-200 absolute ${isSelf ? '-left-20' : '-right-20'} top-2 flex items-center gap-1 bg-slate-900/90 border border-white/15 p-1 rounded-xl backdrop-blur-md z-20 shadow-lg">
+                                <button onclick="toggleReactionPicker('${msg.id}')" class="p-1 hover:text-yellow-400 text-gray-300 text-xs" title="React"><i class="fa-regular fa-face-smile"></i></button>
+                                <button onclick="setReplyMessage('${msg.id}', '${escapeHTML(msg.user_email)}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-cyan-400 text-gray-300 text-xs" title="Reply"><i class="fa-solid fa-reply"></i></button>
+                                ${isSelf ? `<button onclick="startEditMessage('${msg.id}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-amber-400 text-gray-300 text-xs" title="Edit"><i class="fa-solid fa-pen"></i></button>` : ''}
+                            </div>
+
+                            <!-- Reaction Selector -->
+                            <div id="reaction-picker-${msg.id}" class="hidden absolute ${isSelf ? 'right-0' : 'left-0'} -top-10 bg-slate-900/95 border border-white/20 p-1.5 rounded-full flex gap-1 shadow-2xl z-30 backdrop-blur-md">
+                                ${REACTION_PRESETS.map(e => `<button onclick="toggleReaction('${msg.id}', '${e}'); toggleReactionPicker('${msg.id}')" class="hover:scale-125 transition text-base px-1">${e}</button>`).join('')}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1156,40 +1153,26 @@
 
             const sellers = Object.keys(sellerStats);
             if (sellers.length === 0) {
-                sellerSpeedList.innerHTML = `<div class="text-xs text-slate-500 italic text-center py-2">No seller responses recorded yet</div>`;
+                sellerSpeedList.innerHTML = `<div class="text-xs text-gray-500 italic text-center py-2">No seller responses recorded yet</div>`;
                 sellerCount.textContent = '0 Active';
-                storiesContainer.innerHTML = `<div class="text-[11px] text-slate-500 italic">Waiting for activity...</div>`;
                 return;
             }
 
             sellerCount.textContent = `${sellers.length} Active`;
             let listHtml = '';
-            let storiesHtml = '';
-
             sellers.forEach(seller => {
                 const times = sellerStats[seller];
                 const avgSec = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
-                
                 listHtml += `
-                    <div class="glass-card rounded-2xl p-2 flex items-center justify-between text-xs">
+                    <div class="glass-card rounded-xl p-2 flex items-center justify-between text-xs">
                         <span class="font-bold text-cyan-300 truncate">${escapeHTML(seller)}</span>
-                        <span class="bg-cyan-500/20 text-cyan-200 px-2 py-0.5 rounded-full text-[10px] font-mono border border-cyan-500/30">
-                            ⚡ ${avgSec}s
+                        <span class="bg-cyan-500/10 border border-cyan-500/30 text-cyan-200 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold">
+                            ⚡ Avg: ${avgSec}s
                         </span>
                     </div>
                 `;
-
-                storiesHtml += `
-                    <div class="flex items-center gap-1.5 bg-gradient-to-r from-cyan-950/60 to-slate-900/80 border border-cyan-500/30 px-2.5 py-1 rounded-full text-xs shrink-0">
-                        <div class="w-2 h-2 rounded-full bg-cyan-400"></div>
-                        <span class="font-semibold text-slate-200 text-[11px]">${escapeHTML(seller)}</span>
-                        <span class="text-[10px] text-cyan-300 font-mono font-bold">⚡${avgSec}s</span>
-                    </div>
-                `;
             });
-
             sellerSpeedList.innerHTML = listHtml;
-            storiesContainer.innerHTML = storiesHtml;
         }
 
         function setupRealtimeChannel() {
@@ -1241,17 +1224,17 @@
 
             onlineCount.textContent = users.length.toString();
             if (users.length === 0) {
-                presenceList.innerHTML = `<div class="text-xs text-slate-500 italic">No users online</div>`;
+                presenceList.innerHTML = `<div class="text-xs text-gray-500 italic">No users online</div>`;
                 return;
             }
 
             presenceList.innerHTML = users.map(u => `
-                <div class="flex items-center justify-between text-xs glass-card p-2 rounded-2xl">
+                <div class="flex items-center justify-between text-xs glass-card p-2 rounded-xl">
                     <div class="flex items-center gap-2 truncate">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span class="truncate font-medium text-slate-200">${u.email ? escapeHTML(u.email.split('@')[0]) : 'User'}</span>
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 ring-4 ring-emerald-400/20"></span>
+                        <span class="truncate font-medium text-gray-200">${u.email ? escapeHTML(u.email.split('@')[0]) : 'User'}</span>
                     </div>
-                    <span class="text-[9px] px-1.5 py-0.5 rounded border ${u.role === 'Seller' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'}">${escapeHTML(u.role || 'Member')}</span>
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded border ${u.role === 'Seller' ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'}">${escapeHTML(u.role || 'Member')}</span>
                 </div>
             `).join('');
         }
