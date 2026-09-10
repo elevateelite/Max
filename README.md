@@ -82,18 +82,14 @@
             overflow: visible;
         }
 
-        /* Floating Snow Animation replacing rolling object */
         .christmas-message::before {
-            content: "❄";
+            content: "";
             position: absolute;
-            left: -12px;
-            top: -10px;
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 14px;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 0 0 12px rgba(34, 211, 238, 0.6);
-            z-index: 5;
-            animation: snowfall 3s ease-in-out infinite alternate;
-            pointer-events: none;
+            inset: -2px;
+            border-radius: 18px;
+            background: conic-gradient(from 0deg, #22d3ee, #a855f7, #f43f5e, #f59e0b, #22c55e, #22d3ee);
+            z-index: -2;
+            opacity: .95;
         }
 
         .christmas-message::after {
@@ -107,11 +103,6 @@
             animation: christmasTwinkle 1.8s ease-in-out infinite;
             pointer-events: none;
             z-index: 5;
-        }
-
-        @keyframes snowfall {
-            0% { transform: translateY(0) rotate(0deg) scale(0.8); opacity: 0.5; }
-            100% { transform: translateY(8px) rotate(25deg) scale(1.2); opacity: 1; }
         }
 
         .christmas-bubble {
