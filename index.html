@@ -75,60 +75,123 @@
         }
 
 
-        /* Light Christmas snowfall: decorative background only, never over message text */
-        #chat-messages {
+        /* Christmas message customization */
+        .christmas-message {
             position: relative;
             isolation: isolate;
-            background: linear-gradient(180deg, rgba(8, 23, 31, 0.18), rgba(8, 23, 31, 0.05));
+            overflow: visible;
+            z-index: 1;
         }
 
-        #snowfall-layer {
+        /* Soft Christmas snowfall: decorative background only, never over the text. */
+        #christmas-snow {
             position: absolute;
             inset: 0;
-            overflow: hidden;
-            pointer-events: none;
+            width: 100%;
+            height: 100%;
             z-index: 0;
-            opacity: 0.82;
+            pointer-events: none;
+            opacity: .62;
         }
 
-        .snowflake {
-            position: absolute;
-            top: -12px;
-            left: var(--snow-left, 50%);
-            width: var(--snow-size, 3px);
-            height: var(--snow-size, 3px);
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.92);
-            box-shadow: 0 0 5px rgba(190, 235, 255, 0.65);
-            opacity: var(--snow-opacity, 0.65);
-            animation: snowFall var(--snow-duration, 9s) linear var(--snow-delay, 0s) infinite;
-            will-change: transform;
-        }
-
-        .snowflake.soft {
-            filter: blur(0.5px);
-        }
-
-        @keyframes snowFall {
-            0% {
-                transform: translate3d(0, -14px, 0) rotate(0deg);
-            }
-            50% {
-                transform: translate3d(var(--snow-drift, 18px), 50vh, 0) rotate(140deg);
-            }
-            100% {
-                transform: translate3d(calc(var(--snow-drift, 18px) * -0.7), 110vh, 0) rotate(280deg);
-            }
-        }
-
-        /* Keep every message clearly above the snowfall layer. */
-        #chat-messages > *:not(#snowfall-layer) {
+        #chat-screen > .flex-1,
+        #chat-screen > aside {
             position: relative;
             z-index: 1;
         }
 
+        .christmas-message::after {
+            content: "✦";
+            position: absolute;
+            right: -7px;
+            top: -10px;
+            color: #facc15;
+            font-size: 13px;
+            text-shadow: 0 0 8px rgba(250,204,21,.8);
+            animation: christmasTwinkle 1.8s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .christmas-bubble {
+            position: relative;
+            border: 0 !important;
+            background-clip: padding-box !important;
+            box-shadow: 0 8px 28px rgba(0,0,0,.28), 0 0 18px rgba(34,211,238,.08);
+        }
+
+        .christmas-bubble::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            padding: 1.5px;
+            border-radius: inherit;
+            background: linear-gradient(135deg, #22d3ee, #a855f7 30%, #f43f5e 55%, #f59e0b 76%, #22c55e);
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            animation: christmasEdge 5s ease-in-out infinite alternate;
+        }
+
+        .christmas-bubble::after {
+            content: "";
+            position: absolute;
+            left: 10%;
+            right: 10%;
+            bottom: -3px;
+            height: 3px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, transparent, #22d3ee, #f43f5e, #facc15, #22c55e, transparent);
+            filter: blur(1px);
+            opacity: .9;
+            pointer-events: none;
+            animation: christmasGlow 3s ease-in-out infinite;
+        }
+
+        .christmas-text {
+            background: linear-gradient(90deg, #f8fafc, #67e8f9, #f0abfc, #fde68a, #86efac, #f8fafc);
+            background-size: 250% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: christmasText 7s linear infinite;
+            text-shadow: 0 0 10px rgba(255,255,255,.05);
+        }
+
+        .christmas-self-text {
+            background: linear-gradient(90deg, #ffffff, #bae6fd, #fef3c7, #dcfce7, #ffffff);
+            background-size: 220% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: christmasText 6s linear infinite;
+        }
+
+        @keyframes christmasEdge {
+            0% { filter: hue-rotate(0deg); opacity: .72; }
+            100% { filter: hue-rotate(45deg); opacity: 1; }
+        }
+
+        @keyframes christmasGlow {
+            0%, 100% { transform: scaleX(.82); opacity: .45; }
+            50% { transform: scaleX(1); opacity: 1; }
+        }
+
+        @keyframes christmasText {
+            from { background-position: 0% 50%; }
+            to { background-position: 250% 50%; }
+        }
+
+        @keyframes christmasTwinkle {
+            0%, 100% { transform: scale(.7) rotate(0deg); opacity: .35; }
+            50% { transform: scale(1.25) rotate(18deg); opacity: 1; }
+        }
+
         @media (prefers-reduced-motion: reduce) {
-            .snowflake { animation-duration: 16s; }
+            .christmas-message::after,
+            .christmas-bubble::before, .christmas-bubble::after,
+            .christmas-text, .christmas-self-text { animation: none; }
         }
 
         /* Custom Scrollbar */
@@ -194,6 +257,7 @@
 
     <!-- Chat Screen -->
     <div id="chat-screen" class="hidden glass rounded-3xl w-full max-w-6xl h-[98dvh] md:h-[92vh] flex flex-col md:flex-row shadow-2xl overflow-hidden relative border border-white/10 z-10">
+        <canvas id="christmas-snow" aria-hidden="true"></canvas>
         <div class="flex-1 flex flex-col h-full border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden">
 
             <div id="pdf-banner" class="hidden bg-amber-500/20 border-b border-amber-500/30 p-3 text-xs flex flex-wrap items-center justify-between gap-2 backdrop-blur-md z-10 animate-fade-in">
@@ -239,7 +303,6 @@
             </header>
 
             <main id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
-                <div id="snowfall-layer" aria-hidden="true"></div>
             </main>
 
             <div id="typing-indicator" class="text-xs text-cyan-400 italic min-h-[1.25rem] px-4 opacity-0 transition-opacity flex items-center gap-2">
@@ -953,7 +1016,95 @@
         let roomSetupPromise = null;
         let lastInitializedUserId = null;
 
+        // =========================================================
+        // CHRISTMAS SNOW BACKGROUND
+        // Small, lightweight flakes stay behind every message.
+        // Density changes gently with the amount of visible chat content.
+        // =========================================================
+        const christmasSnow = document.getElementById('christmas-snow');
+        const snowCtx = christmasSnow ? christmasSnow.getContext('2d') : null;
+        let snowflakes = [];
+        let snowAnimationFrame = null;
+        let snowWidth = 0;
+        let snowHeight = 0;
+
+        function getSnowCount() {
+            const messages = Array.isArray(allSessionMessages) ? allSessionMessages : [];
+            const totalText = messages.reduce((sum, msg) => sum + String(msg?.content || '').length, 0);
+            // Normally 24–46 tiny flakes; longer conversations can become a little livelier.
+            return Math.min(52, Math.max(24, 24 + Math.floor(totalText / 900)));
+        }
+
+        function resizeChristmasSnow() {
+            if (!christmasSnow || !snowCtx) return;
+            const rect = christmasSnow.getBoundingClientRect();
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            snowWidth = Math.max(1, rect.width);
+            snowHeight = Math.max(1, rect.height);
+            christmasSnow.width = Math.floor(snowWidth * dpr);
+            christmasSnow.height = Math.floor(snowHeight * dpr);
+            snowCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            const target = getSnowCount();
+            snowflakes = Array.from({ length: target }, (_, i) => ({
+                x: Math.random() * snowWidth,
+                y: i < target * 0.75 ? Math.random() * snowHeight : -Math.random() * snowHeight,
+                r: 0.7 + Math.random() * 1.5,
+                speed: 0.35 + Math.random() * 0.85,
+                drift: (Math.random() - 0.5) * 0.32,
+                phase: Math.random() * Math.PI * 2,
+                opacity: 0.35 + Math.random() * 0.5
+            }));
+        }
+
+        function updateChristmasSnow() {
+            if (!christmasSnow || !snowCtx) return;
+            const target = getSnowCount();
+            while (snowflakes.length < target) {
+                snowflakes.push({
+                    x: Math.random() * snowWidth,
+                    y: -Math.random() * snowHeight,
+                    r: 0.7 + Math.random() * 1.5,
+                    speed: 0.35 + Math.random() * 0.85,
+                    drift: (Math.random() - 0.5) * 0.32,
+                    phase: Math.random() * Math.PI * 2,
+                    opacity: 0.35 + Math.random() * 0.5
+                });
+            }
+            if (snowflakes.length > target) snowflakes.length = target;
+
+            snowCtx.clearRect(0, 0, snowWidth, snowHeight);
+            snowflakes.forEach(flake => {
+                flake.y += flake.speed;
+                flake.phase += 0.012;
+                flake.x += flake.drift + Math.sin(flake.phase) * 0.18;
+
+                if (flake.y > snowHeight + 4) {
+                    flake.y = -4;
+                    flake.x = Math.random() * snowWidth;
+                }
+                if (flake.x < -4) flake.x = snowWidth + 4;
+                if (flake.x > snowWidth + 4) flake.x = -4;
+
+                snowCtx.beginPath();
+                snowCtx.arc(flake.x, flake.y, flake.r, 0, Math.PI * 2);
+                snowCtx.fillStyle = `rgba(235, 248, 255, ${flake.opacity})`;
+                snowCtx.fill();
+            });
+
+            snowAnimationFrame = requestAnimationFrame(updateChristmasSnow);
+        }
+
+        function startChristmasSnow() {
+            if (!christmasSnow || !snowCtx || snowAnimationFrame) return;
+            resizeChristmasSnow();
+            snowAnimationFrame = requestAnimationFrame(updateChristmasSnow);
+        }
+
+        window.addEventListener('resize', resizeChristmasSnow);
+
         async function init() {
+            startChristmasSnow();
             const { data: { session }, error } = await supabase.auth.getSession();
 
             if (error) {
@@ -1125,62 +1276,16 @@
                 from += PAGE_SIZE;
             }
 
-            chatMessages.innerHTML = '<div id="snowfall-layer" aria-hidden="true"></div>';
+            chatMessages.innerHTML = '';
             allSessionMessages = [];
-            // Re-acquire the layer after the history container is rebuilt.
-            // (The controller resolves it lazily below.)
 
             if (allMessages.length > 0) {
                 allMessages.forEach(msg => renderOrUpdateMessage(msg, false));
-                refreshSnowfall();
                 calculateTipsterSpeeds();
                 scrollToBottom(true);
             } else {
-                chatMessages.innerHTML = `<div class="text-center text-gray-500 italic text-xs py-10">No messages in room yet. Start the conversation!</div><div id="snowfall-layer" aria-hidden="true"></div>`;
-                refreshSnowfall();
+                chatMessages.innerHTML = `<div class="text-center text-gray-500 italic text-xs py-10">No messages in room yet. Start the conversation!</div>`;
             }
-        }
-
-        // ---------------------------------------------------------
-        // CHRISTMAS SNOW BACKGROUND
-        // Light, dynamic snowfall behind messages only.
-        // Message length influences the overall snow intensity:
-        // longer room messages -> slightly fuller snowfall.
-        // ---------------------------------------------------------
-        let snowfallLayer = null;
-        let snowRefreshTimer = null;
-
-        function refreshSnowfall() {
-            snowfallLayer = document.getElementById('snowfall-layer');
-            if (!snowfallLayer) return;
-
-            const messages = Array.isArray(allSessionMessages) ? allSessionMessages : [];
-            const totalChars = messages.reduce((sum, m) => sum + (m?.content ? String(m.content).length : 0), 0);
-            const averageLength = messages.length ? totalChars / messages.length : 0;
-
-            // Keep it deliberately light so the messages stay completely readable.
-            const baseCount = Math.round(14 + Math.min(averageLength / 18, 2) * 10);
-            const randomVariation = Math.floor(Math.random() * 10) - 4;
-            const count = Math.max(10, Math.min(36, baseCount + randomVariation));
-
-            snowfallLayer.innerHTML = '';
-
-            for (let i = 0; i < count; i++) {
-                const flake = document.createElement('span');
-                flake.className = 'snowflake' + (Math.random() > 0.68 ? ' soft' : '');
-                flake.style.setProperty('--snow-left', `${Math.random() * 100}%`);
-                flake.style.setProperty('--snow-size', `${(1.4 + Math.random() * 2.8).toFixed(1)}px`);
-                flake.style.setProperty('--snow-opacity', `${(0.30 + Math.random() * 0.55).toFixed(2)}`);
-                flake.style.setProperty('--snow-duration', `${(6 + Math.random() * 9).toFixed(1)}s`);
-                flake.style.setProperty('--snow-delay', `${(-Math.random() * 12).toFixed(1)}s`);
-                flake.style.setProperty('--snow-drift', `${(-24 + Math.random() * 48).toFixed(1)}px`);
-                snowfallLayer.appendChild(flake);
-            }
-        }
-
-        function scheduleSnowfallRefresh() {
-            clearTimeout(snowRefreshTimer);
-            snowRefreshTimer = setTimeout(refreshSnowfall, 120);
         }
 
         function renderOrUpdateMessage(msg, isNew = false) {
@@ -1194,13 +1299,11 @@
                 allSessionMessages[existingIndex] = msg;
                 const existingElem = document.getElementById(`msg-${msg.id}`);
                 if (existingElem) existingElem.outerHTML = buildMessageHTML(msg);
-                scheduleSnowfallRefresh();
                 return;
             }
 
             allSessionMessages.push(msg);
             chatMessages.insertAdjacentHTML('beforeend', buildMessageHTML(msg));
-            scheduleSnowfallRefresh();
 
             if (isNew) {
                 const distanceFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight;
@@ -1255,7 +1358,7 @@
             const cleanReplyEmail = escapeHTML(msg.reply_to_email ? msg.reply_to_email.split('@')[0] : 'User');
 
             return `
-                <div id="msg-${msg.id}" class="message-bubble flex items-start gap-2.5 my-2.5 ${isSelf ? 'flex-row-reverse' : 'flex-row'} group">
+                <div id="msg-${msg.id}" class="message-bubble christmas-message flex items-start gap-2.5 my-2.5 ${isSelf ? 'flex-row-reverse' : 'flex-row'} group">
                     <div class="w-8 h-8 rounded-full ${isSelf ? 'bg-cyan-500 text-gray-950 font-bold' : 'bg-slate-800 text-gray-200 font-bold'} flex items-center justify-center text-xs shrink-0 shadow-md border border-white/10 mt-1">
                         ${initial}
                     </div>
@@ -1267,7 +1370,7 @@
                             <span class="text-[10px] text-gray-500">${timeStr}</span>
                         </div>
 
-                        <div class="${isSelf ? 'bg-gradient-to-tr from-cyan-600 to-blue-600 text-white rounded-2xl rounded-tr-none' : 'glass text-gray-100 rounded-2xl rounded-tl-none'} p-3.5 shadow-xl relative border border-white/10">
+                        <div class="christmas-bubble ${isSelf ? 'bg-gradient-to-tr from-cyan-600 to-blue-600 text-white rounded-2xl rounded-tr-none' : 'glass text-gray-100 rounded-2xl rounded-tl-none'} p-3.5 shadow-xl relative">
                             ${msg.reply_to_content ? `
                                 <div onclick="scrollToMessage('${msg.reply_to_id}')" class="cursor-pointer text-xs bg-black/20 p-2 rounded-xl mb-2 border-l-2 border-cyan-400 hover:bg-black/30 transition">
                                     <span class="font-bold text-cyan-300 block">${cleanReplyEmail}</span>
@@ -1275,7 +1378,7 @@
                                 </div>
                             ` : ''}
 
-                            <p class="whitespace-pre-wrap text-sm leading-relaxed">${cleanContent}</p>
+                            <p class="whitespace-pre-wrap text-sm leading-relaxed ${isSelf ? 'christmas-self-text' : 'christmas-text'}">${cleanContent}</p>
 
                             ${msg.file_url ? `
                                 <div class="mt-2">
