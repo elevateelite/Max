@@ -74,6 +74,123 @@
             50% { box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.6); }
         }
 
+
+        /* Christmas message customization */
+        .christmas-message {
+            position: relative;
+            isolation: isolate;
+            overflow: visible;
+        }
+
+        .christmas-message::before {
+            content: "";
+            position: absolute;
+            inset: -2px;
+            border-radius: 18px;
+            background: conic-gradient(from 0deg, #22d3ee, #a855f7, #f43f5e, #f59e0b, #22c55e, #22d3ee);
+            z-index: -2;
+            animation: christmasBorder 6s linear infinite;
+            opacity: .95;
+        }
+
+        .christmas-message::after {
+            content: "✦";
+            position: absolute;
+            right: -7px;
+            top: -10px;
+            color: #facc15;
+            font-size: 13px;
+            text-shadow: 0 0 8px rgba(250,204,21,.8);
+            animation: christmasTwinkle 1.8s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .christmas-bubble {
+            position: relative;
+            border: 0 !important;
+            background-clip: padding-box !important;
+            box-shadow: 0 8px 28px rgba(0,0,0,.28), 0 0 18px rgba(34,211,238,.08);
+        }
+
+        .christmas-bubble::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            padding: 1.5px;
+            border-radius: inherit;
+            background: linear-gradient(135deg, #22d3ee, #a855f7 30%, #f43f5e 55%, #f59e0b 76%, #22c55e);
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            animation: christmasEdge 5s ease-in-out infinite alternate;
+        }
+
+        .christmas-bubble::after {
+            content: "";
+            position: absolute;
+            left: 10%;
+            right: 10%;
+            bottom: -3px;
+            height: 3px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, transparent, #22d3ee, #f43f5e, #facc15, #22c55e, transparent);
+            filter: blur(1px);
+            opacity: .9;
+            pointer-events: none;
+            animation: christmasGlow 3s ease-in-out infinite;
+        }
+
+        .christmas-text {
+            background: linear-gradient(90deg, #f8fafc, #67e8f9, #f0abfc, #fde68a, #86efac, #f8fafc);
+            background-size: 250% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: christmasText 7s linear infinite;
+            text-shadow: 0 0 10px rgba(255,255,255,.05);
+        }
+
+        .christmas-self-text {
+            background: linear-gradient(90deg, #ffffff, #bae6fd, #fef3c7, #dcfce7, #ffffff);
+            background-size: 220% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: christmasText 6s linear infinite;
+        }
+
+        @keyframes christmasBorder {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes christmasEdge {
+            0% { filter: hue-rotate(0deg); opacity: .72; }
+            100% { filter: hue-rotate(45deg); opacity: 1; }
+        }
+
+        @keyframes christmasGlow {
+            0%, 100% { transform: scaleX(.82); opacity: .45; }
+            50% { transform: scaleX(1); opacity: 1; }
+        }
+
+        @keyframes christmasText {
+            from { background-position: 0% 50%; }
+            to { background-position: 250% 50%; }
+        }
+
+        @keyframes christmasTwinkle {
+            0%, 100% { transform: scale(.7) rotate(0deg); opacity: .35; }
+            50% { transform: scale(1.25) rotate(18deg); opacity: 1; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .christmas-message::before, .christmas-message::after,
+            .christmas-bubble::before, .christmas-bubble::after,
+            .christmas-text, .christmas-self-text { animation: none; }
+        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -1149,7 +1266,7 @@
             const cleanReplyEmail = escapeHTML(msg.reply_to_email ? msg.reply_to_email.split('@')[0] : 'User');
 
             return `
-                <div id="msg-${msg.id}" class="message-bubble flex items-start gap-2.5 my-2.5 ${isSelf ? 'flex-row-reverse' : 'flex-row'} group">
+                <div id="msg-${msg.id}" class="message-bubble christmas-message flex items-start gap-2.5 my-2.5 ${isSelf ? 'flex-row-reverse' : 'flex-row'} group">
                     <div class="w-8 h-8 rounded-full ${isSelf ? 'bg-cyan-500 text-gray-950 font-bold' : 'bg-slate-800 text-gray-200 font-bold'} flex items-center justify-center text-xs shrink-0 shadow-md border border-white/10 mt-1">
                         ${initial}
                     </div>
@@ -1161,7 +1278,7 @@
                             <span class="text-[10px] text-gray-500">${timeStr}</span>
                         </div>
 
-                        <div class="${isSelf ? 'bg-gradient-to-tr from-cyan-600 to-blue-600 text-white rounded-2xl rounded-tr-none' : 'glass text-gray-100 rounded-2xl rounded-tl-none'} p-3.5 shadow-xl relative border border-white/10">
+                        <div class="christmas-bubble ${isSelf ? 'bg-gradient-to-tr from-cyan-600 to-blue-600 text-white rounded-2xl rounded-tr-none' : 'glass text-gray-100 rounded-2xl rounded-tl-none'} p-3.5 shadow-xl relative">
                             ${msg.reply_to_content ? `
                                 <div onclick="scrollToMessage('${msg.reply_to_id}')" class="cursor-pointer text-xs bg-black/20 p-2 rounded-xl mb-2 border-l-2 border-cyan-400 hover:bg-black/30 transition">
                                     <span class="font-bold text-cyan-300 block">${cleanReplyEmail}</span>
@@ -1169,7 +1286,7 @@
                                 </div>
                             ` : ''}
 
-                            <p class="whitespace-pre-wrap text-sm leading-relaxed">${cleanContent}</p>
+                            <p class="whitespace-pre-wrap text-sm leading-relaxed ${isSelf ? 'christmas-self-text' : 'christmas-text'}">${cleanContent}</p>
 
                             ${msg.file_url ? `
                                 <div class="mt-2">
