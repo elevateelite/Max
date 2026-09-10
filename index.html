@@ -35,7 +35,6 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Glassmorphism Refinements */
         .glass {
             background: rgba(18, 30, 39, 0.55);
             backdrop-filter: blur(16px);
@@ -74,7 +73,6 @@
             50% { box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.6); }
         }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
@@ -83,7 +81,6 @@
 </head>
 <body class="flex items-center justify-center p-2 sm:p-4 relative selection:bg-cyan-500 selection:text-black">
 
-    <!-- Ambient Lighting Background Gradients -->
     <div class="absolute -top-32 -left-32 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -189,7 +186,6 @@
                 <span id="typing-text">Someone is typing...</span>
             </div>
 
-            <!-- Scroll to Bottom Floating Button -->
             <button id="scroll-bottom-btn" type="button" 
                 class="hidden absolute bottom-20 right-6 z-30 bg-cyan-500 hover:bg-cyan-400 text-gray-950 p-3 rounded-full shadow-2xl border border-white/20 transition-all duration-300 hover:scale-110 flex items-center justify-center w-11 h-11 active:scale-95">
                 <i class="fa-solid fa-arrow-down text-base"></i>
@@ -332,7 +328,6 @@
         const SUPABASE_URL = 'https://uavklixceheysspmgilk.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_Y9vPgA1CYXcFgk2SVqMXRg_M-jLuk_8';
 
-        // Updated authentication config to ensure persistent sessions across refreshes/reopens
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
                 persistSession: true,
@@ -433,19 +428,17 @@
         const savePdfModalBtn = document.getElementById('save-pdf-modal-btn');
         const pdfFrame = document.getElementById('pdf-frame');
 
-        function scrollToBottom(force = false) {
+        function scrollToBottom() {
             const doScroll = () => {
                 if (chatMessages) {
                     chatMessages.scrollTop = chatMessages.scrollHeight;
                 }
             };
-
             doScroll();
             requestAnimationFrame(() => {
                 doScroll();
                 setTimeout(doScroll, 50);
                 setTimeout(doScroll, 150);
-                setTimeout(doScroll, 400);
             });
         }
 
@@ -460,7 +453,6 @@
         if (chatMessages && scrollBottomBtn) {
             chatMessages.addEventListener('scroll', () => {
                 const distanceFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight;
-                
                 if (distanceFromBottom > 150) {
                     scrollBottomBtn.classList.remove('hidden');
                 } else {
@@ -918,17 +910,18 @@
             loadTranscriptArchive();
             resetChatInactivityTimer();
 
-            scrollToBottom(true);
+            scrollToBottom();
         }
 
+        // TELEGRAM-STYLE FULL HISTORY LOADER
         async function loadMessages() {
-            chatMessages.innerHTML = '<div class="text-center text-gray-400 py-8"><i class="fa-solid fa-spinner fa-spin text-2xl text-cyan-400"></i><p class="mt-2 text-xs">Loading room history...</p></div>';
+            chatMessages.innerHTML = '<div class="text-center text-gray-400 py-8"><i class="fa-solid fa-spinner fa-spin text-2xl text-cyan-400"></i><p class="mt-2 text-xs">Loading complete room history...</p></div>';
 
             const { data, error } = await supabase
                 .from('messages')
                 .select('*')
                 .order('created_at', { ascending: true })
-                .limit(300);
+                .limit(1000); // Increased limit to ensure full history is fetched
 
             if (error) {
                 chatMessages.innerHTML = `<p class="text-center text-red-400 text-xs py-4">Error loading history: ${escapeHTML(error.message)}</p>`;
@@ -941,7 +934,7 @@
             if (data && data.length > 0) {
                 data.forEach(msg => renderOrUpdateMessage(msg, false));
                 calculateSellerSpeeds();
-                scrollToBottom(true);
+                scrollToBottom();
             } else {
                 chatMessages.innerHTML = `<div class="text-center text-gray-500 italic text-xs py-10">No messages in room yet. Start the conversation!</div>`;
             }
@@ -951,7 +944,7 @@
             const emptyPlaceholder = chatMessages.querySelector('.italic');
             if (emptyPlaceholder) emptyPlaceholder.remove();
 
-            // Check if message already exists in array to prevent state loss/disappearing
+            // Prevent duplication and state corruption
             const existingIndex = allSessionMessages.findIndex(m => m.id === msg.id);
             if (existingIndex !== -1) {
                 allSessionMessages[existingIndex] = msg;
@@ -976,7 +969,7 @@
                         scrollBottomBtn.classList.remove('hidden');
                     }
                 } else {
-                    scrollToBottom(true);
+                    scrollToBottom();
                 }
             }
         }
