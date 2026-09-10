@@ -83,7 +83,7 @@
 </head>
 <body class="flex items-center justify-center p-2 sm:p-4 relative selection:bg-cyan-500 selection:text-black">
 
-    <!-- Ambient Ambient Lighting Background Gradients -->
+    <!-- Ambient Lighting Background Gradients -->
     <div class="absolute -top-32 -left-32 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -332,18 +332,65 @@
         const SUPABASE_URL = 'https://uavklixceheysspmgilk.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_Y9vPgA1CYXcFgk2SVqMXRg_M-jLuk_8';
 
+        /*
+         * ==============================================================
+         * NEXUS CHAT HISTORY / RLS REQUIREMENT
+         * ==============================================================
+         * IMPORTANT: The browser cannot bypass Supabase Row Level Security.
+         * To make the room history GLOBAL (Telegram-style), run this SQL
+         * ONCE in Supabase Dashboard -> SQL Editor:
+         *
+         * DROP POLICY IF EXISTS "Allow authenticated users to insert messages" ON public.messages;
+         * DROP POLICY IF EXISTS "Allow authenticated users to read messages" ON public.messages;
+         * DROP POLICY IF EXISTS "Users can view their own messages" ON public.messages;
+         * DROP POLICY IF EXISTS "Users can read messages" ON public.messages;
+         *
+         * CREATE POLICY "Allow authenticated users to read messages"
+         * ON public.messages FOR SELECT TO authenticated USING (true);
+         *
+         * CREATE POLICY "Allow authenticated users to insert messages"
+         * ON public.messages FOR INSERT TO authenticated
+         * WITH CHECK (auth.uid() = user_id);
+         *
+         * -- Optional: allow a sender to edit only their own messages.
+         * CREATE POLICY "Users can update their own messages"
+         * ON public.messages FOR UPDATE TO authenticated
+         * USING (auth.uid() = user_id)
+         * WITH CHECK (auth.uid() = user_id);
+         *
+         * This does NOT delete existing messages. If the messages still exist
+         * in public.messages, every authenticated room member can see them.
+         *
+         * ==============================================================
+         */
+
+        // Updated authentication config to ensure persistent sessions across refreshes/reopens
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
                 persistSession: true,
                 autoRefreshToken: true,
                 detectSessionInUrl: true,
+                flowType: 'pkce',
                 storageKey: 'nexus-market-auth-token',
                 storage: window.localStorage
             }
         });
 
         let currentUser = null;
-        let userRole = localStorage.getItem('nexus_user_role') || null;
+        let userRole = null;
+
+        function roleStorageKey(userId) {
+            return userId ? `nexus_user_role_${userId}` : 'nexus_user_role';
+        }
+
+        function getStoredRole(userId) {
+            return userId ? localStorage.getItem(roleStorageKey(userId)) : null;
+        }
+
+        function storeUserRole(userId, role) {
+            if (!userId) return;
+            localStorage.setItem(roleStorageKey(userId), role);
+        }
         let selectedFile = null;
         let allSessionMessages = []; 
         let replyingToMessage = null;
@@ -844,31 +891,60 @@
             }
         }
 
-        async function init() {
-            const { data: { session } } = await supabase.auth.getSession();
-            currentUser = session?.user || null;
+        let roomSetupPromise = null;
+        let lastInitializedUserId = null;
 
-            if (currentUser) {
-                userDisplay.textContent = currentUser.email;
-                if (!userRole) {
-                    showScreen('role');
-                } else {
-                    setupChatRoom();
-                }
-            } else {
+        async function init() {
+            const { data: { session }, error } = await supabase.auth.getSession();
+
+            if (error) {
+                console.error('Session restore error:', error);
                 showScreen('login');
+            } else {
+                await handleAuthenticatedSession(session);
             }
 
-            supabase.auth.onAuthStateChange((event, session) => {
-                currentUser = session?.user || null;
-                if (currentUser) {
-                    userDisplay.textContent = currentUser.email;
-                    if (!userRole) showScreen('role');
-                    else setupChatRoom();
-                } else {
+            supabase.auth.onAuthStateChange(async (event, session) => {
+                console.log('Auth event:', event);
+
+                if (event === 'SIGNED_OUT') {
+                    currentUser = null;
+                    userRole = null;
+                    lastInitializedUserId = null;
+                    roomSetupPromise = null;
                     showScreen('login');
+                    return;
+                }
+
+                if (session?.user) {
+                    await handleAuthenticatedSession(session);
                 }
             });
+        }
+
+        async function handleAuthenticatedSession(session) {
+            if (!session?.user) {
+                showScreen('login');
+                return;
+            }
+
+            currentUser = session.user;
+            userRole = getStoredRole(currentUser.id);
+            userDisplay.textContent = currentUser.email || 'User';
+
+            if (!userRole) {
+                showScreen('role');
+                return;
+            }
+
+            if (lastInitializedUserId === currentUser.id && roomSetupPromise) {
+                await roomSetupPromise;
+                return;
+            }
+
+            lastInitializedUserId = currentUser.id;
+            roomSetupPromise = setupChatRoom();
+            await roomSetupPromise;
         }
 
         function showScreen(screen) {
@@ -882,63 +958,115 @@
         }
 
         googleLoginBtn.addEventListener('click', async () => {
-            await supabase.auth.signInWithOAuth({
+            googleLoginBtn.disabled = true;
+            googleLoginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-gray-700"></i> Connecting...';
+
+            const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: window.location.href }
+                options: {
+                    redirectTo: window.location.href,
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'select_account'
+                    }
+                }
             });
+
+            if (error) {
+                console.error('Google authentication error:', error);
+                alert('Google sign-in failed: ' + error.message);
+                googleLoginBtn.disabled = false;
+                googleLoginBtn.innerHTML = '<i class="fa-brands fa-google text-red-500 text-lg"></i> Continue with Google';
+            }
         });
 
         selectSellerBtn.addEventListener('click', () => setRole('Seller'));
         selectBuyerBtn.addEventListener('click', () => setRole('Buyer'));
 
-        function setRole(role) {
+        async function setRole(role) {
+            if (!currentUser) {
+                showScreen('login');
+                return;
+            }
+
             userRole = role;
-            localStorage.setItem('nexus_user_role', role);
-            setupChatRoom();
+            storeUserRole(currentUser.id, role);
+
+            lastInitializedUserId = currentUser.id;
+            roomSetupPromise = setupChatRoom();
+            await roomSetupPromise;
         }
 
         logoutBtn.addEventListener('click', async () => {
-            localStorage.removeItem('nexus_user_role');
-            userRole = null;
-            await supabase.auth.signOut();
-            window.location.reload();
+            // Explicit logout only. Signing in/signing up never calls signOut().
+            // Keep the user's role so the same account can return directly to the room.
+            try {
+                if (roomChannel) {
+                    await supabase.removeChannel(roomChannel);
+                    roomChannel = null;
+                }
+                await supabase.auth.signOut();
+            } catch (err) {
+                console.error('Logout error:', err);
+            }
         });
 
         async function setupChatRoom() {
-            showScreen('chat');
+            if (!currentUser || !userRole) {
+                showScreen(currentUser ? 'role' : 'login');
+                return;
+            }
 
+            showScreen('chat');
             await new Promise(resolve => setTimeout(resolve, 50));
 
             userRoleBadge.textContent = userRole;
             userRoleBadge.className = `text-[11px] font-bold px-2.5 py-0.5 rounded-full ${userRole === 'Seller' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}`;
-            
+
             await loadMessages();
             setupRealtimeChannel();
             loadTranscriptArchive();
             resetChatInactivityTimer();
-
             scrollToBottom(true);
         }
 
         async function loadMessages() {
-            chatMessages.innerHTML = '<div class="text-center text-gray-400 py-8"><i class="fa-solid fa-spinner fa-spin text-2xl text-cyan-400"></i><p class="mt-2 text-xs">Loading room history...</p></div>';
+            chatMessages.innerHTML = '<div class="text-center text-gray-400 py-8"><i class="fa-solid fa-spinner fa-spin text-2xl text-cyan-400"></i><p class="mt-2 text-xs">Loading complete room history...</p></div>';
 
-            const { data, error } = await supabase
-                .from('messages')
-                .select('*')
-                .order('created_at', { ascending: true })
-                .limit(300);
+            // Read the entire room in pages instead of only the newest 300 messages.
+            const PAGE_SIZE = 1000;
+            let allMessages = [];
+            let from = 0;
 
-            if (error) {
-                chatMessages.innerHTML = `<p class="text-center text-red-400 text-xs py-4">Error loading history: ${escapeHTML(error.message)}</p>`;
-                return;
+            while (true) {
+                const { data, error } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .order('created_at', { ascending: true })
+                    .order('id', { ascending: true })
+                    .range(from, from + PAGE_SIZE - 1);
+
+                if (error) {
+                    console.error('History load error:', error);
+                    chatMessages.innerHTML = `
+                        <div class="text-center text-red-300 text-xs py-8 px-4">
+                            <p class="font-bold mb-2">Unable to read room history.</p>
+                            <p class="text-gray-400">${escapeHTML(error.message)}</p>
+                            <p class="text-amber-300 mt-3">Run the global SELECT policy shown near the Supabase configuration in this file.</p>
+                        </div>`;
+                    return;
+                }
+
+                if (data?.length) allMessages.push(...data);
+                if (!data || data.length < PAGE_SIZE) break;
+                from += PAGE_SIZE;
             }
 
             chatMessages.innerHTML = '';
             allSessionMessages = [];
-            
-            if (data && data.length > 0) {
-                data.forEach(msg => renderOrUpdateMessage(msg, false));
+
+            if (allMessages.length > 0) {
+                allMessages.forEach(msg => renderOrUpdateMessage(msg, false));
                 calculateSellerSpeeds();
                 scrollToBottom(true);
             } else {
@@ -950,6 +1078,7 @@
             const emptyPlaceholder = chatMessages.querySelector('.italic');
             if (emptyPlaceholder) emptyPlaceholder.remove();
 
+            // Check if message already exists in array to prevent state loss/disappearing
             const existingIndex = allSessionMessages.findIndex(m => m.id === msg.id);
             if (existingIndex !== -1) {
                 allSessionMessages[existingIndex] = msg;
@@ -1015,7 +1144,6 @@
 
             return `
                 <div id="msg-${msg.id}" class="message-bubble flex items-start gap-2.5 my-2.5 ${isSelf ? 'flex-row-reverse' : 'flex-row'} group">
-                    <!-- User Avatar Circle -->
                     <div class="w-8 h-8 rounded-full ${isSelf ? 'bg-cyan-500 text-gray-950 font-bold' : 'bg-slate-800 text-gray-200 font-bold'} flex items-center justify-center text-xs shrink-0 shadow-md border border-white/10 mt-1">
                         ${initial}
                     </div>
@@ -1055,14 +1183,12 @@
                             
                             ${reactionsHTML}
 
-                            <!-- Message Action Toolbar -->
                             <div class="opacity-0 group-hover:opacity-100 transition duration-200 absolute ${isSelf ? '-left-20' : '-right-20'} top-2 flex items-center gap-1 bg-slate-900/90 border border-white/15 p-1 rounded-xl backdrop-blur-md z-20 shadow-lg">
                                 <button onclick="toggleReactionPicker('${msg.id}')" class="p-1 hover:text-yellow-400 text-gray-300 text-xs" title="React"><i class="fa-regular fa-face-smile"></i></button>
                                 <button onclick="setReplyMessage('${msg.id}', '${escapeHTML(msg.user_email)}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-cyan-400 text-gray-300 text-xs" title="Reply"><i class="fa-solid fa-reply"></i></button>
                                 ${isSelf ? `<button onclick="startEditMessage('${msg.id}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-amber-400 text-gray-300 text-xs" title="Edit"><i class="fa-solid fa-pen"></i></button>` : ''}
                             </div>
 
-                            <!-- Reaction Selector -->
                             <div id="reaction-picker-${msg.id}" class="hidden absolute ${isSelf ? 'right-0' : 'left-0'} -top-10 bg-slate-900/95 border border-white/20 p-1.5 rounded-full flex gap-1 shadow-2xl z-30 backdrop-blur-md">
                                 ${REACTION_PRESETS.map(e => `<button onclick="toggleReaction('${msg.id}', '${e}'); toggleReactionPicker('${msg.id}')" class="hover:scale-125 transition text-base px-1">${e}</button>`).join('')}
                             </div>
