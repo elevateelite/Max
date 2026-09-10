@@ -364,7 +364,8 @@
          * ==============================================================
          */
 
-        // Updated authentication config to ensure persistent sessions across refreshes/reopens
+        // Persistent authentication: the app does not intentionally refresh or reload the page.
+        // IMPORTANT: Never use window.location.reload() for normal app operation.
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
                 persistSession: true,
