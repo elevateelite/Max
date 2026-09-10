@@ -94,7 +94,7 @@
                 <i class="fa-solid fa-store text-3xl text-gray-950"></i>
             </div>
             <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-gray-100 to-cyan-300 bg-clip-text text-transparent">NEXUS MARKET</h1>
-            <p class="text-gray-400 text-sm mt-2">Instant high-speed buyer & seller trading room.</p>
+            <p class="text-gray-400 text-sm mt-2">Instant high-speed buyer & tipster trading room.</p>
         </div>
         <button id="google-login-btn" class="w-full bg-white hover:bg-gray-100 text-gray-900 font-bold py-3.5 px-4 rounded-xl transition duration-200 flex items-center justify-center gap-3 active:scale-95 shadow-lg shadow-white/10">
             <i class="fa-brands fa-google text-red-500 text-lg"></i> Continue with Google
@@ -107,13 +107,13 @@
         <p class="text-gray-400 text-sm mb-6">Choose your trading role in this live room:</p>
 
         <div class="space-y-4">
-            <button id="select-seller-btn" class="w-full p-4 border border-cyan-500/30 rounded-2xl bg-cyan-950/30 hover:bg-cyan-900/40 hover:border-cyan-400 transition flex items-center justify-between text-left group active:scale-98">
+            <button id="select-tipster-btn" class="w-full p-4 border border-cyan-500/30 rounded-2xl bg-cyan-950/30 hover:bg-cyan-900/40 hover:border-cyan-400 transition flex items-center justify-between text-left group active:scale-98">
                 <div class="flex items-center gap-3.5">
                     <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg font-bold group-hover:scale-110 transition">
                         <i class="fa-solid fa-user-tag"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-cyan-300 text-base">Seller</h3>
+                        <h3 class="font-bold text-cyan-300 text-base">Tipster</h3>
                         <p class="text-xs text-gray-400">Respond to requests & track response speed</p>
                     </div>
                 </div>
@@ -264,11 +264,11 @@
 
             <div>
                 <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-[11px] font-bold uppercase tracking-wider text-cyan-400">Seller Speed Tracker</h3>
-                    <span id="seller-count" class="bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[10px] px-2 py-0.5 rounded-full font-bold">0 Active</span>
+                    <h3 class="text-[11px] font-bold uppercase tracking-wider text-cyan-400">Tipster Speed Tracker</h3>
+                    <span id="tipster-count" class="bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[10px] px-2 py-0.5 rounded-full font-bold">0 Active</span>
                 </div>
-                <div id="seller-speed-list" class="space-y-2 max-h-36 overflow-y-auto pr-1">
-                    <div class="text-xs text-gray-500 italic text-center py-2">No seller responses recorded yet</div>
+                <div id="tipster-speed-list" class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                    <div class="text-xs text-gray-500 italic text-center py-2">No tipster responses recorded yet</div>
                 </div>
             </div>
 
@@ -431,7 +431,7 @@
         const chatScreen = document.getElementById('chat-screen');
         const googleLoginBtn = document.getElementById('google-login-btn');
         const logoutBtn = document.getElementById('logout-btn');
-        const selectSellerBtn = document.getElementById('select-seller-btn');
+        const selectTipsterBtn = document.getElementById('select-tipster-btn');
         const selectBuyerBtn = document.getElementById('select-buyer-btn');
         const userRoleBadge = document.getElementById('user-role-badge');
         const chatMessages = document.getElementById('chat-messages');
@@ -450,8 +450,8 @@
         const onlineCount = document.getElementById('online-count');
         const toggleSidebarBtn = document.getElementById('toggle-sidebar-btn');
         const sidebarPanel = document.getElementById('sidebar-panel');
-        const sellerSpeedList = document.getElementById('seller-speed-list');
-        const sellerCount = document.getElementById('seller-count');
+        const tipsterSpeedList = document.getElementById('tipster-speed-list');
+        const tipsterCount = document.getElementById('tipster-count');
         const pdfBanner = document.getElementById('pdf-banner');
         const downloadPdfBtn = document.getElementById('download-pdf-btn');
         const manualExportBtn = document.getElementById('manual-export-btn');
@@ -931,6 +931,10 @@
 
             currentUser = session.user;
             userRole = getStoredRole(currentUser.id);
+            if (userRole === 'Seller') {
+                userRole = 'Tipster';
+                storeUserRole(currentUser.id, userRole);
+            }
             userDisplay.textContent = currentUser.email || 'User';
 
             if (!userRole) {
@@ -981,7 +985,7 @@
             }
         });
 
-        selectSellerBtn.addEventListener('click', () => setRole('Seller'));
+        selectTipsterBtn.addEventListener('click', () => setRole('Tipster'));
         selectBuyerBtn.addEventListener('click', () => setRole('Buyer'));
 
         async function setRole(role) {
@@ -1022,7 +1026,7 @@
             await new Promise(resolve => setTimeout(resolve, 50));
 
             userRoleBadge.textContent = userRole;
-            userRoleBadge.className = `text-[11px] font-bold px-2.5 py-0.5 rounded-full ${userRole === 'Seller' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}`;
+            userRoleBadge.className = `text-[11px] font-bold px-2.5 py-0.5 rounded-full ${userRole === 'Tipster' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}`;
 
             await loadMessages();
             setupRealtimeChannel();
@@ -1068,7 +1072,7 @@
 
             if (allMessages.length > 0) {
                 allMessages.forEach(msg => renderOrUpdateMessage(msg, false));
-                calculateSellerSpeeds();
+                calculateTipsterSpeeds();
                 scrollToBottom(true);
             } else {
                 chatMessages.innerHTML = `<div class="text-center text-gray-500 italic text-xs py-10">No messages in room yet. Start the conversation!</div>`;
@@ -1076,6 +1080,7 @@
         }
 
         function renderOrUpdateMessage(msg, isNew = false) {
+            if (msg && msg.user_role === 'Seller') msg = { ...msg, user_role: 'Tipster' };
             const emptyPlaceholder = chatMessages.querySelector('.italic');
             if (emptyPlaceholder) emptyPlaceholder.remove();
 
@@ -1113,9 +1118,9 @@
             const isSelf = currentUser && currentUser.email === msg.user_email;
             const senderName = msg.user_email ? msg.user_email.split('@')[0] : 'User';
             const initial = senderName.charAt(0).toUpperCase();
-            const role = msg.user_role || 'Member';
+            const role = (msg.user_role === 'Seller' ? 'Tipster' : (msg.user_role || 'Member'));
             
-            const isSeller = role === 'Seller';
+            const isSeller = role === 'Tipster';
             const roleBadgeClass = isSeller 
                 ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30' 
                 : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30';
@@ -1234,7 +1239,7 @@
             const newMsg = {
                 user_id: currentUser.id,
                 user_email: currentUser.email,
-                user_role: userRole,
+                user_role: userRole === 'Seller' ? 'Tipster' : userRole,
                 content: content,
                 file_url: file_url,
                 reactions: {},
@@ -1259,47 +1264,47 @@
             }
         });
 
-        function calculateSellerSpeeds() {
+        function calculateTipsterSpeeds() {
             let lastBuyerMsgTime = null;
-            const sellerStats = {};
+            const tipsterStats = {};
 
             allSessionMessages.forEach(msg => {
                 const msgTime = new Date(msg.created_at).getTime();
                 if (msg.user_role === 'Buyer') {
                     lastBuyerMsgTime = msgTime;
-                } else if (msg.user_role === 'Seller' && lastBuyerMsgTime) {
+                } else if (msg.user_role === 'Tipster' && lastBuyerMsgTime) {
                     const responseSec = Math.round((msgTime - lastBuyerMsgTime) / 1000);
                     if (responseSec >= 0 && responseSec < 3600) {
-                        const seller = msg.user_email.split('@')[0];
-                        if (!sellerStats[seller]) sellerStats[seller] = [];
-                        sellerStats[seller].push(responseSec);
+                        const tipster = msg.user_email.split('@')[0];
+                        if (!tipsterStats[tipster]) tipsterStats[tipster] = [];
+                        tipsterStats[tipster].push(responseSec);
                     }
                     lastBuyerMsgTime = null;
                 }
             });
 
-            const sellers = Object.keys(sellerStats);
-            if (sellers.length === 0) {
-                sellerSpeedList.innerHTML = `<div class="text-xs text-gray-500 italic text-center py-2">No seller responses recorded yet</div>`;
-                sellerCount.textContent = '0 Active';
+            const tipsters = Object.keys(tipsterStats);
+            if (tipsters.length === 0) {
+                tipsterSpeedList.innerHTML = `<div class="text-xs text-gray-500 italic text-center py-2">No tipster responses recorded yet</div>`;
+                tipsterCount.textContent = '0 Active';
                 return;
             }
 
-            sellerCount.textContent = `${sellers.length} Active`;
+            tipsterCount.textContent = `${tipsters.length} Active`;
             let listHtml = '';
-            sellers.forEach(seller => {
-                const times = sellerStats[seller];
+            tipsters.forEach(tipster => {
+                const times = tipsterStats[tipster];
                 const avgSec = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
                 listHtml += `
                     <div class="glass-card rounded-xl p-2 flex items-center justify-between text-xs">
-                        <span class="font-bold text-cyan-300 truncate">${escapeHTML(seller)}</span>
+                        <span class="font-bold text-cyan-300 truncate">${escapeHTML(tipster)}</span>
                         <span class="bg-cyan-500/10 border border-cyan-500/30 text-cyan-200 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold">
                             ⚡ Avg: ${avgSec}s
                         </span>
                     </div>
                 `;
             });
-            sellerSpeedList.innerHTML = listHtml;
+            tipsterSpeedList.innerHTML = listHtml;
         }
 
         function setupRealtimeChannel() {
@@ -1312,11 +1317,11 @@
             roomChannel
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
                     renderOrUpdateMessage(payload.new, true);
-                    calculateSellerSpeeds();
+                    calculateTipsterSpeeds();
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, payload => {
                     renderOrUpdateMessage(payload.new, false);
-                    calculateSellerSpeeds();
+                    calculateTipsterSpeeds();
                 })
                 .on('broadcast', { event: 'typing' }, payload => {
                     if (payload.payload.isTyping) {
@@ -1361,7 +1366,7 @@
                         <span class="w-2 h-2 rounded-full bg-emerald-400 ring-4 ring-emerald-400/20"></span>
                         <span class="truncate font-medium text-gray-200">${u.email ? escapeHTML(u.email.split('@')[0]) : 'User'}</span>
                     </div>
-                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded border ${u.role === 'Seller' ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'}">${escapeHTML(u.role || 'Member')}</span>
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded border ${u.role === 'Tipster' ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'}">${escapeHTML(u.role || 'Member')}</span>
                 </div>
             `).join('');
         }
