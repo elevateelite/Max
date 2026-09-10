@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -80,24 +80,20 @@
             position: relative;
             isolation: isolate;
             overflow: visible;
-            z-index: 1;
         }
 
-        /* Soft Christmas snowfall: decorative background only, never over the text. */
-        #christmas-snow {
+        /* Floating Snow Animation replacing rolling object */
+        .christmas-message::before {
+            content: "❄";
             position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
+            left: -12px;
+            top: -10px;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 14px;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 0 0 12px rgba(34, 211, 238, 0.6);
+            z-index: 5;
+            animation: snowfall 3s ease-in-out infinite alternate;
             pointer-events: none;
-            opacity: .62;
-        }
-
-        #chat-screen > .flex-1,
-        #chat-screen > aside {
-            position: relative;
-            z-index: 1;
         }
 
         .christmas-message::after {
@@ -111,6 +107,11 @@
             animation: christmasTwinkle 1.8s ease-in-out infinite;
             pointer-events: none;
             z-index: 5;
+        }
+
+        @keyframes snowfall {
+            0% { transform: translateY(0) rotate(0deg) scale(0.8); opacity: 0.5; }
+            100% { transform: translateY(8px) rotate(25deg) scale(1.2); opacity: 1; }
         }
 
         .christmas-bubble {
@@ -189,7 +190,7 @@
         }
 
         @media (prefers-reduced-motion: reduce) {
-            .christmas-message::after,
+            .christmas-message::before, .christmas-message::after,
             .christmas-bubble::before, .christmas-bubble::after,
             .christmas-text, .christmas-self-text { animation: none; }
         }
@@ -257,7 +258,6 @@
 
     <!-- Chat Screen -->
     <div id="chat-screen" class="hidden glass rounded-3xl w-full max-w-6xl h-[98dvh] md:h-[92vh] flex flex-col md:flex-row shadow-2xl overflow-hidden relative border border-white/10 z-10">
-        <canvas id="christmas-snow" aria-hidden="true"></canvas>
         <div class="flex-1 flex flex-col h-full border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden">
 
             <div id="pdf-banner" class="hidden bg-amber-500/20 border-b border-amber-500/30 p-3 text-xs flex flex-wrap items-center justify-between gap-2 backdrop-blur-md z-10 animate-fade-in">
@@ -1016,95 +1016,7 @@
         let roomSetupPromise = null;
         let lastInitializedUserId = null;
 
-        // =========================================================
-        // CHRISTMAS SNOW BACKGROUND
-        // Small, lightweight flakes stay behind every message.
-        // Density changes gently with the amount of visible chat content.
-        // =========================================================
-        const christmasSnow = document.getElementById('christmas-snow');
-        const snowCtx = christmasSnow ? christmasSnow.getContext('2d') : null;
-        let snowflakes = [];
-        let snowAnimationFrame = null;
-        let snowWidth = 0;
-        let snowHeight = 0;
-
-        function getSnowCount() {
-            const messages = Array.isArray(allSessionMessages) ? allSessionMessages : [];
-            const totalText = messages.reduce((sum, msg) => sum + String(msg?.content || '').length, 0);
-            // Normally 24–46 tiny flakes; longer conversations can become a little livelier.
-            return Math.min(52, Math.max(24, 24 + Math.floor(totalText / 900)));
-        }
-
-        function resizeChristmasSnow() {
-            if (!christmasSnow || !snowCtx) return;
-            const rect = christmasSnow.getBoundingClientRect();
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
-            snowWidth = Math.max(1, rect.width);
-            snowHeight = Math.max(1, rect.height);
-            christmasSnow.width = Math.floor(snowWidth * dpr);
-            christmasSnow.height = Math.floor(snowHeight * dpr);
-            snowCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-            const target = getSnowCount();
-            snowflakes = Array.from({ length: target }, (_, i) => ({
-                x: Math.random() * snowWidth,
-                y: i < target * 0.75 ? Math.random() * snowHeight : -Math.random() * snowHeight,
-                r: 0.7 + Math.random() * 1.5,
-                speed: 0.35 + Math.random() * 0.85,
-                drift: (Math.random() - 0.5) * 0.32,
-                phase: Math.random() * Math.PI * 2,
-                opacity: 0.35 + Math.random() * 0.5
-            }));
-        }
-
-        function updateChristmasSnow() {
-            if (!christmasSnow || !snowCtx) return;
-            const target = getSnowCount();
-            while (snowflakes.length < target) {
-                snowflakes.push({
-                    x: Math.random() * snowWidth,
-                    y: -Math.random() * snowHeight,
-                    r: 0.7 + Math.random() * 1.5,
-                    speed: 0.35 + Math.random() * 0.85,
-                    drift: (Math.random() - 0.5) * 0.32,
-                    phase: Math.random() * Math.PI * 2,
-                    opacity: 0.35 + Math.random() * 0.5
-                });
-            }
-            if (snowflakes.length > target) snowflakes.length = target;
-
-            snowCtx.clearRect(0, 0, snowWidth, snowHeight);
-            snowflakes.forEach(flake => {
-                flake.y += flake.speed;
-                flake.phase += 0.012;
-                flake.x += flake.drift + Math.sin(flake.phase) * 0.18;
-
-                if (flake.y > snowHeight + 4) {
-                    flake.y = -4;
-                    flake.x = Math.random() * snowWidth;
-                }
-                if (flake.x < -4) flake.x = snowWidth + 4;
-                if (flake.x > snowWidth + 4) flake.x = -4;
-
-                snowCtx.beginPath();
-                snowCtx.arc(flake.x, flake.y, flake.r, 0, Math.PI * 2);
-                snowCtx.fillStyle = `rgba(235, 248, 255, ${flake.opacity})`;
-                snowCtx.fill();
-            });
-
-            snowAnimationFrame = requestAnimationFrame(updateChristmasSnow);
-        }
-
-        function startChristmasSnow() {
-            if (!christmasSnow || !snowCtx || snowAnimationFrame) return;
-            resizeChristmasSnow();
-            snowAnimationFrame = requestAnimationFrame(updateChristmasSnow);
-        }
-
-        window.addEventListener('resize', resizeChristmasSnow);
-
         async function init() {
-            startChristmasSnow();
             const { data: { session }, error } = await supabase.auth.getSession();
 
             if (error) {
