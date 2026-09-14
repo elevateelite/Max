@@ -80,6 +80,53 @@
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
     
+
+/* =========================
+   NEXUS MESSAGE ENERGY SYSTEM — SHARED PER MESSAGE
+   Every message gets its own deterministic visual identity from msg.id.
+   Therefore every connected user sees the SAME animated edge/effects.
+   ========================= */
+.message-energy{position:relative;display:inline-block;max-width:100%;isolation:isolate}
+.message-energy::before{
+    /* Removed the rotating shape/orb layer. The message itself keeps its dynamic edge treatment. */
+    content:"";position:absolute;inset:-1px;border-radius:19px;z-index:-2;
+    background:linear-gradient(90deg,#ff245c,#ffbf00,#ffe600,#21e6a4,#00c8ff,#4667ff,#b84dff,#ff245c);
+    background-size:300% 100%;
+    filter:blur(.35px);animation:messageEdgeFlow 3.6s linear infinite;
+}
+.message-energy::after{
+    content:"";position:absolute;inset:1px;border-radius:18px;z-index:-1;
+    background:var(--msg-inner,#0c1720);
+}
+.message-energy .dynamic-bubble{border-color:transparent!important;z-index:1}
+.message-energy .energy-spark{
+    position:absolute;z-index:4;pointer-events:none;font-size:12px;line-height:1;
+    color:var(--spark-color,#ffe45e);text-shadow:0 0 6px currentColor,0 0 14px currentColor;
+    animation:energySpark 2.1s ease-in-out infinite;
+}
+.message-energy .energy-spark.one{top:-12px;right:-12px;animation-delay:.1s}
+.message-energy .energy-spark.two{bottom:-9px;left:-11px;font-size:8px;animation-delay:.75s}
+.message-energy .energy-spark.three{top:35%;left:-16px;font-size:6px;animation-delay:1.2s}
+.message-energy .energy-spark.four{bottom:18%;right:-17px;font-size:7px;animation-delay:1.65s}
+.message-energy .energy-line{
+    position:absolute;left:10%;right:10%;bottom:-5px;height:2px;border-radius:999px;
+    background:linear-gradient(90deg,#ff245c,#ffbf00,#21e6a4,#00c8ff,#4667ff,#ff245c);
+    background-size:300% 100%;filter:blur(.3px);opacity:.95;
+    animation:energyLine 2.7s linear infinite;
+    box-shadow:0 0 7px var(--msg-glow,#00c8ff);
+}
+.message-energy.self::before{opacity:1}
+.message-energy.other::before{opacity:.82}
+@keyframes messageEdgeFlow{to{background-position:300% 0}}
+@keyframes energyLine{to{background-position:300% 0}}
+@keyframes energySpark{
+  0%,100%{transform:scale(.55) rotate(0deg);opacity:.2}
+  35%{transform:scale(1.15) rotate(18deg);opacity:1}
+  65%{transform:scale(.8) rotate(-12deg);opacity:.55}
+}
+.message-energy.live-arrival{animation:energyArrival .7s cubic-bezier(.2,.8,.2,1)}
+@keyframes energyArrival{0%{transform:translateY(8px) scale(.96);filter:brightness(1.8)}100%{transform:none;filter:none}}
+
 /* =========================
    NEXUS LIVE DYNAMIC UI v2
    ========================= */
@@ -1238,6 +1285,14 @@ body::before{
                 : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30';
 
             const timeStr = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+            // IMPORTANT: this identity is derived ONLY from the persisted message id.
+            // All users therefore get the same colors/effect positions for this message.
+            const visualSeed = String(msg.id || msg.created_at || senderName);
+            let visualHash = 0;
+            for (let i = 0; i < visualSeed.length; i++) visualHash = ((visualHash << 5) - visualHash) + visualSeed.charCodeAt(i) | 0;
+            const visualAngle = Math.abs(visualHash) % 360;
+            const visualGlow = isSeller ? '#8b5cf6' : '#10b981';
+            const innerSurface = isSelf ? 'rgba(17,50,115,.94)' : 'rgba(9,20,28,.96)';
 
             let reactionsHTML = '';
             if (msg.reactions && Object.keys(msg.reactions).length > 0) {
@@ -1273,7 +1328,13 @@ body::before{
                             <span class="text-[10px] text-gray-500">${timeStr}</span>
                         </div>
 
-                        <div class="dynamic-bubble ${isSelf ? 'bg-gradient-to-tr from-indigo-600 to-blue-600 text-white rounded-2xl rounded-tr-none' : 'glass text-gray-100 rounded-2xl rounded-tl-none'} p-3.5 shadow-xl relative border border-white/10">
+                        <div class="message-energy ${isSelf ? 'self' : 'other'}" style="--msg-angle:${visualAngle}deg;--msg-glow:${visualGlow};--msg-inner:${innerSurface}">
+                            <span class="energy-spark one">✦</span>
+                            <span class="energy-spark two">✧</span>
+                            <span class="energy-spark three">•</span>
+                            <span class="energy-spark four">✦</span>
+                            <span class="energy-line"></span>
+                            <div class="dynamic-bubble ${isSelf ? 'bg-gradient-to-tr from-indigo-600 to-blue-600 text-white rounded-2xl rounded-tr-none' : 'glass text-gray-100 rounded-2xl rounded-tl-none'} p-3.5 shadow-xl relative">
                             ${msg.reply_to_content ? `
                                 <div onclick="scrollToMessage('${msg.reply_to_id}')" class="cursor-pointer text-xs bg-black/20 p-2 rounded-xl mb-2 border-l-2 border-indigo-400 hover:bg-black/30 transition">
                                     <span class="font-bold text-indigo-300 block">${cleanReplyEmail}</span>
@@ -1306,6 +1367,7 @@ body::before{
                                 <button onclick="setReplyMessage('${msg.id}', '${escapeHTML(msg.user_email)}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-indigo-400 text-gray-300 text-xs" title="Reply"><i class="fa-solid fa-reply"></i></button>
                                 ${isSelf ? `<button onclick="startEditMessage('${msg.id}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-amber-400 text-gray-300 text-xs" title="Edit"><i class="fa-solid fa-pen"></i></button>` : ''}
                             </div>
+                        </div>
 
                             <div id="reaction-picker-${msg.id}" class="hidden absolute ${isSelf ? 'right-0' : 'left-0'} -top-10 bg-slate-900/95 border border-white/20 p-1.5 rounded-full flex gap-1 shadow-2xl z-30 backdrop-blur-md">
                                 ${REACTION_PRESETS.map(e => `<button onclick="toggleReaction('${msg.id}', '${e}'); toggleReactionPicker('${msg.id}')" class="hover:scale-125 transition text-base px-1">${e}</button>`).join('')}
