@@ -80,52 +80,6 @@
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
     
-
-/* =========================
-   NEXUS MESSAGE ENERGY SYSTEM — SHARED PER MESSAGE
-   Every message gets its own deterministic visual identity from msg.id.
-   Therefore every connected user sees the SAME animated edge/effects.
-   ========================= */
-.message-energy{position:relative;display:inline-block;max-width:100%;isolation:isolate}
-.message-energy::before{
-    content:"";position:absolute;inset:-1px;border-radius:19px;z-index:-2;
-    background:conic-gradient(from var(--msg-angle,0deg),
-      #ff245c,#ffbf00,#ffe600,#21e6a4,#00c8ff,#4667ff,#b84dff,#ff245c);
-    filter:blur(.35px);animation:messageRainbow 4.2s linear infinite;
-}
-.message-energy::after{
-    content:"";position:absolute;inset:1px;border-radius:18px;z-index:-1;
-    background:var(--msg-inner,#0c1720);
-}
-.message-energy .dynamic-bubble{border-color:transparent!important;z-index:1}
-.message-energy .energy-spark{
-    position:absolute;z-index:4;pointer-events:none;font-size:12px;line-height:1;
-    color:var(--spark-color,#ffe45e);text-shadow:0 0 6px currentColor,0 0 14px currentColor;
-    animation:energySpark 2.1s ease-in-out infinite;
-}
-.message-energy .energy-spark.one{top:-12px;right:-12px;animation-delay:.1s}
-.message-energy .energy-spark.two{bottom:-9px;left:-11px;font-size:8px;animation-delay:.75s}
-.message-energy .energy-spark.three{top:35%;left:-16px;font-size:6px;animation-delay:1.2s}
-.message-energy .energy-spark.four{bottom:18%;right:-17px;font-size:7px;animation-delay:1.65s}
-.message-energy .energy-line{
-    position:absolute;left:10%;right:10%;bottom:-5px;height:2px;border-radius:999px;
-    background:linear-gradient(90deg,#ff245c,#ffbf00,#21e6a4,#00c8ff,#4667ff,#ff245c);
-    background-size:300% 100%;filter:blur(.3px);opacity:.95;
-    animation:energyLine 2.7s linear infinite;
-    box-shadow:0 0 7px var(--msg-glow,#00c8ff);
-}
-.message-energy.self::before{opacity:1}
-.message-energy.other::before{opacity:.82}
-@keyframes messageRainbow{to{transform:rotate(360deg)}}
-@keyframes energyLine{to{background-position:300% 0}}
-@keyframes energySpark{
-  0%,100%{transform:scale(.55) rotate(0deg);opacity:.2}
-  35%{transform:scale(1.15) rotate(18deg);opacity:1}
-  65%{transform:scale(.8) rotate(-12deg);opacity:.55}
-}
-.message-energy.live-arrival{animation:energyArrival .7s cubic-bezier(.2,.8,.2,1)}
-@keyframes energyArrival{0%{transform:translateY(8px) scale(.96);filter:brightness(1.8)}100%{transform:none;filter:none}}
-
 /* =========================
    NEXUS LIVE DYNAMIC UI v2
    ========================= */
@@ -176,7 +130,6 @@ body::before{
     box-shadow:0 0 10px var(--orb-color,#6d5dfc),0 0 24px var(--orb-color,#6d5dfc);
     opacity:.75;
     animation:edgeFloat var(--orb-speed,7s) ease-in-out infinite;
-    will-change:transform,opacity;
 }
 @keyframes edgeFloat{
     0%{transform:translate3d(0,0,0) scale(.65);opacity:.15}
@@ -562,8 +515,6 @@ body::before{
         const typingUsers = new Set();
         const dynamicColors = ['#6d5dfc','#00d4ff','#ff3cac','#20e3b2','#ffe45e','#ff7a59'];
         let dynamicColorIndex = 0;
-        let sharedRoomSeed = 20260827;
-        let roomThemeLocked = false;
         let liveToastTimer = null;
 
         const CHAT_INACTIVITY_MS = 5 * 60 * 1000;
@@ -1183,6 +1134,7 @@ body::before{
             }
 
             showScreen('chat');
+            seedLiveEffects();
             await new Promise(resolve => setTimeout(resolve, 50));
 
             userRoleBadge.textContent = userRole;
@@ -1190,7 +1142,6 @@ body::before{
 
             await loadMessages();
             setupRealtimeChannel();
-            seedLiveEffects(sharedRoomSeed);
             loadTranscriptArchive();
             resetChatInactivityTimer();
             scrollToBottom(true);
@@ -1284,14 +1235,6 @@ body::before{
                 : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30';
 
             const timeStr = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-            // IMPORTANT: this identity is derived ONLY from the persisted message id.
-            // All users therefore get the same colors/effect positions for this message.
-            const visualSeed = String(msg.id || msg.created_at || senderName);
-            let visualHash = 0;
-            for (let i = 0; i < visualSeed.length; i++) visualHash = ((visualHash << 5) - visualHash) + visualSeed.charCodeAt(i) | 0;
-            const visualAngle = Math.abs(visualHash) % 360;
-            const visualGlow = isSeller ? '#8b5cf6' : '#10b981';
-            const innerSurface = isSelf ? 'rgba(17,50,115,.94)' : 'rgba(9,20,28,.96)';
 
             let reactionsHTML = '';
             if (msg.reactions && Object.keys(msg.reactions).length > 0) {
@@ -1327,13 +1270,7 @@ body::before{
                             <span class="text-[10px] text-gray-500">${timeStr}</span>
                         </div>
 
-                        <div class="message-energy ${isSelf ? 'self' : 'other'}" style="--msg-angle:${visualAngle}deg;--msg-glow:${visualGlow};--msg-inner:${innerSurface}">
-                            <span class="energy-spark one">✦</span>
-                            <span class="energy-spark two">✧</span>
-                            <span class="energy-spark three">•</span>
-                            <span class="energy-spark four">✦</span>
-                            <span class="energy-line"></span>
-                            <div class="dynamic-bubble ${isSelf ? 'bg-gradient-to-tr from-indigo-600 to-blue-600 text-white rounded-2xl rounded-tr-none' : 'glass text-gray-100 rounded-2xl rounded-tl-none'} p-3.5 shadow-xl relative">
+                        <div class="dynamic-bubble ${isSelf ? 'bg-gradient-to-tr from-indigo-600 to-blue-600 text-white rounded-2xl rounded-tr-none' : 'glass text-gray-100 rounded-2xl rounded-tl-none'} p-3.5 shadow-xl relative border border-white/10">
                             ${msg.reply_to_content ? `
                                 <div onclick="scrollToMessage('${msg.reply_to_id}')" class="cursor-pointer text-xs bg-black/20 p-2 rounded-xl mb-2 border-l-2 border-indigo-400 hover:bg-black/30 transition">
                                     <span class="font-bold text-indigo-300 block">${cleanReplyEmail}</span>
@@ -1366,7 +1303,6 @@ body::before{
                                 <button onclick="setReplyMessage('${msg.id}', '${escapeHTML(msg.user_email)}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-indigo-400 text-gray-300 text-xs" title="Reply"><i class="fa-solid fa-reply"></i></button>
                                 ${isSelf ? `<button onclick="startEditMessage('${msg.id}', '${(msg.content || '').replace(/'/g, "\\'")}')" class="p-1 hover:text-amber-400 text-gray-300 text-xs" title="Edit"><i class="fa-solid fa-pen"></i></button>` : ''}
                             </div>
-                        </div>
 
                             <div id="reaction-picker-${msg.id}" class="hidden absolute ${isSelf ? 'right-0' : 'left-0'} -top-10 bg-slate-900/95 border border-white/20 p-1.5 rounded-full flex gap-1 shadow-2xl z-30 backdrop-blur-md">
                                 ${REACTION_PRESETS.map(e => `<button onclick="toggleReaction('${msg.id}', '${e}'); toggleReactionPicker('${msg.id}')" class="hover:scale-125 transition text-base px-1">${e}</button>`).join('')}
@@ -1435,9 +1371,12 @@ body::before{
             if (insertError) {
                 alert('Message send error: ' + insertError.message);
             } else {
-                const effect = createVisualEffect(userRole);
-                triggerLivePulse(userRole, 'New message • Live room', effect);
-                broadcastVisual('visual', effect);
+                triggerLivePulse(userRole, 'New message • Live room');
+                broadcastVisual('visual', {
+                    userId: currentUser.id,
+                    role: userRole,
+                    label: `${currentUser.email.split('@')[0]} sent a message`
+                });
             }
         });
 
@@ -1491,63 +1430,55 @@ body::before{
                 : {a:'#10b981',b:'#facc15'};
         }
 
-        function seedLiveEffects(seed = 0){
+        function seedLiveEffects(){
             const layer = document.getElementById('live-effects');
             if(!layer) return;
             layer.innerHTML = '';
-            // Same seed/theme for everyone in the room; animation remains alive locally.
-            let state = (Number(seed) >>> 0) || 1;
-            const rand = () => {
-                state = (1664525 * state + 1013904223) >>> 0;
-                return state / 4294967296;
-            };
-            for(let i=0;i<20;i++){
+            for(let i=0;i<18;i++){
                 const orb = document.createElement('span');
                 orb.className='live-orb';
                 const edge = i % 4;
-                const pos = 5 + rand()*90;
-                if(edge===0){orb.style.left=pos+'%';orb.style.top='1%';}
-                if(edge===1){orb.style.right='1%';orb.style.top=pos+'%';}
-                if(edge===2){orb.style.left=pos+'%';orb.style.bottom='1%';}
-                if(edge===3){orb.style.left='1%';orb.style.top=pos+'%';}
+                if(edge===0){orb.style.left=(5+Math.random()*90)+'%';orb.style.top='1%';}
+                if(edge===1){orb.style.right='1%';orb.style.top=(5+Math.random()*90)+'%';}
+                if(edge===2){orb.style.left=(5+Math.random()*90)+'%';orb.style.bottom='1%';}
+                if(edge===3){orb.style.left='1%';orb.style.top=(5+Math.random()*90)+'%';}
                 orb.style.setProperty('--orb-color',dynamicColors[i%dynamicColors.length]);
-                orb.style.setProperty('--dx',(-40+rand()*80)+'px');
-                orb.style.setProperty('--dy',(-40+rand()*80)+'px');
-                orb.style.setProperty('--orb-speed',(5+rand()*5)+'s');
-                orb.style.animationDelay=(-rand()*8)+'s';
+                orb.style.setProperty('--dx',(-40+Math.random()*80)+'px');
+                orb.style.setProperty('--dy',(-40+Math.random()*80)+'px');
+                orb.style.setProperty('--orb-speed',(5+Math.random()*5)+'s');
+                orb.style.animationDelay=(-Math.random()*8)+'s';
                 layer.appendChild(orb);
             }
-            for(let i=0;i<28;i++){
+            for(let i=0;i<22;i++){
                 const spark=document.createElement('span');
                 spark.className='edge-spark';
                 const edge=i%4;
-                const pos=rand()*100;
-                if(edge===0){spark.style.left=pos+'%';spark.style.top='0';}
-                if(edge===1){spark.style.right='0';spark.style.top=pos+'%';}
-                if(edge===2){spark.style.left=pos+'%';spark.style.bottom='0';}
-                if(edge===3){spark.style.left='0';spark.style.top=pos+'%';}
+                if(edge===0){spark.left=(Math.random()*100)+'%';spark.top='0';}
+                if(edge===1){spark.right='0';spark.top=(Math.random()*100)+'%';}
+                if(edge===2){spark.left=(Math.random()*100)+'%';spark.bottom='0';}
+                if(edge===3){spark.left='0';spark.top=(Math.random()*100)+'%';}
+                spark.style.left=edge===1||edge===3?spark.style.left:spark.style.left;
                 spark.style.setProperty('--spark',dynamicColors[(i+2)%dynamicColors.length]);
-                spark.style.animationDelay=(-rand()*2)+'s';
+                spark.style.animationDelay=(-Math.random()*2)+'s';
                 layer.appendChild(spark);
             }
         }
 
-        function triggerLivePulse(role='Member', source='Room activity', effect={}){
+        function triggerLivePulse(role='Member', source='Room activity'){
             const layer=document.getElementById('live-effects');
-            if(!layer) return;
+            const shell=document.getElementById('chat-screen');
+            if(!layer || !shell) return;
             const c=roleColor(role);
             const pulse=document.createElement('span');
             pulse.className='live-pulse';
-            pulse.style.setProperty('--pulse-color', effect.color || c.a);
-            const side = Number.isInteger(effect.side) ? effect.side : Math.floor(Math.random()*4);
-            const pos = typeof effect.pos === 'number' ? effect.pos : (8+Math.random()*84);
-            if(side===0){pulse.style.left=pos+'%';pulse.style.top='0%';}
-            if(side===1){pulse.style.left='100%';pulse.style.top=pos+'%';}
-            if(side===2){pulse.style.left=pos+'%';pulse.style.top='100%';}
-            if(side===3){pulse.style.left='0%';pulse.style.top=pos+'%';}
+            pulse.style.setProperty('--pulse-color',c.a);
+            const side=Math.floor(Math.random()*4);
+            if(side===0){pulse.style.left=(8+Math.random()*84)+'%';pulse.style.top='0%';}
+            if(side===1){pulse.style.left='100%';pulse.style.top=(8+Math.random()*84)+'%';}
+            if(side===2){pulse.style.left=(8+Math.random()*84)+'%';pulse.style.top='100%';}
+            if(side===3){pulse.style.left='0%';pulse.style.top=(8+Math.random()*84)+'%';}
             layer.appendChild(pulse);
             setTimeout(()=>pulse.remove(),1000);
-
             const toast=document.getElementById('live-event-toast');
             const toastText=document.getElementById('live-event-text');
             if(toast && toastText){
@@ -1562,25 +1493,11 @@ body::before{
 
         function broadcastVisual(event,payload={}){
             if(!roomChannel) return;
-            roomChannel.send({type:'broadcast',event,payload}).catch(err=>console.debug('visual broadcast:',err));
-        }
-
-        function createVisualEffect(role){
-            const c=roleColor(role);
-            return {
-                userId: currentUser?.id || null,
-                role,
-                label: `${currentUser?.email?.split('@')[0] || 'User'} sent a message`,
-                side: Math.floor(Math.random()*4),
-                pos: 8 + Math.random()*84,
-                color: c.a,
-                at: Date.now()
-            };
+            roomChannel.send({type:'broadcast',event,payload}).catch(()=>{});
         }
 
         function setupRealtimeChannel() {
             if (roomChannel) supabase.removeChannel(roomChannel);
-            roomThemeLocked = false;
 
             roomChannel = supabase.channel('nexus-trading-room', {
                 config: { presence: { key: currentUser.id } }
@@ -1607,42 +1524,19 @@ body::before{
                 .on('broadcast', { event: 'visual' }, payload => {
                     const p = payload.payload || {};
                     if (p.userId === currentUser?.id) return;
-                    triggerLivePulse(p.role || 'Member', p.label || 'New room activity', p);
-                })
-                .on('broadcast', { event: 'theme' }, payload => {
-                    const p = payload.payload || {};
-                    if (Number.isFinite(p.seed)) {
-                        sharedRoomSeed = p.seed;
-                        roomThemeLocked = true;
-                        seedLiveEffects(sharedRoomSeed);
-                    }
+                    triggerLivePulse(p.role || 'Member', p.label || 'New room activity');
                 })
                 .on('presence', { event: 'sync' }, () => {
                     const state = roomChannel.presenceState();
-                    const members = Object.values(state).flat();
-                    const themeMember = members.find(m => Number.isFinite(m.room_seed));
-                    if (themeMember && !roomThemeLocked) {
-                        sharedRoomSeed = themeMember.room_seed;
-                        roomThemeLocked = true;
-                        seedLiveEffects(sharedRoomSeed);
-                    }
                     updatePresenceUI(state);
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
-                        // The first connected member establishes the shared visual seed.
-                        if (!roomThemeLocked) {
-                            sharedRoomSeed = 100000 + Math.floor(Math.random()*899999);
-                            roomThemeLocked = true;
-                        }
                         await roomChannel.track({
                             email: currentUser.email,
                             role: userRole,
-                            room_seed: sharedRoomSeed,
                             online_at: new Date().toISOString()
                         });
-                        seedLiveEffects(sharedRoomSeed);
-                        broadcastVisual('theme', { seed: sharedRoomSeed });
                     }
                 });
         }
