@@ -130,6 +130,7 @@ body::before{
     box-shadow:0 0 10px var(--orb-color,#6d5dfc),0 0 24px var(--orb-color,#6d5dfc);
     opacity:.75;
     animation:edgeFloat var(--orb-speed,7s) ease-in-out infinite;
+    will-change:transform,opacity;
 }
 @keyframes edgeFloat{
     0%{transform:translate3d(0,0,0) scale(.65);opacity:.15}
@@ -515,6 +516,8 @@ body::before{
         const typingUsers = new Set();
         const dynamicColors = ['#6d5dfc','#00d4ff','#ff3cac','#20e3b2','#ffe45e','#ff7a59'];
         let dynamicColorIndex = 0;
+        let sharedRoomSeed = 20260827;
+        let roomThemeLocked = false;
         let liveToastTimer = null;
 
         const CHAT_INACTIVITY_MS = 5 * 60 * 1000;
@@ -1134,7 +1137,6 @@ body::before{
             }
 
             showScreen('chat');
-            seedLiveEffects();
             await new Promise(resolve => setTimeout(resolve, 50));
 
             userRoleBadge.textContent = userRole;
@@ -1142,6 +1144,7 @@ body::before{
 
             await loadMessages();
             setupRealtimeChannel();
+            seedLiveEffects(sharedRoomSeed);
             loadTranscriptArchive();
             resetChatInactivityTimer();
             scrollToBottom(true);
@@ -1371,12 +1374,9 @@ body::before{
             if (insertError) {
                 alert('Message send error: ' + insertError.message);
             } else {
-                triggerLivePulse(userRole, 'New message • Live room');
-                broadcastVisual('visual', {
-                    userId: currentUser.id,
-                    role: userRole,
-                    label: `${currentUser.email.split('@')[0]} sent a message`
-                });
+                const effect = createVisualEffect(userRole);
+                triggerLivePulse(userRole, 'New message • Live room', effect);
+                broadcastVisual('visual', effect);
             }
         });
 
@@ -1430,55 +1430,63 @@ body::before{
                 : {a:'#10b981',b:'#facc15'};
         }
 
-        function seedLiveEffects(){
+        function seedLiveEffects(seed = 0){
             const layer = document.getElementById('live-effects');
             if(!layer) return;
             layer.innerHTML = '';
-            for(let i=0;i<18;i++){
+            // Same seed/theme for everyone in the room; animation remains alive locally.
+            let state = (Number(seed) >>> 0) || 1;
+            const rand = () => {
+                state = (1664525 * state + 1013904223) >>> 0;
+                return state / 4294967296;
+            };
+            for(let i=0;i<20;i++){
                 const orb = document.createElement('span');
                 orb.className='live-orb';
                 const edge = i % 4;
-                if(edge===0){orb.style.left=(5+Math.random()*90)+'%';orb.style.top='1%';}
-                if(edge===1){orb.style.right='1%';orb.style.top=(5+Math.random()*90)+'%';}
-                if(edge===2){orb.style.left=(5+Math.random()*90)+'%';orb.style.bottom='1%';}
-                if(edge===3){orb.style.left='1%';orb.style.top=(5+Math.random()*90)+'%';}
+                const pos = 5 + rand()*90;
+                if(edge===0){orb.style.left=pos+'%';orb.style.top='1%';}
+                if(edge===1){orb.style.right='1%';orb.style.top=pos+'%';}
+                if(edge===2){orb.style.left=pos+'%';orb.style.bottom='1%';}
+                if(edge===3){orb.style.left='1%';orb.style.top=pos+'%';}
                 orb.style.setProperty('--orb-color',dynamicColors[i%dynamicColors.length]);
-                orb.style.setProperty('--dx',(-40+Math.random()*80)+'px');
-                orb.style.setProperty('--dy',(-40+Math.random()*80)+'px');
-                orb.style.setProperty('--orb-speed',(5+Math.random()*5)+'s');
-                orb.style.animationDelay=(-Math.random()*8)+'s';
+                orb.style.setProperty('--dx',(-40+rand()*80)+'px');
+                orb.style.setProperty('--dy',(-40+rand()*80)+'px');
+                orb.style.setProperty('--orb-speed',(5+rand()*5)+'s');
+                orb.style.animationDelay=(-rand()*8)+'s';
                 layer.appendChild(orb);
             }
-            for(let i=0;i<22;i++){
+            for(let i=0;i<28;i++){
                 const spark=document.createElement('span');
                 spark.className='edge-spark';
                 const edge=i%4;
-                if(edge===0){spark.left=(Math.random()*100)+'%';spark.top='0';}
-                if(edge===1){spark.right='0';spark.top=(Math.random()*100)+'%';}
-                if(edge===2){spark.left=(Math.random()*100)+'%';spark.bottom='0';}
-                if(edge===3){spark.left='0';spark.top=(Math.random()*100)+'%';}
-                spark.style.left=edge===1||edge===3?spark.style.left:spark.style.left;
+                const pos=rand()*100;
+                if(edge===0){spark.style.left=pos+'%';spark.style.top='0';}
+                if(edge===1){spark.style.right='0';spark.style.top=pos+'%';}
+                if(edge===2){spark.style.left=pos+'%';spark.style.bottom='0';}
+                if(edge===3){spark.style.left='0';spark.style.top=pos+'%';}
                 spark.style.setProperty('--spark',dynamicColors[(i+2)%dynamicColors.length]);
-                spark.style.animationDelay=(-Math.random()*2)+'s';
+                spark.style.animationDelay=(-rand()*2)+'s';
                 layer.appendChild(spark);
             }
         }
 
-        function triggerLivePulse(role='Member', source='Room activity'){
+        function triggerLivePulse(role='Member', source='Room activity', effect={}){
             const layer=document.getElementById('live-effects');
-            const shell=document.getElementById('chat-screen');
-            if(!layer || !shell) return;
+            if(!layer) return;
             const c=roleColor(role);
             const pulse=document.createElement('span');
             pulse.className='live-pulse';
-            pulse.style.setProperty('--pulse-color',c.a);
-            const side=Math.floor(Math.random()*4);
-            if(side===0){pulse.style.left=(8+Math.random()*84)+'%';pulse.style.top='0%';}
-            if(side===1){pulse.style.left='100%';pulse.style.top=(8+Math.random()*84)+'%';}
-            if(side===2){pulse.style.left=(8+Math.random()*84)+'%';pulse.style.top='100%';}
-            if(side===3){pulse.style.left='0%';pulse.style.top=(8+Math.random()*84)+'%';}
+            pulse.style.setProperty('--pulse-color', effect.color || c.a);
+            const side = Number.isInteger(effect.side) ? effect.side : Math.floor(Math.random()*4);
+            const pos = typeof effect.pos === 'number' ? effect.pos : (8+Math.random()*84);
+            if(side===0){pulse.style.left=pos+'%';pulse.style.top='0%';}
+            if(side===1){pulse.style.left='100%';pulse.style.top=pos+'%';}
+            if(side===2){pulse.style.left=pos+'%';pulse.style.top='100%';}
+            if(side===3){pulse.style.left='0%';pulse.style.top=pos+'%';}
             layer.appendChild(pulse);
             setTimeout(()=>pulse.remove(),1000);
+
             const toast=document.getElementById('live-event-toast');
             const toastText=document.getElementById('live-event-text');
             if(toast && toastText){
@@ -1493,11 +1501,25 @@ body::before{
 
         function broadcastVisual(event,payload={}){
             if(!roomChannel) return;
-            roomChannel.send({type:'broadcast',event,payload}).catch(()=>{});
+            roomChannel.send({type:'broadcast',event,payload}).catch(err=>console.debug('visual broadcast:',err));
+        }
+
+        function createVisualEffect(role){
+            const c=roleColor(role);
+            return {
+                userId: currentUser?.id || null,
+                role,
+                label: `${currentUser?.email?.split('@')[0] || 'User'} sent a message`,
+                side: Math.floor(Math.random()*4),
+                pos: 8 + Math.random()*84,
+                color: c.a,
+                at: Date.now()
+            };
         }
 
         function setupRealtimeChannel() {
             if (roomChannel) supabase.removeChannel(roomChannel);
+            roomThemeLocked = false;
 
             roomChannel = supabase.channel('nexus-trading-room', {
                 config: { presence: { key: currentUser.id } }
@@ -1524,19 +1546,42 @@ body::before{
                 .on('broadcast', { event: 'visual' }, payload => {
                     const p = payload.payload || {};
                     if (p.userId === currentUser?.id) return;
-                    triggerLivePulse(p.role || 'Member', p.label || 'New room activity');
+                    triggerLivePulse(p.role || 'Member', p.label || 'New room activity', p);
+                })
+                .on('broadcast', { event: 'theme' }, payload => {
+                    const p = payload.payload || {};
+                    if (Number.isFinite(p.seed)) {
+                        sharedRoomSeed = p.seed;
+                        roomThemeLocked = true;
+                        seedLiveEffects(sharedRoomSeed);
+                    }
                 })
                 .on('presence', { event: 'sync' }, () => {
                     const state = roomChannel.presenceState();
+                    const members = Object.values(state).flat();
+                    const themeMember = members.find(m => Number.isFinite(m.room_seed));
+                    if (themeMember && !roomThemeLocked) {
+                        sharedRoomSeed = themeMember.room_seed;
+                        roomThemeLocked = true;
+                        seedLiveEffects(sharedRoomSeed);
+                    }
                     updatePresenceUI(state);
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
+                        // The first connected member establishes the shared visual seed.
+                        if (!roomThemeLocked) {
+                            sharedRoomSeed = 100000 + Math.floor(Math.random()*899999);
+                            roomThemeLocked = true;
+                        }
                         await roomChannel.track({
                             email: currentUser.email,
                             role: userRole,
+                            room_seed: sharedRoomSeed,
                             online_at: new Date().toISOString()
                         });
+                        seedLiveEffects(sharedRoomSeed);
+                        broadcastVisual('theme', { seed: sharedRoomSeed });
                     }
                 });
         }
